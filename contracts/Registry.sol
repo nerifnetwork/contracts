@@ -54,6 +54,9 @@ contract Registry {
 
     constructor(address[] initialNodes) public {
         require(initialNodes.length == MIN_REQUIRED_NODES, "Not enough nodes provided");
+
+        // TODO: Check that the given tokens have staked tokens within the staking contract
+
         _activeNodes = initialNodes;
     }
 
@@ -194,7 +197,8 @@ contract Registry {
     // The function checks that the given performance transaction was signed by the majority
     // of the network so the workflow owner could be charged and the transaction
     // with the given payload could be passed to the customer's contract.
-    //  - "payload" is the encoded transaction payload.
+    //  - "payload" is the encoded transaction payload:
+    //    TODO: Define payload structure
     function perform(uint256 id, bytes payload, bytes signature) public {
         // TODO: Make sure the workflow exists
         // TODO: Make consensus check
