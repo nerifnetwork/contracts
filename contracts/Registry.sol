@@ -3,6 +3,9 @@ pragma solidity ^0.8.9;
 
 // Registry is the internal smart contract needed to secure the network and support important features of Nerif.
 contract Registry {
+    // MIN_APPROVAL_THRESHOLD is the node approval threshold, i.e. 2/3 of the network or 66%
+    uint32 public constant MIN_APPROVAL_THRESHOLD = 66;
+
     // MIN_REQUIRED_NODES is the minimum number of nodes needed to bootstrap the network.
     uint8 public constant MIN_REQUIRED_NODES = 4;
 
@@ -13,6 +16,12 @@ contract Registry {
         CANCELLED
     }
 
+    // BalanceFunded is emitted when the balance of a workflow owner has been funded
+    event BalanceFunded(address workflowOwner, uint256 amount);
+
+    // BalanceWithdrawn is emitted when the balance of a workflow owner has been withdrawn
+    event BalanceWithdrawn(address workflowOwner, uint256 amount);
+
     // NodeRegistered is emitted when a node has been registered.
     event NodeRegistered(address node);
 
@@ -20,7 +29,7 @@ contract Registry {
     event NodeApproved(address node, address approver);
 
     // NodeActivated is emitted when a node has been approved by majority of the network.
-    event NodeActivated(address node, address approver);
+    event NodeActivated(address node);
 
     // NodeUnregistered is emitted when a node has been approved by network participant.
     event NodeUnregistered(address node);
@@ -50,7 +59,7 @@ contract Registry {
     mapping(uint64 => Workflow) internal _workflows;
 
     // _balances is the list of workflow owner balances;
-    mapping(address => uint64) internal _balances;
+    mapping(address => uint256) internal _balances;
 
     constructor(address[] initialNodes) public {
         require(initialNodes.length == MIN_REQUIRED_NODES, "Not enough nodes provided");
@@ -67,6 +76,19 @@ contract Registry {
     function registerNode(address node) public {
         require(node == msg.sender, "Node address must be equal to tx sender address");
 
+        // Make sure this node does not exist in pending nodes list
+        require(_pendingNodes[node].length == 0, "Node with the given address was already registered");
+
+        // Make sure this node does not exist in active nodes list
+        bool isActivatedNode = false;
+        for (uint i = 0; i < _activeNodes.length; i++) {
+            if (_activeNodes[i] == node) {
+                isActivatedNode = true;
+                break;
+            }
+        }
+        require(!isActivatedNode, "Node with the given address is already active");
+
         // TODO: Make sure the given node has staked tokens within the staking contract
 
         // Add node to the pending list with 0 approvals
@@ -80,15 +102,47 @@ contract Registry {
     // The transaction sender public key is used as an approver public key.
     //  - "node" is the node address (public key) to be approved.
     function approveRegistration(address node) publicKey {
-        // TODO: Make sure the given node exists in the pending list
-        // TODO: Make sure the current tx sender has not approved it yet
-        // TODO: Add current tx sender to the approvers list
-        // TODO: If the number of approvers >= 2/3 of all network participants, activate node and remove from pending
+        // Make sure the given sender is an active node
+        bool isActivatedNode = false;
+        for (uint i = 0; i < _activeNodes.length; i++) {
+            if (_activeNodes[i] == msg.sender) {
+                isActivatedNode = true;
+                break;
+            }
+        }
+        require(isActivatedNode, "Operation is not permitted");
+
+        // Make sure the given node exists in the pending list
+        require(_pendingNodes[node].length > 0, "Node with the given address does not exist");
+
+        // Make sure the current tx sender has not approved it yet
+        bool alreadyApproved = false;
+        for (uint i = 0; i < _pendingNodes[node].length; i++) {
+            if (_pendingNodes[node][i] == msg.sender) {
+                alreadyApproved = true;
+                break;
+            }
+        }
+        require(!alreadyApproved, "Node has been already approved by tx sender");
+
+        // Add current tx sender to the approvers list
+        _pendingNodes[node].push(msg.sender);
+        emit NodeApproved(node, msg.sender);
+
+        // If the number of approvers >= 2/3 of all network participants, activate node and remove from pending
+        uint32 currentPercentage = uint32(100) * uint32(_pendingNodes[node].length) / uint32(_activeNodes.length_);
+        if (currentPercentage >= MIN_APPROVAL_THRESHOLD) {
+            // Delete from pending nodes list
+            delete _pendingNodes[node];
+
+            // Add to active nodes list
+            _activeNodes.push(node);
+
+            // This event must be emitted only after the majority of the network has approved the registration.
+            emit NodeActivated(node);
+        }
 
         // TODO: Node operator must cover approval costs
-
-        // This event must be emitted only after the majority of the network has approved the registration.
-        emit NodeApproved(node, msg.sender);
     }
 
     // unregisterNode unregisters an existing Nerif Network Node from the list of network participants.
@@ -98,14 +152,20 @@ contract Registry {
     function unregisterNode(address node) public {
         require(node == msg.sender, "Node address must be equal to tx sender address");
 
-        // TODO: Delete node from the _activeNodes list
+        // Unregister node
+        require(_unregisterNode(node), "Node with the given address does not exist");
 
         emit NodeUnregistered(node);
     }
 
     // fundBalance funds the balance of the sender's public key with the given amount.
     function fundBalance(address workflowOwner) public payable {
-        // TODO: Add workflowOwner to _balances list with the given amount
+        require(msg.sender == workflowOwner, "Operation is not permitted");
+
+        // Update the balance value
+        _balances[msg.sender] += msg.value;
+
+        emit BalanceFunded(workflowOwner, msg.value);
     }
 
     // fundBalance funds the balance of the sender's public key with the given amount.
@@ -115,7 +175,22 @@ contract Registry {
 
     // withdrawBalance withdraws the remaining balance of the sender's public key.
     function withdrawBalance(address workflowOwner) public {
-        // TODO: Withdraw remaining balance of the given owner to its address
+        require(msg.sender == workflowOwner, "Operation is not permitted");
+
+        address payable sender = payable(msg.sender);
+        uint256 balance = _balances[sender];
+
+        // Ensure the sender has a positive balance
+        require(balance > 0, "No balance to withdraw");
+
+        // Update the sender's balance
+        _balances[sender] = 0;
+
+        // Transfer the balance to the sender
+        sender.transfer(balance);
+
+        // Emit an event to log the withdrawal transaction
+        emit BalanceWithdrawn(sender, balance);
     }
 
     // registerWorkflow registers a new workflow metadata.
@@ -188,7 +263,8 @@ contract Registry {
         // Check workflow ownership
         require(workflow.owner == msg.sender, "Operation is not permitted");
 
-        // TODO: Delete workflow from the map
+        // Delete workflow from the map
+        delete _workflows[id];
 
         emit ChangeWorkflowStatus(id, WorkflowStatus.CANCELLED);
     }
@@ -226,5 +302,25 @@ contract Registry {
     function _signatureCheck(address signer, bytes data, bytes signature) returns (bool verified) {
         // TODO: Implement
         return true;
+    }
+
+    // _unregisterNode deletes the element from _activeNodes by the given value
+    function _unregisterNode(address node) internal {
+        // Delete the given node from the active nodes list
+        for (uint i = 0; i < _activeNodes.length; i++) {
+            if (_activeNodes[i] == node) {
+                _activeNodes[i] = _activeNodes[_activeNodes.length - 1];
+                _activeNodes.pop();
+                return true;
+            }
+        }
+
+        // Delete the given node from the pending nodes list
+        if (_pendingNodes[node].length > 0) {
+           delete _pendingNodes[node];
+           return true;
+        }
+
+        return false;
     }
 }
