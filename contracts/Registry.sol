@@ -288,21 +288,28 @@ contract Registry {
     // The function checks that the given performance transaction was signed by the majority
     // of the network so the workflow owner could be charged and the transaction
     // with the given payload could be passed to the customer's contract.
-    //  - "payload" is the encoded transaction payload:
-    //    - "id" is the workflow ID
-    //    - "gasAmount" is the maximum number of gas used to execute the transaction
-    //    - "target" is the client contract address
-    //    - "data" is the contract call data
+    //  - "workflowId" is the workflow ID
+    //  - "gasAmount" is the maximum number of gas used to execute the transaction
+    //  - "data" is the contract call data
+    //  - "target" is the client contract address
     //  - "signature" is the payload signature
-    function perform(bytes calldata payload, bytes calldata signature) public {
+    function perform(uint256 workflowId, uint256 gasAmount, bytes memory data, address target, bytes memory signature) public {
+        // Make sure the tx sender is in the active nodes list
+        bool isActivatedNode = false;
+        for (uint i = 0; i < _activeNodes.length; i++) {
+            if (_activeNodes[i] == msg.sender) {
+                isActivatedNode = true;
+                break;
+            }
+        }
+        require(isActivatedNode, "Operation is not permitted");
+
         // Make sure the given payload was signed by the network
+        bytes memory payload = abi.encode(workflowId, gasAmount, data, target);
         require(_consensusCheck(payload, signature), "Consensus check failed");
 
-        // Decode the payload from the given input
-        PerformPayload memory decodedPayload = abi.decode(payload, (PerformPayload));
-
         // Get a workflow by ID
-        Workflow storage workflow = _workflows[decodedPayload.id];
+        Workflow storage workflow = _workflows[workflowId];
 
         // Make sure workflow exists
         require(workflow.id > 0, "Workflow does not exist");
@@ -312,8 +319,8 @@ contract Registry {
 
         // Execute client's contract
         uint256 gasUsed = gasleft();
-        bool success = _callWithExactGas(decodedPayload.gasAmount, decodedPayload.target, decodedPayload.data);
-        gasUsed = gasUsed - gasleft();
+        bool success = _callWithExactGas(gasAmount, target, data);
+        gasUsed -= gasleft();
 
         // Charge workflow owner _balances
         _balances[workflow.owner] -= gasUsed;
@@ -321,24 +328,24 @@ contract Registry {
         // TODO: Make sure the given transaction was not performed yet
 
         // Emit performance event
-        emit Performance(decodedPayload.id, gasUsed);
+        emit Performance(workflowId, gasUsed);
     }
 
     // consensusCheck is the public function of _consensusCheck.
     // It could be used to verify that an action during the workflow execution is non-malicious.
-    function consensusCheck(bytes calldata data, bytes calldata signature) public returns (bool verified) {
+    function consensusCheck(bytes memory data, bytes memory signature) public returns (bool verified) {
         return _consensusCheck(data, signature);
     }
 
     // _consensusCheck checks that the given data was signed by majority of the network.
-    function _consensusCheck(bytes calldata data, bytes calldata signature) internal returns (bool verified) {
+    function _consensusCheck(bytes memory data, bytes memory signature) internal returns (bool verified) {
         // TODO: Implement
         return true;
     }
 
     // _signatureCheck checks that the given data corresponds to the given signature
     // and was signed by the given address.
-    function _signatureCheck(address signer, bytes calldata data, bytes calldata signature) internal returns (bool verified) {
+    function _signatureCheck(address signer, bytes memory data, bytes memory signature) internal returns (bool verified) {
         // TODO: Implement
         return true;
     }
