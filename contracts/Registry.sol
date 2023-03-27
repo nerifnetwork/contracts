@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.18;
 
 // Registry is the internal smart contract needed to secure the network and support important features of Nerif.
 contract Registry {
+    uint256 internal constant PERFORM_GAS_CUSHION = 5_000;
+
     // MIN_APPROVAL_THRESHOLD is the node approval threshold, i.e. 2/3 of the network or 66%
     uint32 public constant MIN_APPROVAL_THRESHOLD = 66;
 
@@ -40,13 +42,24 @@ contract Registry {
     // ChangeWorkflowStatus is emitted when a workflow status has been changed.
     event ChangeWorkflowStatus(uint256 id, WorkflowStatus status);
 
+    // Performance is emitted when a client contract was executed
+    event Performance(uint256 id, uint256 gasUsed);
+
     // Workflow represents the workflow metadata model.
     struct Workflow {
-        uint64 id;
+        uint256 id;
         address owner;
         bytes hash;
         bytes signature;
         WorkflowStatus status;
+    }
+
+    // PerformPayload represents the structure of perform payload
+    struct PerformPayload {
+        uint256 id;
+        uint256 gasAmount;
+        address target;
+        bytes data;
     }
 
     // _pendingNodes is the mapping between pending Nerif Network Nodes and approvers
@@ -56,12 +69,12 @@ contract Registry {
     address[] internal _activeNodes;
 
     // _workflows is the list of registered workflows
-    mapping(uint64 => Workflow) internal _workflows;
+    mapping(uint256 => Workflow) internal _workflows;
 
     // _balances is the list of workflow owner balances;
     mapping(address => uint256) internal _balances;
 
-    constructor(address[] initialNodes) public {
+    constructor(address[] memory initialNodes) {
         require(initialNodes.length == MIN_REQUIRED_NODES, "Not enough nodes provided");
 
         // TODO: Check that the given tokens have staked tokens within the staking contract
@@ -101,7 +114,7 @@ contract Registry {
     // Is the registration got >= 2/3 network approvals, the status gets changed to ACTIVE.
     // The transaction sender public key is used as an approver public key.
     //  - "node" is the node address (public key) to be approved.
-    function approveRegistration(address node) publicKey {
+    function approveRegistration(address node) public {
         // Make sure the given sender is an active node
         bool isActivatedNode = false;
         for (uint i = 0; i < _activeNodes.length; i++) {
@@ -130,7 +143,7 @@ contract Registry {
         emit NodeApproved(node, msg.sender);
 
         // If the number of approvers >= 2/3 of all network participants, activate node and remove from pending
-        uint32 currentPercentage = uint32(100) * uint32(_pendingNodes[node].length) / uint32(_activeNodes.length_);
+        uint32 currentPercentage = uint32(100) * uint32(_pendingNodes[node].length) / uint32(_activeNodes.length);
         if (currentPercentage >= MIN_APPROVAL_THRESHOLD) {
             // Delete from pending nodes list
             delete _pendingNodes[node];
@@ -153,7 +166,8 @@ contract Registry {
         require(node == msg.sender, "Node address must be equal to tx sender address");
 
         // Unregister node
-        require(_unregisterNode(node), "Node with the given address does not exist");
+        bool isUnregistered = _unregisterNode(node);
+        require(isUnregistered, "Node with the given address does not exist");
 
         emit NodeUnregistered(node);
     }
@@ -169,11 +183,12 @@ contract Registry {
     }
 
     // fundBalance funds the balance of the sender's public key with the given amount.
-    function getBalance(address workflowOwner) public returns (uint64 balance) {
+    function getBalance(address workflowOwner) public returns (uint256 balance) {
         return _balances[workflowOwner];
     }
 
     // withdrawBalance withdraws the remaining balance of the sender's public key.
+    // TODO: Handle cases when the withdrawal happens during the workflow execution.
     function withdrawBalance(address workflowOwner) public {
         require(msg.sender == workflowOwner, "Operation is not permitted");
 
@@ -200,7 +215,7 @@ contract Registry {
     //  - "signature" is the workflow hash signature made by workflow owner.
     // The given signature must correspond to the given hash and created by
     // the transaction sender.
-    function registerWorkflow(uint256 id, address owner, bytes hash, bytes signature) public {
+    function registerWorkflow(uint256 id, address owner, bytes calldata hash, bytes calldata signature) public {
         require(owner == msg.sender, "Workflow owner must be equal to tx sender address");
 
         // Check the given signature
@@ -274,38 +289,62 @@ contract Registry {
     // of the network so the workflow owner could be charged and the transaction
     // with the given payload could be passed to the customer's contract.
     //  - "payload" is the encoded transaction payload:
-    //    TODO: Define payload structure
-    function perform(uint256 id, bytes payload, bytes signature) public {
-        // TODO: Make sure the workflow exists
-        // TODO: Make consensus check
-        // TODO: Make sure workflow owner has enough funds
+    //    - "id" is the workflow ID
+    //    - "gasAmount" is the maximum number of gas used to execute the transaction
+    //    - "target" is the client contract address
+    //    - "data" is the contract call data
+    //  - "signature" is the payload signature
+    function perform(bytes calldata payload, bytes calldata signature) public {
+        // Make sure the given payload was signed by the network
+        require(_consensusCheck(payload, signature), "Consensus check failed");
+
+        // Decode the payload from the given input
+        PerformPayload memory decodedPayload = abi.decode(payload, (PerformPayload));
+
+        // Get a workflow by ID
+        Workflow storage workflow = _workflows[decodedPayload.id];
+
+        // Make sure workflow exists
+        require(workflow.id > 0, "Workflow does not exist");
+
+        // Make sure workflow owner has enough funds
+        require(_balances[workflow.owner] > 0, "Not enough funds on balance");
+
+        // Execute client's contract
+        uint256 gasUsed = gasleft();
+        bool success = _callWithExactGas(decodedPayload.gasAmount, decodedPayload.target, decodedPayload.data);
+        gasUsed = gasUsed - gasleft();
+
+        // Charge workflow owner _balances
+        _balances[workflow.owner] -= gasUsed;
+
         // TODO: Make sure the given transaction was not performed yet
-        // TODO: Send transaction to the specified contract
-        // TODO: Charge workflow owner's balance
-        // TODO: Emit performance event
+
+        // Emit performance event
+        emit Performance(decodedPayload.id, gasUsed);
     }
 
     // consensusCheck is the public function of _consensusCheck.
     // It could be used to verify that an action during the workflow execution is non-malicious.
-    function consensusCheck(bytes data, bytes signature) public returns (bool verified) {
+    function consensusCheck(bytes calldata data, bytes calldata signature) public returns (bool verified) {
         return _consensusCheck(data, signature);
     }
 
     // _consensusCheck checks that the given data was signed by majority of the network.
-    function _consensusCheck(bytes data, bytes signature) returns (bool verified) {
+    function _consensusCheck(bytes calldata data, bytes calldata signature) internal returns (bool verified) {
         // TODO: Implement
         return true;
     }
 
     // _signatureCheck checks that the given data corresponds to the given signature
     // and was signed by the given address.
-    function _signatureCheck(address signer, bytes data, bytes signature) returns (bool verified) {
+    function _signatureCheck(address signer, bytes calldata data, bytes calldata signature) internal returns (bool verified) {
         // TODO: Implement
         return true;
     }
 
     // _unregisterNode deletes the element from _activeNodes by the given value
-    function _unregisterNode(address node) internal {
+    function _unregisterNode(address node) internal returns (bool) {
         // Delete the given node from the active nodes list
         for (uint i = 0; i < _activeNodes.length; i++) {
             if (_activeNodes[i] == node) {
@@ -317,10 +356,44 @@ contract Registry {
 
         // Delete the given node from the pending nodes list
         if (_pendingNodes[node].length > 0) {
-           delete _pendingNodes[node];
-           return true;
+            delete _pendingNodes[node];
+            return true;
         }
 
         return false;
+    }
+
+    // _callWithExactGas calls target address with exactly gasAmount gas and data as calldata
+    // or reverts if at least gasAmount gas is not available
+    function _callWithExactGas(
+        uint256 gasAmount,
+        address target,
+        bytes memory data
+    ) private returns (bool success) {
+        assembly {
+            let g := gas()
+
+            // Compute g -= PERFORM_GAS_CUSHION and check for underflow
+            if lt(g, PERFORM_GAS_CUSHION) {
+                revert(0, 0)
+            }
+
+            g := sub(g, PERFORM_GAS_CUSHION)
+
+            // if g - g//64 <= gasAmount, revert
+            // (we subtract g//64 because of EIP-150)
+            if iszero(gt(sub(g, div(g, 64)), gasAmount)) {
+                revert(0, 0)
+            }
+
+            // solidity calls check that a contract actually exists at the destination, so we do the same
+            if iszero(extcodesize(target)) {
+                revert(0, 0)
+            }
+
+            // call and return whether we succeeded. ignore return data
+            success := call(gasAmount, target, 0, add(data, 0x20), mload(data), 0, 0)
+        }
+        return success;
     }
 }
