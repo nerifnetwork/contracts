@@ -285,7 +285,7 @@ contract Registry {
     }
 
     // getWorkflow returns the workflow by the given ID
-    function getWorkflow(uint256 id) view public returns (Workflow workflow) {
+    function getWorkflow(uint256 id) view public returns (Workflow memory workflow) {
         return _workflows[id];
     }
 
