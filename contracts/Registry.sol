@@ -314,6 +314,9 @@ contract Registry {
         // Make sure workflow exists
         require(workflow.id > 0, "Workflow does not exist");
 
+        // Make sure the workflow is not paused
+        require(workflow.status == WorkflowStatus.ACTIVE, "Workflow must be active");
+
         // Make sure workflow owner has enough funds
         require(_balances[workflow.owner] > 0, "Not enough funds on balance");
 
