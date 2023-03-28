@@ -183,7 +183,7 @@ contract Registry {
     }
 
     // fundBalance funds the balance of the sender's public key with the given amount.
-    function getBalance(address workflowOwner) public returns (uint256 balance) {
+    function getBalance(address workflowOwner) view public returns (uint256 balance) {
         return _balances[workflowOwner];
     }
 
