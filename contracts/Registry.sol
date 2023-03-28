@@ -284,6 +284,11 @@ contract Registry {
         emit ChangeWorkflowStatus(id, WorkflowStatus.CANCELLED);
     }
 
+    // getWorkflow returns the workflow by the given ID
+    function getWorkflow(uint256 id) view public returns (Workflow workflow) {
+        return _workflows[id];
+    }
+
     // perform performs the contract execution defined in the registered workflow.
     // The function checks that the given performance transaction was signed by the majority
     // of the network so the workflow owner could be charged and the transaction
@@ -320,18 +325,20 @@ contract Registry {
         // Make sure workflow owner has enough funds
         require(_balances[workflow.owner] > 0, "Not enough funds on balance");
 
-        // Execute client's contract
+        // TODO: Make sure the given transaction was not performed yet
+
         uint256 gasUsed = gasleft();
+
+        // Execute client's contract
         bool success = _callWithExactGas(gasAmount, target, data);
+
+        // Emit performance event
+        emit Performance(workflowId, gasUsed);
+
         gasUsed -= gasleft();
 
         // Charge workflow owner _balances
         _balances[workflow.owner] -= gasUsed;
-
-        // TODO: Make sure the given transaction was not performed yet
-
-        // Emit performance event
-        emit Performance(workflowId, gasUsed);
     }
 
     // consensusCheck is the public function of _consensusCheck.
