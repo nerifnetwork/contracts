@@ -36,6 +36,9 @@ contract Registry {
     // NodeUnregistered is emitted when a node has been approved by network participant.
     event NodeUnregistered(address node);
 
+    // NodeRegistrationCancelled is emitted when a node registration has been cancelled.
+    event NodeRegistrationCancelled(address node);
+
     // WorkflowRegistered is emitted when a workflow has been registered.
     event WorkflowRegistered(address owner, uint256 id, bytes hash, bytes signature);
 
@@ -43,7 +46,7 @@ contract Registry {
     event ChangeWorkflowStatus(uint256 id, WorkflowStatus status);
 
     // Performance is emitted when a client contract was executed
-    event Performance(uint256 id, uint256 gasUsed);
+    event Performance(uint256 id, uint256 gasUsed, bool success);
 
     // Workflow represents the workflow metadata model.
     struct Workflow {
@@ -52,6 +55,7 @@ contract Registry {
         bytes hash;
         bytes signature;
         WorkflowStatus status;
+        bool isInternal;
     }
 
     // PerformPayload represents the structure of perform payload
@@ -63,6 +67,7 @@ contract Registry {
     }
 
     // _pendingNodes is the mapping between pending Nerif Network Nodes and approvers
+    // This is used on the mainchain only.
     mapping(address => address[]) internal _pendingNodes;
 
     // _activeNodes is the list of active Nerif Network Nodes addresses
@@ -75,7 +80,7 @@ contract Registry {
     mapping(address => uint256) internal _balances;
 
     // _isMainChain is the indicator whether the contract is deployed on the main chain
-    bool _isMainChain = true;
+    bool internal _isMainChain;
 
     constructor(
         address[] memory initialNodes,
@@ -87,27 +92,23 @@ contract Registry {
 
         _activeNodes = initialNodes;
         _isMainChain = isMainChain;
+
+        // Define internal workflows
+        // TODO: Implement more elegant way
+        _workflows[1] = Workflow(1, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        _workflows[2] = Workflow(2, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        _workflows[3] = Workflow(3, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        _workflows[4] = Workflow(4, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        _workflows[5] = Workflow(5, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        _workflows[6] = Workflow(6, address(0), "", "", WorkflowStatus.ACTIVE, true);
     }
 
-    modifier onlyNetwork {
-        if (_isMainChain) {
-            // Only active nodes can execute the function on the mainchain.
-            // The transaction must come directly from an active node.
-            for (uint i = 0; i < _activeNodes.length; i++) {
-                if (_activeNodes[i] == msg.sender) {
-                    _;
-                    break;
-                }
-            }
-        } else {
-            // Only network can execute the function on the sidechain.
-            // The transaction must come from the network after reaching consensus.
-            // Basically, the transaction must come from the registry contract itself,
-            // namely from the perform function after passing all checks.
-            if (address(this) == msg.sender) {
-                _;
-            }
-        }
+    function isMainChain() public view returns (bool) {
+        return _isMainChain;
+    }
+
+    function getActiveNodes() public view returns (address[] memory) {
+        return _activeNodes;
     }
 
     // registerNode registers the newjoiner with the PENDING registration status.
@@ -116,7 +117,7 @@ contract Registry {
     //  - "node" is the newjoiner node address (public key).
     // Permissions:
     //  - Only active node operator could invite a new node to the network.
-    //  - TODO: ONLY network can execute this function on SIDECHAIN.
+    //  - Only network can execute this function on SIDECHAIN.
     function registerNode(
         address node
     ) public onlyNetwork {
@@ -126,7 +127,7 @@ contract Registry {
         // Make sure this node does not exist in active nodes list
         bool isActivatedNode = false;
         for (uint i = 0; i < _activeNodes.length; i++) {
-            if (_activeNodes[i] == msg.sender) {
+            if (_activeNodes[i] == node) {
                 isActivatedNode = true;
                 break;
             }
@@ -135,24 +136,30 @@ contract Registry {
 
         // TODO: Make sure the given node has staked tokens within the staking contract
 
-        // Add node to the pending list with 0 approvals
-        // FIXME: The first element is the zero address, should be fixed
-        _pendingNodes[node] = new address[](0);
+        // Is it is sidechain, it is assumed the Nerif Network got an approval from the mainchain
+        // and sent a sync transaction to the sidechain so the node has to be immediately activated
+        if (_isMainChain) {
+            // Add node to the pending list with 0 approvals
+            // FIXME: The first element is the zero address, should be fixed
+            _pendingNodes[node] = new address[](0);
 
-        emit NodeRegistered(msg.sender);
+            emit NodeRegistered(node);
+        } else {
+            // Activate the node
+            _activateNode(node);
+        }
     }
 
     // approveRegistration approves PENDING registration by the given public key.
     // Is the registration got >= 2/3 network approvals, the status gets changed to ACTIVE.
-    // Only active nodes can execute this transaction.
-    // The transaction sender public key is used as an approver public key.
+    // Arguments.
     //  - "node" is the node address (public key) to be approved.
     // Permissions:
     //  - Only active node operators can execute this function
-    //  - TODO: not allowed on sidechain
+    //  - Not allowed on sidechain
     function approveRegistration(
         address node
-    ) public onlyNodeOperator {
+    ) public onlyNodeOperator onlyMainchain {
         // Make sure the given node exists in the pending list
         require(_pendingNodes[node].length > 0, "Node with the given address does not exist");
 
@@ -176,78 +183,96 @@ contract Registry {
             // Delete from pending nodes list
             delete _pendingNodes[node];
 
-            // Add to active nodes list
-            _activeNodes.push(node);
-
-            // This event must be emitted only after the majority of the network has approved the registration.
-            emit NodeActivated(node);
+            // Activate the node
+            _activateNode(node);
         }
 
         // TODO: Node operator must cover approval costs
     }
 
-    // unregisterNode unregisters an existing Nerif Network Node from the list of network participants.
-    // Only active or pending node can unregister itself.
-    // The transaction sender address is used as a public key of the node.
+    // _activateNode activates the given node and emitts the event
+    function _activateNode(address node) internal {
+        // Make sure the node is not activated yet
+        // Make sure the current tx sender has not approved it yet
+        bool alreadyActive = false;
+        for (uint i = 0; i < _activeNodes.length; i++) {
+            if (_activeNodes[i] == node) {
+                alreadyActive = true;
+                break;
+            }
+        }
+        require(!alreadyActive, "Node is already active");
+
+        // Add node to the active nodes list
+        _activeNodes.push(node);
+
+        emit NodeActivated(node);
+    }
+
+    // unregisterNode unregisters an existing Nerif Network Node from the active nodes list.
     // Emits an event so Nerif Network will get informed about it and will exclude the node from the network.
-    //  - "node" is the node address (public key), must be the same as the invoker address.
+    // Arguments:
+    //  - "node" is the node address (public key) to unregister.
     // Permissions:
     //  - Only node can unregister itself
-    //  - TODO: ONLY network can unregister the node on SIDECHAIN
+    //  - Only network can unregister the node on SIDECHAIN
     function unregisterNode(
         address node
-    ) public onlyMsgSender(node) {
-        bool hasBeenDeleted = false;
-
-        // Delete the given node from the active nodes list
+    ) public onlyNetwork {
         for (uint i = 0; i < _activeNodes.length; i++) {
             if (_activeNodes[i] == node) {
                 _activeNodes[i] = _activeNodes[_activeNodes.length - 1];
                 _activeNodes.pop();
-                hasBeenDeleted = true;
             }
         }
 
-        // Delete the given node from the pending nodes list
-        if (_pendingNodes[node].length > 0) {
-            delete _pendingNodes[node];
-            hasBeenDeleted = true;
-        }
-
-        require(hasBeenDeleted, "Node with the given address does not exist");
-
         emit NodeUnregistered(node);
+    }
+
+    // cancelNodeRegistration cancels node registration - deletes the given node from the pending nodes list.
+    // Arguments:
+    //  - "node" is the node address (public key).
+    // Permissions:
+    //  - Only node can unregister itself
+    //  - Only network can unregister the node on SIDECHAIN
+    function cancelNodeRegistration(
+        address node
+    ) public onlyMainchain onlyMsgSender(node) {
+        require(_pendingNodes[node].length > 0, "Node does not exist in the pending nodes list");
+
+        delete _pendingNodes[node];
+
+        emit NodeRegistrationCancelled(node);
     }
 
     // fundBalance funds the balance of the sender's public key with the given amount.
     // Permissions:
     //  - Anyone can fund balance.
     function fundBalance(
-        address workflowOwner
-    ) public payable onlyMsgSender(workflowOwner) {
+        address addr
+    ) public payable onlyMsgSender(addr) {
         // Update the balance value
         _balances[msg.sender] += msg.value;
 
-        emit BalanceFunded(workflowOwner, msg.value);
+        emit BalanceFunded(addr, msg.value);
     }
 
     // fundBalance funds the balance of the sender's public key with the given amount.
     // Permissions:
     //  - Anyone can get a balance.
     function getBalance(
-        address workflowOwner
+        address addr
     ) view public returns (uint256 balance) {
-        return _balances[workflowOwner];
+        return _balances[addr];
     }
 
     // withdrawBalance withdraws the remaining balance of the sender's public key.
-    // Only balance owner can withdraw its balance.
     // Permissions:
     //  - Only balance owner can withdraw its balance.
     // TODO: Handle cases when the withdrawal happens during the workflow execution.
     function withdrawBalance(
-        address workflowOwner
-    ) public onlyMsgSender(workflowOwner) {
+        address addr
+    ) public onlyMsgSender(addr) {
         address payable sender = payable(msg.sender);
         uint256 balance = _balances[sender];
 
@@ -265,46 +290,41 @@ contract Registry {
     }
 
     // registerWorkflow registers a new workflow metadata.
-    // This request is allowed for the workflow owner only.
+    // Arguments:
     //  - "id" is the workflow identifier.
     //  - "owner" is the workflow owner address.
     //  - "hash" is the workflow hash.
     //  - "signature" is the workflow hash signature made by workflow owner.
-    // The given signature must correspond to the given hash and created by
-    // the transaction sender.
+    // The given signature must correspond to the given hash and created by the transaction sender.
     // Permissions:
-    //  - Only workflow owner can register a workflow.
-    //  - TODO: ONLY network can register a workflow on SIDECHAIN.
+    //  - Only workflow owner can register a workflow on MAINCHAIN.
+    //  - Only network can register a workflow on SIDECHAIN.
     function registerWorkflow(
         uint256 id,
         address owner,
         bytes calldata hash,
         bytes calldata signature
-    ) public onlyMsgSender(owner) {
+    ) public onlyMsgSenderOrNetwork(owner) {
         // Check the given signature
         require(_signatureCheck(owner, hash, signature), "Signature has not been verified");
 
         // Store workflow with ACTIVE status
-        _workflows[id] = Workflow(id, owner, hash, signature, WorkflowStatus.ACTIVE);
+        _workflows[id] = Workflow(id, owner, hash, signature, WorkflowStatus.ACTIVE, false);
 
         emit WorkflowRegistered(msg.sender, id, hash, signature);
     }
 
     // pauseWorkflow pauses an existing active workflow.
-    // This operation is allowed for workflow owner ONLY.
+    // Arguments:
     //  - "id" is the workflow identifier.
     // Permissions:
-    //  - Only workflow owner can pause an existing active workflow.
-    //  - TODO: ONLY network can pause a workflow on SIDECHAIN.
+    //  - Only workflow owner can pause an existing active workflow on MAINCHAIN.
+    //  - Only network can pause a workflow on SIDECHAIN.
     function pauseWorkflow(
         uint256 id
-    ) public {
+    ) public onlyWorkflowOwnerOrNetwork(id) {
         // Find the workflow in the list
         Workflow storage workflow = _workflows[id];
-        require(workflow.id != 0, "Workflow with the given ID does not exist");
-
-        // Check workflow ownership
-        require(workflow.owner == msg.sender, "Operation is not permitted");
 
         // Check current workflow status
         require(workflow.status == WorkflowStatus.ACTIVE, "Only active workflows could be paused");
@@ -316,20 +336,16 @@ contract Registry {
     }
 
     // resumeWorkflow resumes an existing paused workflow.
-    // This operation is allowed for workflow owner ONLY.
+    // Arguments:
     //  - "id" is the workflow identifier.
     // Permissions:
-    //  - Only workflow owner can pause an existing active workflow.
-    //  - TODO: ONLY network can resume a workflow on SIDECHAIN.
+    //  - Only workflow owner can resume an existing active workflow on MAINCHAIN.
+    //  - Only network can resume a workflow on SIDECHAIN.
     function resumeWorkflow(
         uint256 id
-    ) public {
+    ) public onlyWorkflowOwnerOrNetwork(id) {
         // Find the workflow in the list
         Workflow storage workflow = _workflows[id];
-        require(workflow.id != 0, "Workflow with the given ID does not exist");
-
-        // Check workflow ownership
-        require(workflow.owner == msg.sender, "Operation is not permitted");
 
         // Check current workflow status
         require(workflow.status == WorkflowStatus.PAUSED, "Only paused workflows could be resumed");
@@ -341,18 +357,16 @@ contract Registry {
     }
 
     // cancelWorkflow cancels an existing workflow.
-    // This operation is allowed for workflow owner ONLY.
+    // Arguments:
     //  - "id" is the workflow identifier.
-    //  - TODO: ONLY network can cancel a workflow on SIDECHAIN.
+    // Permissions:
+    //  - Only workflow owner can cancel an existing active workflow on MAINCHAIN.
+    //  - Only network can cancel a workflow on SIDECHAIN.
     function cancelWorkflow(
         uint256 id
-    ) public {
+    ) public onlyWorkflowOwnerOrNetwork(id) {
         // Find the workflow in the list
         Workflow storage workflow = _workflows[id];
-        require(workflow.id != 0, "Workflow with the given ID does not exist");
-
-        // Check workflow ownership
-        require(workflow.owner == msg.sender, "Operation is not permitted");
 
         // Delete workflow from the map
         delete _workflows[id];
@@ -360,7 +374,7 @@ contract Registry {
         emit ChangeWorkflowStatus(id, WorkflowStatus.CANCELLED);
     }
 
-    // getWorkflow returns the workflow by the given ID
+    // getWorkflow returns the workflow by the given ID.
     // Permissions:
     //  - Anyone can read a workflow
     function getWorkflow(
@@ -373,6 +387,7 @@ contract Registry {
     // The function checks that the given performance transaction was signed by the majority
     // of the network so the workflow owner could be charged and the transaction
     // with the given payload could be passed to the customer's contract.
+    // Arguments:
     //  - "workflowId" is the workflow ID
     //  - "gasAmount" is the maximum number of gas used to execute the transaction
     //  - "data" is the contract call data
@@ -401,22 +416,27 @@ contract Registry {
         require(workflow.status == WorkflowStatus.ACTIVE, "Workflow must be active");
 
         // Make sure workflow owner has enough funds
-        require(_balances[workflow.owner] > 0, "Not enough funds on balance");
+        // require(_balances[workflow.owner] > 0, "Not enough funds on balance");
 
         // TODO: Make sure the given transaction was not performed yet
 
-        uint256 gasUsed = gasleft();
+        // Cannot self-execute if not internal
+        if (!workflow.isInternal) {
+            require(address(this) != target, "Operation is not permitted");
+        }
 
         // Execute client's contract
+        uint256 gasUsed = gasleft();
         bool success = _callWithExactGas(gasAmount, target, data);
-
-        // Emit performance event
-        emit Performance(workflowId, gasUsed);
-
         gasUsed -= gasleft();
 
-        // Charge workflow owner _balances
-        _balances[workflow.owner] -= gasUsed;
+        if (!workflow.isInternal) {
+            // Charge workflow owner _balances
+            _balances[workflow.owner] -= gasUsed;
+        }
+
+        // Emit performance event
+        emit Performance(workflowId, gasUsed, success);
     }
 
     // consensusCheck is the public function of _consensusCheck.
@@ -484,6 +504,62 @@ contract Registry {
         return success;
     }
 
+    modifier onlyWorkflowOwnerOrNetwork(uint256 id) {
+        if (_isMainChain) {
+            Workflow storage workflow = _workflows[id];
+            if (workflow.owner == msg.sender) {
+                _;
+            }
+        } else {
+            // Only network can execute the function on the sidechain.
+            // The transaction must come from the network after reaching consensus.
+            // Basically, the transaction must come from the registry contract itself,
+            // namely from the perform function after passing all checks.
+            if (address(this) == msg.sender) {
+                _;
+            }
+        }
+    }
+
+    modifier onlyMsgSenderOrNetwork(address addr) {
+        if (_isMainChain) {
+            if (addr == msg.sender) {
+                _;
+            }
+        } else {
+            // Only network can execute the function on the sidechain.
+            // The transaction must come from the network after reaching consensus.
+            // Basically, the transaction must come from the registry contract itself,
+            // namely from the perform function after passing all checks.
+            if (address(this) == msg.sender) {
+                _;
+            }
+        }
+    }
+
+    modifier onlyNetwork {
+        if (_isMainChain) {
+            // Only active nodes can execute the function on the mainchain.
+            // The transaction must come directly from an active node.
+            bool found = false;
+            for (uint i = 0; i < _activeNodes.length; i++) {
+                if (_activeNodes[i] == msg.sender) {
+                    found = true;
+                    break;
+                }
+            }
+            require(found, "Operation is not permitted");
+            _;
+        } else {
+            // Only network can execute the function on the sidechain.
+            // The transaction must come from the network after reaching consensus.
+            // Basically, the transaction must come from the registry contract itself,
+            // namely from the perform function after passing all checks.
+            require(address(this) == msg.sender, "Operation is not permitted");
+            _;
+        }
+    }
+
     // onlyNodeOperator allows only active nodes to execute the transaction
     modifier onlyNodeOperator {
         for (uint i = 0; i < _activeNodes.length; i++) {
@@ -497,6 +573,12 @@ contract Registry {
     // onlyMsgSender checks that the given address is the message sender one
     modifier onlyMsgSender(address addr) {
         if (msg.sender == addr) {
+            _;
+        }
+    }
+
+    modifier onlyMainchain {
+        if (_isMainChain) {
             _;
         }
     }

@@ -1,14 +1,15 @@
 import { time, loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
-import { expect } from "chai";
+import { expect, assert } from "chai";
 import { ethers } from "hardhat";
 import {Wallet, BigNumber, Signer} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
 const testCustomerContractABI = require("../artifacts/contracts/TestCustomerContract.sol/TestCustomerContract.json");
+const registryContractABI = require("../artifacts/contracts/Registry.sol/Registry.json");
 
 describe("Registry", function () {
-    async function deployRegistry(num: number) {
+    async function deployRegistry(num: number, mainchain: boolean = true) {
         const [owner] = await ethers.getSigners();
 
         let wallets: Signer[] = [owner];
@@ -19,7 +20,8 @@ describe("Registry", function () {
         }
 
         const Registry = await ethers.getContractFactory("Registry");
-        const registry = await Registry.deploy(addresses, true);
+        const registry = await Registry.deploy(addresses, mainchain);
+        expect(await registry.isMainChain()).to.equal(mainchain);
 
         return { registry, wallets };
     }
@@ -33,11 +35,131 @@ describe("Registry", function () {
 
     describe("Deployment", function () {
         it("Successfully deployed with 4 nodes", async function () {
-            const { registry, wallets } = await deployRegistry(4);
-
+            const { registry, wallets } = await deployRegistry(4, true);
             expect(wallets.length).to.equal(4);
         });
     });
+
+    describe("Register node", function () {
+        it("MAINCHAIN: existing node can add a new one", async function () {
+            const { registry, wallets } = await deployRegistry(4, true);
+
+            const newNodeWallet = await ethers.Wallet.createRandom();
+
+            await expect(
+                registry
+                    .connect(wallets[0])
+                    .registerNode(newNodeWallet.getAddress())
+            )
+                .to.emit(registry, "NodeRegistered")
+                .withArgs(await newNodeWallet.getAddress());
+        })
+
+        it("MAINCHAIN: unknown node cannot add a new one", async function () {
+            const { registry, wallets } = await deployRegistry(4, true);
+
+            const [_, other] = await ethers.getSigners();
+            const newNodeWallet = await ethers.Wallet.createRandom();
+
+            await expect(
+                registry
+                    .connect(other)
+                    .registerNode(newNodeWallet.getAddress())
+            )
+            .to.be.revertedWith("Operation is not permitted");
+        })
+
+        it("MAINCHAIN: network cannot add a new node", async function () {
+            const { registry, wallets } = await deployRegistry(4, true);
+
+            const newNodeWallet = await ethers.Wallet.createRandom();
+
+            // Create a contract ABI instance
+            const cc = new ethers.Contract(registry.address, registryContractABI.abi, wallets[0])
+
+            const registerNodePerformData = ethers.utils.solidityPack(
+                ['address'],
+                [await newNodeWallet.getAddress()]
+            )
+
+            // Encode the function call with the selector
+            const functionSignature = cc.interface.getSighash("registerNode");
+            const functionCallData = cc.interface.encodeFunctionData(functionSignature, [registerNodePerformData]);
+
+            // Network can add a new node
+            await expect(
+                registry
+                    .connect(wallets[0])
+                    .perform(1, 300_000, functionCallData, registry.address, [])
+            )
+            .to.emit(registry, "Performance")
+            .withArgs(1, 12100, false);
+
+            // Make sure the node is not registered
+            const expectedNode = await newNodeWallet.getAddress();
+            expect(await registry.getActiveNodes()).to.not.include(expectedNode);
+        })
+
+        it("SIDECHAIN: existing node cannot add a new one", async function () {
+            const { registry, wallets } = await deployRegistry(4, false);
+
+            const newNodeWallet = await ethers.Wallet.createRandom();
+
+            // Node operator cannot add a new node directly
+            await expect(
+                registry
+                    .connect(wallets[0])
+                    .registerNode(newNodeWallet.getAddress())
+            )
+            .to.be.revertedWith("Operation is not permitted");
+        })
+
+        it("SIDECHAIN: unknown node cannot add a new one", async function () {
+            const { registry, wallets } = await deployRegistry(4, false);
+
+            const [_, other] = await ethers.getSigners();
+            const newNodeWallet = await ethers.Wallet.createRandom();
+
+            // Node operator cannot add a new node directly
+            await expect(
+                registry
+                    .connect(other)
+                    .registerNode(newNodeWallet.getAddress())
+            )
+            .to.be.revertedWith("Operation is not permitted");
+        })
+
+        it("SIDECHAIN: network add a new node", async function () {
+            const { registry, wallets } = await deployRegistry(4, false);
+
+            const newNodeWallet = await ethers.Wallet.createRandom();
+
+            // Create a contract ABI instance
+            const cc = new ethers.Contract(registry.address, registryContractABI.abi, wallets[0])
+
+            const registerNodePerformData = ethers.utils.solidityPack(
+                ['address'],
+                [await newNodeWallet.getAddress()]
+            )
+
+            // Encode the function call with the selector
+            const functionSignature = cc.interface.getSighash("registerNode");
+            const functionCallData = cc.interface.encodeFunctionData(functionSignature, [registerNodePerformData]);
+
+            // Network can add a new node
+            await expect(
+                registry
+                    .connect(wallets[0])
+                    .perform(1, 300_000, functionCallData, registry.address, [])
+            )
+            .to.emit(registry, "Performance")
+            .withArgs(1, 43488, true);
+
+            // Make sure the node got registered
+            const expectedNode = await newNodeWallet.getAddress();
+            expect(await registry.getActiveNodes()).to.include(expectedNode);
+        })
+    })
 
     describe("Fund balance", function () {
         it("Successfully funded the balance", async function () {
