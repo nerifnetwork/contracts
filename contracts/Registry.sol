@@ -141,7 +141,8 @@ contract Registry {
         if (_isMainChain) {
             // Add node to the pending list with 0 approvals
             // FIXME: The first element is the zero address, should be fixed
-            _pendingNodes[node] = new address[](0);
+            _pendingNodes[node] = new address[](1);
+            _pendingNodes[node][0] = msg.sender;
 
             emit NodeRegistered(node);
         } else {
@@ -218,13 +219,18 @@ contract Registry {
     //  - Only network can unregister the node on SIDECHAIN
     function unregisterNode(
         address node
-    ) public onlyNetwork {
+    ) public onlyMsgSenderOrNetwork(node) {
+        bool found = false;
         for (uint i = 0; i < _activeNodes.length; i++) {
             if (_activeNodes[i] == node) {
                 _activeNodes[i] = _activeNodes[_activeNodes.length - 1];
                 _activeNodes.pop();
+                found = true;
+                break;
             }
         }
+
+        require(found, "Node not found");
 
         emit NodeUnregistered(node);
     }
@@ -507,33 +513,29 @@ contract Registry {
     modifier onlyWorkflowOwnerOrNetwork(uint256 id) {
         if (_isMainChain) {
             Workflow storage workflow = _workflows[id];
-            if (workflow.owner == msg.sender) {
-                _;
-            }
+            require(workflow.owner == msg.sender, "Operation is not permitted");
+            _;
         } else {
             // Only network can execute the function on the sidechain.
             // The transaction must come from the network after reaching consensus.
             // Basically, the transaction must come from the registry contract itself,
             // namely from the perform function after passing all checks.
-            if (address(this) == msg.sender) {
-                _;
-            }
+            require(address(this) == msg.sender, "Operation is not permitted");
+            _;
         }
     }
 
     modifier onlyMsgSenderOrNetwork(address addr) {
         if (_isMainChain) {
-            if (addr == msg.sender) {
-                _;
-            }
+            require(addr == msg.sender, "Operation is not permitted");
+            _;
         } else {
             // Only network can execute the function on the sidechain.
             // The transaction must come from the network after reaching consensus.
             // Basically, the transaction must come from the registry contract itself,
             // namely from the perform function after passing all checks.
-            if (address(this) == msg.sender) {
-                _;
-            }
+            require(address(this) == msg.sender, "Operation is not permitted");
+            _;
         }
     }
 

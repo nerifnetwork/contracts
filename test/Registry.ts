@@ -1,9 +1,8 @@
-import { time, loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
-import { expect, assert } from "chai";
+import { expect } from "chai";
 import { ethers } from "hardhat";
-import {Wallet, BigNumber, Signer} from "ethers";
-import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import {Signer, Wallet} from "ethers";
+import {Registry} from "../typechain-types";
 
 const testCustomerContractABI = require("../artifacts/contracts/TestCustomerContract.sol/TestCustomerContract.json");
 const registryContractABI = require("../artifacts/contracts/Registry.sol/Registry.json");
@@ -17,6 +16,15 @@ describe("Registry", function () {
         for (let i = 1; i < num; i++) {
             wallets[i] = await ethers.Wallet.createRandom();
             addresses[i] = await wallets[i].getAddress();
+
+            await expect(
+                owner.sendTransaction({
+                    to: addresses[i],
+                    value: ethers.utils.parseEther("10"),
+                    gasLimit: 500_000
+                })
+            )
+            .to.not.be.reverted;
         }
 
         const Registry = await ethers.getContractFactory("Registry");
@@ -31,6 +39,60 @@ describe("Registry", function () {
         const testCustomerContract = await TestCustomerContract.deploy();
 
         return { testCustomerContract };
+    }
+
+    async function registerNodeOnSidechain(registry: Registry, signer: Signer, newNode: Wallet) {
+        // Create a contract ABI instance
+        const cc = new ethers.Contract(registry.address, registryContractABI.abi, signer)
+
+        const performData = ethers.utils.solidityPack(
+            ['address'],
+            [await newNode.getAddress()]
+        )
+
+        // Encode the function call with the selector
+        const functionSignature = cc.interface.getSighash("registerNode");
+        const functionCallData = cc.interface.encodeFunctionData(functionSignature, [performData]);
+
+        // Network can add a new node
+        await expect(
+            registry
+                .connect(signer)
+                .perform(1, 300_000, functionCallData, registry.address, [])
+        )
+            .to.emit(registry, "Performance")
+            .withArgs(1, 43488, true);
+
+        // Make sure the node got registered
+        const expectedNode = await newNode.getAddress();
+        expect(await registry.getActiveNodes()).to.include(expectedNode);
+    }
+
+    async function unregisterNodeOnSidechain(registry: Registry, signer: Signer, newNode: Wallet) {
+        // Create a contract ABI instance
+        const cc = new ethers.Contract(registry.address, registryContractABI.abi, signer)
+
+        const performData = ethers.utils.solidityPack(
+            ['address'],
+            [await newNode.getAddress()]
+        )
+
+        // Encode the function call with the selector
+        const functionSignature = cc.interface.getSighash("unregisterNode");
+        const functionCallData = cc.interface.encodeFunctionData(functionSignature, [performData]);
+
+        // Network can add a new node
+        await expect(
+            registry
+                .connect(signer)
+                .perform(1, 300_000, functionCallData, registry.address, [])
+        )
+            .to.emit(registry, "Performance")
+            .withArgs(1, 22572, true);
+
+        // Make sure the node got registered
+        const expectedNode = await newNode.getAddress();
+        expect(await registry.getActiveNodes()).to.not.include(expectedNode);
     }
 
     describe("Deployment", function () {
@@ -134,30 +196,231 @@ describe("Registry", function () {
 
             const newNodeWallet = await ethers.Wallet.createRandom();
 
-            // Create a contract ABI instance
-            const cc = new ethers.Contract(registry.address, registryContractABI.abi, wallets[0])
+            // Register node on the sidechain
+            await registerNodeOnSidechain(registry, wallets[0], newNodeWallet)
+        })
+    })
 
-            const registerNodePerformData = ethers.utils.solidityPack(
-                ['address'],
-                [await newNodeWallet.getAddress()]
+    describe("Approve node registration", function () {
+        it("MAINCHAIN: node operator can approve the node", async function () {
+            const { registry, wallets } = await deployRegistry(4, true);
+
+            const newNodeWallet = await ethers.Wallet.createRandom();
+            const nodeAddress = await newNodeWallet.getAddress();
+
+            // Register node
+            expect(
+                registry
+                    .connect(wallets[0])
+                    .registerNode(nodeAddress)
             )
+                .to.emit(registry, "NodeRegistered")
+                .withArgs(nodeAddress);
 
-            // Encode the function call with the selector
-            const functionSignature = cc.interface.getSighash("registerNode");
-            const functionCallData = cc.interface.encodeFunctionData(functionSignature, [registerNodePerformData]);
+            // Approve node
+            expect(
+                registry
+                    .connect(wallets[0])
+                    .approveRegistration(nodeAddress)
+            )
+            .to.emit(registry, "NodeApproved")
+            .withArgs(nodeAddress);
+        })
 
-            // Network can add a new node
+        it("MAINCHAIN: unknown node cannot approve the node", async function () {
+            const { registry, wallets } = await deployRegistry(4, true);
+
+            const [_, other] = await ethers.getSigners();
+            const newNodeWallet = await ethers.Wallet.createRandom();
+            const nodeAddress = await newNodeWallet.getAddress();
+
+            // Register node
+            expect(
+                registry
+                    .connect(wallets[0])
+                    .registerNode(nodeAddress)
+            )
+                .to.emit(registry, "NodeRegistered")
+                .withArgs(nodeAddress);
+
+            // Approve node
+            expect(
+                registry
+                    .connect(other)
+                    .approveRegistration(nodeAddress)
+            )
+            .to.be.revertedWith("Operation is not permitted");
+        })
+
+        it("SIDECHAIN: operation is not permitted", async function () {
+            const { registry, wallets } = await deployRegistry(4, false);
+
+            const [_, other] = await ethers.getSigners();
+            const newNodeWallet = await ethers.Wallet.createRandom();
+            const nodeAddress = await newNodeWallet.getAddress();
+
+            // Approve node by other node
+            expect(
+                registry
+                    .connect(other)
+                    .approveRegistration(nodeAddress)
+            )
+            .to.be.revertedWith("Operation is not permitted");
+
+            // Approve node by existing node
+            expect(
+                registry
+                    .connect(wallets[0])
+                    .approveRegistration(nodeAddress)
+            )
+            .to.be.revertedWith("Operation is not permitted");
+        })
+    })
+
+    describe("Unregister node", function () {
+        it("MAINCHAIN: active node can unregister itself", async function () {
+            const { registry, wallets } = await deployRegistry(4, true);
+
+            const newNodeWallet = await ethers.Wallet.createRandom();
+            const nodeAddress = await newNodeWallet.getAddress();
+
+            await expect(
+                wallets[0].sendTransaction({
+                    to: nodeAddress,
+                    value: ethers.utils.parseEther("10"),
+                    gasLimit: 500_000
+                })
+            )
+                .to.not.be.reverted;
+
+            // Register node
+            expect(
+                registry
+                    .connect(wallets[0])
+                    .registerNode(nodeAddress)
+            )
+                .to.emit(registry, "NodeRegistered")
+                .withArgs(nodeAddress);
+
+            // Get 2/3 number of approvals
+            const approvals = wallets.length / 3 * 2;
+
+            // Approve node by network
+            for (let i = 1; i < approvals; i++) {
+                await expect(
+                    registry
+                        .connect(wallets[i].connect(ethers.provider))
+                        .approveRegistration(nodeAddress)
+                )
+                .to.emit(registry, "NodeApproved")
+                .withArgs(nodeAddress, await wallets[i].getAddress());
+            }
+
+            // Make sure the node is active
+            expect(await registry.getActiveNodes()).to.include(nodeAddress);
+
+            // Unregister node
+            await expect(
+                registry
+                    .connect(newNodeWallet.connect(ethers.provider))
+                    .unregisterNode(nodeAddress)
+            )
+                .to.emit(registry, "NodeUnregistered")
+                .withArgs(nodeAddress);
+        })
+
+        it("MAINCHAIN: active node cannot unregister other node", async function () {
+            const { registry, wallets } = await deployRegistry(4, true);
+
+            // Failed to unregister node
+            await expect(
+                registry
+                    .connect(wallets[1].connect(ethers.provider))
+                    .unregisterNode(await wallets[0].getAddress())
+            )
+                .to.be.revertedWith("Operation is not permitted")
+        })
+
+        it("MAINCHAIN: unknown node cannot unregister existing node", async function () {
+            const { registry, wallets } = await deployRegistry(4, true);
+
+            const newNodeWallet = await ethers.Wallet.createRandom();
+            const nodeAddress = await newNodeWallet.getAddress();
+
+            await expect(
+                wallets[0].sendTransaction({
+                    to: nodeAddress,
+                    value: ethers.utils.parseEther("10"),
+                    gasLimit: 500_000
+                })
+            )
+                .to.not.be.reverted;
+
+            // Failed to unregister node
+            await expect(
+                registry
+                    .connect(newNodeWallet.connect(ethers.provider))
+                    .unregisterNode(await wallets[0].getAddress())
+            )
+                .to.be.revertedWith("Operation is not permitted")
+        })
+
+        it("SIDECHAIN: network can unregister the node", async function () {
+            const { registry, wallets } = await deployRegistry(4, false);
+
+            const newNodeWallet = await ethers.Wallet.createRandom();
+            const nodeAddress = await newNodeWallet.getAddress();
+
+            await expect(
+                wallets[0].sendTransaction({
+                    to: nodeAddress,
+                    value: ethers.utils.parseEther("10"),
+                    gasLimit: 500_000
+                })
+            )
+                .to.not.be.reverted;
+
+            // Register node on the sidechain
+            await registerNodeOnSidechain(registry, wallets[0], newNodeWallet)
+
+            // Unregister node on the sidechain
+            await unregisterNodeOnSidechain(registry, wallets[0], newNodeWallet)
+        })
+
+        it("SIDECHAIN: existing node cannot unregister itself", async function () {
+            const { registry, wallets } = await deployRegistry(4, false);
+
+            // Failed to unregister node
             await expect(
                 registry
                     .connect(wallets[0])
-                    .perform(1, 300_000, functionCallData, registry.address, [])
+                    .unregisterNode(await wallets[0].getAddress())
             )
-            .to.emit(registry, "Performance")
-            .withArgs(1, 43488, true);
+                .to.be.revertedWith("Operation is not permitted")
+        })
 
-            // Make sure the node got registered
-            const expectedNode = await newNodeWallet.getAddress();
-            expect(await registry.getActiveNodes()).to.include(expectedNode);
+        it("SIDECHAIN: unknown node cannot unregister active node", async function () {
+            const { registry, wallets } = await deployRegistry(4, false);
+
+            const newNodeWallet = await ethers.Wallet.createRandom();
+            const nodeAddress = await newNodeWallet.getAddress();
+
+            await expect(
+                wallets[0].sendTransaction({
+                    to: nodeAddress,
+                    value: ethers.utils.parseEther("10"),
+                    gasLimit: 500_000
+                })
+            )
+                .to.not.be.reverted;
+
+            // Failed to unregister node
+            await expect(
+                registry
+                    .connect(newNodeWallet.connect(ethers.provider))
+                    .unregisterNode(await wallets[0].getAddress())
+            )
+                .to.be.revertedWith("Operation is not permitted")
         })
     })
 
