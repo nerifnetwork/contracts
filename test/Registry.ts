@@ -19,7 +19,7 @@ describe("Registry", function () {
         }
 
         const Registry = await ethers.getContractFactory("Registry");
-        const registry = await Registry.deploy(addresses);
+        const registry = await Registry.deploy(addresses, true);
 
         return { registry, wallets };
     }
