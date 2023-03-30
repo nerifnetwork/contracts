@@ -95,12 +95,12 @@ contract Registry {
 
         // Define internal workflows
         // TODO: Implement more elegant way
-        _workflows[1] = Workflow(1, address(0), "", "", WorkflowStatus.ACTIVE, true);
-        _workflows[2] = Workflow(2, address(0), "", "", WorkflowStatus.ACTIVE, true);
-        _workflows[3] = Workflow(3, address(0), "", "", WorkflowStatus.ACTIVE, true);
-        _workflows[4] = Workflow(4, address(0), "", "", WorkflowStatus.ACTIVE, true);
-        _workflows[5] = Workflow(5, address(0), "", "", WorkflowStatus.ACTIVE, true);
-        _workflows[6] = Workflow(6, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        _workflows[1] = Workflow(1, address(0), "", "", WorkflowStatus.ACTIVE, true); // Register an activated node on the sidechain
+        _workflows[2] = Workflow(2, address(0), "", "", WorkflowStatus.ACTIVE, true); // Unregister an active node on the sidechain
+        _workflows[3] = Workflow(3, address(0), "", "", WorkflowStatus.ACTIVE, true); // Create workflow on the sidechain side
+        _workflows[4] = Workflow(4, address(0), "", "", WorkflowStatus.ACTIVE, true); // Pause workflow on the sidechain side
+        _workflows[5] = Workflow(5, address(0), "", "", WorkflowStatus.ACTIVE, true); // Resume workflow on the sidechain side
+        _workflows[6] = Workflow(6, address(0), "", "", WorkflowStatus.ACTIVE, true); // Cancel workflow on the sidechain side
     }
 
     function isMainChain() public view returns (bool) {
@@ -116,11 +116,11 @@ contract Registry {
     // This request can be approved by existing network participants using the function below.
     //  - "node" is the newjoiner node address (public key).
     // Permissions:
-    //  - Only active node operator could invite a new node to the network.
+    //  - Anyone can request to join the network.
     //  - Only network can execute this function on SIDECHAIN.
     function registerNode(
         address node
-    ) public onlyNetwork {
+    ) public onlyMsgSenderOrNetwork(node) {
         // Make sure this node does not exist in pending nodes list
         require(_pendingNodes[node].length == 0, "Node with the given address was already registered");
 
@@ -421,15 +421,15 @@ contract Registry {
         // Make sure the workflow is not paused
         require(workflow.status == WorkflowStatus.ACTIVE, "Workflow must be active");
 
-        // Make sure workflow owner has enough funds
-        // require(_balances[workflow.owner] > 0, "Not enough funds on balance");
-
-        // TODO: Make sure the given transaction was not performed yet
-
-        // Cannot self-execute if not internal
         if (!workflow.isInternal) {
+            // Make sure workflow owner has enough funds
+            require(_balances[workflow.owner] > 0, "Not enough funds on balance");
+
+            // Cannot self-execute if not internal
             require(address(this) != target, "Operation is not permitted");
         }
+
+        // TODO: Make sure the given transaction was not performed yet
 
         // Execute client's contract
         uint256 gasUsed = gasleft();
@@ -564,24 +564,25 @@ contract Registry {
 
     // onlyNodeOperator allows only active nodes to execute the transaction
     modifier onlyNodeOperator {
+        bool found = false;
         for (uint i = 0; i < _activeNodes.length; i++) {
             if (_activeNodes[i] == msg.sender) {
-                _;
-                return;
+                found = true;
+                break;
             }
         }
+        require(found, "Operation is not permitted");
+        _;
     }
 
     // onlyMsgSender checks that the given address is the message sender one
     modifier onlyMsgSender(address addr) {
-        if (msg.sender == addr) {
-            _;
-        }
+        require(addr == msg.sender, "Operation is not permitted");
+        _;
     }
 
     modifier onlyMainchain {
-        if (_isMainChain) {
-            _;
-        }
+        require(_isMainChain, "Operation is not permitted");
+        _;
     }
 }
