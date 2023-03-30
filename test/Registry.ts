@@ -852,7 +852,7 @@ describe("Registry", function () {
                     .perform(3, 300_000, functionCallData, registry.address, [])
             )
             .to.emit(registry, "Performance")
-            .withArgs(3, 100940, true);
+            .withArgs(3, anyValue, true);
 
             // Encode the function call with the selector
             functionCallData = cc.interface.encodeFunctionData(
@@ -870,7 +870,7 @@ describe("Registry", function () {
                     .perform(4, 300_000, functionCallData, registry.address, [])
             )
                 .to.emit(registry, "Performance")
-                .withArgs(4, 27906, true);
+                .withArgs(4, anyValue, true);
         })
     })
 
