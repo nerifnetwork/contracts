@@ -374,8 +374,8 @@ contract Registry {
         // Find the workflow in the list
         Workflow storage workflow = _workflows[id];
 
-        // Delete workflow from the map
-        delete _workflows[id];
+        // Update status
+        _workflows[id].status = WorkflowStatus.CANCELLED;
 
         emit ChangeWorkflowStatus(id, WorkflowStatus.CANCELLED);
     }
