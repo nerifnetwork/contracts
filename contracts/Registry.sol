@@ -95,12 +95,30 @@ contract Registry {
 
         // Define internal workflows
         // TODO: Implement more elegant way
-        _workflows[1] = Workflow(1, address(0), "", "", WorkflowStatus.ACTIVE, true); // Register an activated node on the sidechain
-        _workflows[2] = Workflow(2, address(0), "", "", WorkflowStatus.ACTIVE, true); // Unregister an active node on the sidechain
-        _workflows[3] = Workflow(3, address(0), "", "", WorkflowStatus.ACTIVE, true); // Create workflow on the sidechain side
-        _workflows[4] = Workflow(4, address(0), "", "", WorkflowStatus.ACTIVE, true); // Pause workflow on the sidechain side
-        _workflows[5] = Workflow(5, address(0), "", "", WorkflowStatus.ACTIVE, true); // Resume workflow on the sidechain side
-        _workflows[6] = Workflow(6, address(0), "", "", WorkflowStatus.ACTIVE, true); // Cancel workflow on the sidechain side
+
+        // Register an activated node on the sidechain
+        Workflow memory nodeActivationWorkflow = Workflow(97772660256052158796229912779610582517, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        _workflows[nodeActivationWorkflow.id] = nodeActivationWorkflow;
+
+        // Unregister an active node on the sidechain
+        Workflow memory nodeDeactivationWorkflow = Workflow(117764555324547669208370722903305523582, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        _workflows[nodeDeactivationWorkflow.id] = nodeDeactivationWorkflow;
+
+        // Create workflow on the sidechain side
+        Workflow memory workflowCreationWorkflow = Workflow(40505927788353901442144037336646356013, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        _workflows[workflowCreationWorkflow.id] = workflowCreationWorkflow;
+
+        // Pause workflow on the sidechain side
+        Workflow memory workflowPausingWorkflow = Workflow(68042006037411996168005622460351421679, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        _workflows[workflowPausingWorkflow.id] = workflowPausingWorkflow;
+
+        // Resume workflow on the sidechain side
+        Workflow memory workflowResumingWorkflow = Workflow(267740693886077544039681219218685058227, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        _workflows[workflowResumingWorkflow.id] = workflowResumingWorkflow;
+
+        // Cancel workflow on the sidechain side
+        Workflow memory workflowCancellationWorkflow = Workflow(219775546284901721155783592958414245131, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        _workflows[workflowCancellationWorkflow.id] = workflowCancellationWorkflow;
     }
 
     function isMainChain() public view returns (bool) {
