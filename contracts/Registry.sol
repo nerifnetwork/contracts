@@ -42,7 +42,17 @@ contract Registry {
     // WorkflowRegistered is emitted when a workflow has been registered.
     event WorkflowRegistered(address owner, uint256 id, bytes hash, bytes signature);
 
-    // ChangeWorkflowStatus is emitted when a workflow status has been changed.
+    // WorkflowPaused is emitted when a workflow status has been changed to PAUSED.
+    event WorkflowPaused(uint256 id);
+
+    // WorkflowResumed is emitted when a workflow status has been changed from PAUSED to ACTIVE.
+    event WorkflowResumed(uint256 id);
+
+    // WorkflowCancelled is emitted when a workflow status has been cancelled.
+    event WorkflowCancelled(uint256 id);
+
+    // ChangeWorkflowStatus is emitted when a workflow status has been changed by the network.
+    // This event gets emitted when the workflow status has been successfully changed on all supported networks.
     event ChangeWorkflowStatus(uint256 id, WorkflowStatus status);
 
     // Performance is emitted when a client contract was executed
@@ -95,12 +105,30 @@ contract Registry {
 
         // Define internal workflows
         // TODO: Implement more elegant way
-        _workflows[1] = Workflow(1, address(0), "", "", WorkflowStatus.ACTIVE, true); // Register an activated node on the sidechain
-        _workflows[2] = Workflow(2, address(0), "", "", WorkflowStatus.ACTIVE, true); // Unregister an active node on the sidechain
-        _workflows[3] = Workflow(3, address(0), "", "", WorkflowStatus.ACTIVE, true); // Create workflow on the sidechain side
-        _workflows[4] = Workflow(4, address(0), "", "", WorkflowStatus.ACTIVE, true); // Pause workflow on the sidechain side
-        _workflows[5] = Workflow(5, address(0), "", "", WorkflowStatus.ACTIVE, true); // Resume workflow on the sidechain side
-        _workflows[6] = Workflow(6, address(0), "", "", WorkflowStatus.ACTIVE, true); // Cancel workflow on the sidechain side
+
+        // Register an activated node on the sidechain
+        Workflow memory nodeActivationWorkflow = Workflow(97772660256052158796229912779610582517, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        _workflows[nodeActivationWorkflow.id] = nodeActivationWorkflow;
+
+        // Unregister an active node on the sidechain
+        Workflow memory nodeDeactivationWorkflow = Workflow(117764555324547669208370722903305523582, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        _workflows[nodeDeactivationWorkflow.id] = nodeDeactivationWorkflow;
+
+        // Create workflow on the sidechain side
+        Workflow memory workflowCreationWorkflow = Workflow(40505927788353901442144037336646356013, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        _workflows[workflowCreationWorkflow.id] = workflowCreationWorkflow;
+
+        // Pause workflow on the sidechain side
+        Workflow memory workflowPausingWorkflow = Workflow(68042006037411996168005622460351421679, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        _workflows[workflowPausingWorkflow.id] = workflowPausingWorkflow;
+
+        // Resume workflow on the sidechain side
+        Workflow memory workflowResumingWorkflow = Workflow(267740693886077544039681219218685058227, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        _workflows[workflowResumingWorkflow.id] = workflowResumingWorkflow;
+
+        // Cancel workflow on the sidechain side
+        Workflow memory workflowCancellationWorkflow = Workflow(219775546284901721155783592958414245131, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        _workflows[workflowCancellationWorkflow.id] = workflowCancellationWorkflow;
     }
 
     function isMainChain() public view returns (bool) {
@@ -338,7 +366,7 @@ contract Registry {
         // Update status
         _workflows[id].status = WorkflowStatus.PAUSED;
 
-        emit ChangeWorkflowStatus(id, WorkflowStatus.PAUSED);
+        emit WorkflowPaused(id);
     }
 
     // resumeWorkflow resumes an existing paused workflow.
@@ -359,7 +387,7 @@ contract Registry {
         // Update status
         _workflows[id].status = WorkflowStatus.ACTIVE;
 
-        emit ChangeWorkflowStatus(id, WorkflowStatus.ACTIVE);
+        emit WorkflowResumed(id);
     }
 
     // cancelWorkflow cancels an existing workflow.
@@ -374,10 +402,33 @@ contract Registry {
         // Find the workflow in the list
         Workflow storage workflow = _workflows[id];
 
-        // Delete workflow from the map
-        delete _workflows[id];
+        // Update status
+        _workflows[id].status = WorkflowStatus.CANCELLED;
 
-        emit ChangeWorkflowStatus(id, WorkflowStatus.CANCELLED);
+        emit WorkflowCancelled(id);
+    }
+
+    // updateWorkflowState updates the workflow state.
+    // Arguments:
+    //  - "id" is the workflow identifier.
+    //  - "status" is the workflow status.
+    // Permissions:
+    //  - Permitted on MAINCHAIN only.
+    //  - Only network can execute it.
+    function updateWorkflowState(
+        uint256 id,
+        WorkflowStatus status
+    ) public onlyNetwork {
+        // Find the workflow in the list
+        Workflow storage workflow = _workflows[id];
+
+        // Check current workflow status
+        require(workflow.status != status, "Workflow already has the given status");
+
+        // Update status
+        _workflows[id].status = status;
+
+        emit ChangeWorkflowStatus(id, status);
     }
 
     // getWorkflow returns the workflow by the given ID.

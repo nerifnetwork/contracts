@@ -64,10 +64,10 @@ describe("Registry", function () {
         await expect(
             registry
                 .connect(signer)
-                .perform(1, 300_000, functionCallData, registry.address, [])
+                .perform('97772660256052158796229912779610582517', 300_000, functionCallData, registry.address, [])
         )
             .to.emit(registry, "Performance")
-            .withArgs(1, anyValue, true);
+            .withArgs('97772660256052158796229912779610582517', anyValue, true);
 
         // Make sure the node got registered
         const expectedNode = await newNode.getAddress();
@@ -91,10 +91,10 @@ describe("Registry", function () {
         await expect(
             registry
                 .connect(signer)
-                .perform(1, 300_000, functionCallData, registry.address, [])
+                .perform('117764555324547669208370722903305523582', 300_000, functionCallData, registry.address, [])
         )
             .to.emit(registry, "Performance")
-            .withArgs(1, 22572, true);
+            .withArgs('117764555324547669208370722903305523582', 22572, true);
 
         // Make sure the node got registered
         const expectedNode = await newNode.getAddress();
@@ -172,10 +172,10 @@ describe("Registry", function () {
             await expect(
                 registry
                     .connect(wallets[0])
-                    .perform(1, 300_000, functionCallData, registry.address, [])
+                    .perform('97772660256052158796229912779610582517', 300_000, functionCallData, registry.address, [])
             )
             .to.emit(registry, "Performance")
-            .withArgs(1, anyValue, false);
+            .withArgs('97772660256052158796229912779610582517', anyValue, false);
 
             // Make sure the node is not registered
             const expectedNode = await newNodeWallet.getAddress();
@@ -585,10 +585,10 @@ describe("Registry", function () {
             await expect(
                 registry
                     .connect(wallets[0])
-                    .perform(3, 300_000, functionCallData, registry.address, [])
+                    .perform('40505927788353901442144037336646356013', 300_000, functionCallData, registry.address, [])
             )
             .to.emit(registry, "Performance")
-            .withArgs(3, 100940, true);
+            .withArgs('40505927788353901442144037336646356013', anyValue, true);
         })
     })
 
@@ -614,8 +614,8 @@ describe("Registry", function () {
                     .connect(newNodeWallet.connect(ethers.provider))
                     .pauseWorkflow(123)
             )
-            .to.emit(registry, "ChangeWorkflowStatus")
-            .withArgs(123, 1);
+            .to.emit(registry, "WorkflowPaused")
+            .withArgs(123);
         })
 
         it("SIDECHAIN: network can pause workflow", async function () {
@@ -652,10 +652,10 @@ describe("Registry", function () {
             await expect(
                 registry
                     .connect(wallets[0])
-                    .perform(3, 300_000, functionCallData, registry.address, [])
+                    .perform('40505927788353901442144037336646356013', 300_000, functionCallData, registry.address, [])
             )
             .to.emit(registry, "Performance")
-            .withArgs(3, 100940, true);
+            .withArgs('40505927788353901442144037336646356013', 100940, true);
 
             // Encode the function call with the selector
             functionCallData = cc.interface.encodeFunctionData(
@@ -670,10 +670,10 @@ describe("Registry", function () {
             await expect(
                 registry
                     .connect(wallets[0])
-                    .perform(4, 300_000, functionCallData, registry.address, [])
+                    .perform('68042006037411996168005622460351421679', 300_000, functionCallData, registry.address, [])
             )
                 .to.emit(registry, "Performance")
-                .withArgs(4, 27245, true);
+                .withArgs('68042006037411996168005622460351421679', anyValue, true);
         })
     })
 
@@ -699,8 +699,8 @@ describe("Registry", function () {
                     .connect(newNodeWallet.connect(ethers.provider))
                     .pauseWorkflow(123)
             )
-            .to.emit(registry, "ChangeWorkflowStatus")
-            .withArgs(123, 1);
+            .to.emit(registry, "WorkflowPaused")
+            .withArgs(123);
 
             // Resume workflow
             await expect(
@@ -708,8 +708,8 @@ describe("Registry", function () {
                     .connect(newNodeWallet.connect(ethers.provider))
                     .resumeWorkflow(123)
             )
-            .to.emit(registry, "ChangeWorkflowStatus")
-            .withArgs(123, 0);
+            .to.emit(registry, "WorkflowResumed")
+            .withArgs(123);
         })
 
         it("SIDECHAIN: network can resume workflow", async function () {
@@ -746,10 +746,10 @@ describe("Registry", function () {
             await expect(
                 registry
                     .connect(wallets[0])
-                    .perform(3, 300_000, functionCallData, registry.address, [])
+                    .perform('40505927788353901442144037336646356013', 300_000, functionCallData, registry.address, [])
             )
             .to.emit(registry, "Performance")
-            .withArgs(3, 100940, true);
+            .withArgs('40505927788353901442144037336646356013', 100940, true);
 
             // Encode the function call with the selector
             functionCallData = cc.interface.encodeFunctionData(
@@ -764,10 +764,10 @@ describe("Registry", function () {
             await expect(
                 registry
                     .connect(wallets[0])
-                    .perform(4, 300_000, functionCallData, registry.address, [])
+                    .perform('68042006037411996168005622460351421679', 300_000, functionCallData, registry.address, [])
             )
                 .to.emit(registry, "Performance")
-                .withArgs(4, 27245, true);
+                .withArgs('68042006037411996168005622460351421679', anyValue, true);
 
             // Encode the function call with the selector
             functionCallData = cc.interface.encodeFunctionData(
@@ -782,10 +782,10 @@ describe("Registry", function () {
             await expect(
                 registry
                     .connect(wallets[0])
-                    .perform(4, 300_000, functionCallData, registry.address, [])
+                    .perform('267740693886077544039681219218685058227', 300_000, functionCallData, registry.address, [])
             )
                 .to.emit(registry, "Performance")
-                .withArgs(4, 10187, true);
+                .withArgs('267740693886077544039681219218685058227', anyValue, true);
         })
     })
 
@@ -811,8 +811,8 @@ describe("Registry", function () {
                     .connect(newNodeWallet.connect(ethers.provider))
                     .cancelWorkflow(123)
             )
-            .to.emit(registry, "ChangeWorkflowStatus")
-            .withArgs(123, 2);
+            .to.emit(registry, "WorkflowCancelled")
+            .withArgs(123);
         })
 
         it("SIDECHAIN: network can cancel workflow", async function () {
@@ -849,10 +849,10 @@ describe("Registry", function () {
             await expect(
                 registry
                     .connect(wallets[0])
-                    .perform(3, 300_000, functionCallData, registry.address, [])
+                    .perform('40505927788353901442144037336646356013', 300_000, functionCallData, registry.address, [])
             )
             .to.emit(registry, "Performance")
-            .withArgs(3, 100940, true);
+            .withArgs('40505927788353901442144037336646356013', anyValue, true);
 
             // Encode the function call with the selector
             functionCallData = cc.interface.encodeFunctionData(
@@ -867,10 +867,10 @@ describe("Registry", function () {
             await expect(
                 registry
                     .connect(wallets[0])
-                    .perform(4, 300_000, functionCallData, registry.address, [])
+                    .perform('219775546284901721155783592958414245131', 300_000, functionCallData, registry.address, [])
             )
                 .to.emit(registry, "Performance")
-                .withArgs(4, 27906, true);
+                .withArgs('219775546284901721155783592958414245131', anyValue, true);
         })
     })
 
