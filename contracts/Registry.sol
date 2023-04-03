@@ -418,7 +418,7 @@ contract Registry {
     // Permissions:
     //  - Only workflow owner can cancel an existing active workflow on MAINCHAIN.
     //  - Only network can cancel a workflow on SIDECHAIN.
-    function (
+    function cancelWorkflow(
         uint256 id
     ) public onlyWorkflowOwnerOrNetwork(id) {
         // Find the workflow in the list
