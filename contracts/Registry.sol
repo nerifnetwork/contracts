@@ -13,6 +13,7 @@ contract Registry {
 
     // WorkflowStatus represents the workflow status.
     enum WorkflowStatus {
+        PENDING,
         ACTIVE,
         PAUSED,
         CANCELLED
@@ -42,6 +43,10 @@ contract Registry {
     // WorkflowRegistered is emitted when a workflow has been registered.
     event WorkflowRegistered(address owner, uint256 id, bytes hash, bytes signature);
 
+    // WorkflowActivated is emitted when a workflow status has been changed from PENDING to ACTIVE.
+    // This event gets emitted when the workflow has been successfully registered on all supported networks.
+    event WorkflowActivated(uint256 id);
+
     // WorkflowPaused is emitted when a workflow status has been changed to PAUSED.
     event WorkflowPaused(uint256 id);
 
@@ -50,10 +55,6 @@ contract Registry {
 
     // WorkflowCancelled is emitted when a workflow status has been cancelled.
     event WorkflowCancelled(uint256 id);
-
-    // ChangeWorkflowStatus is emitted when a workflow status has been changed by the network.
-    // This event gets emitted when the workflow status has been successfully changed on all supported networks.
-    event ChangeWorkflowStatus(uint256 id, WorkflowStatus status);
 
     // Performance is emitted when a client contract was executed
     event Performance(uint256 id, uint256 gasUsed, bool success);
@@ -117,14 +118,6 @@ contract Registry {
         // Create workflow on the sidechain side
         Workflow memory workflowCreationWorkflow = Workflow(40505927788353901442144037336646356013, address(0), "", "", WorkflowStatus.ACTIVE, true);
         _workflows[workflowCreationWorkflow.id] = workflowCreationWorkflow;
-
-        // Pause workflow on the sidechain side
-        Workflow memory workflowPausingWorkflow = Workflow(68042006037411996168005622460351421679, address(0), "", "", WorkflowStatus.ACTIVE, true);
-        _workflows[workflowPausingWorkflow.id] = workflowPausingWorkflow;
-
-        // Resume workflow on the sidechain side
-        Workflow memory workflowResumingWorkflow = Workflow(267740693886077544039681219218685058227, address(0), "", "", WorkflowStatus.ACTIVE, true);
-        _workflows[workflowResumingWorkflow.id] = workflowResumingWorkflow;
 
         // Cancel workflow on the sidechain side
         Workflow memory workflowCancellationWorkflow = Workflow(219775546284901721155783592958414245131, address(0), "", "", WorkflowStatus.ACTIVE, true);
@@ -342,21 +335,50 @@ contract Registry {
         // Check the given signature
         require(_signatureCheck(owner, hash, signature), "Signature has not been verified");
 
+        // Select the proper state
+        WorkflowStatus workflowStatus = WorkflowStatus.ACTIVE;
+        if (_isMainChain) {
+            // It will be active after the workflow got registered on all supported networks.
+            workflowStatus = WorkflowStatus.PENDING;
+        }
+
         // Store workflow with ACTIVE status
-        _workflows[id] = Workflow(id, owner, hash, signature, WorkflowStatus.ACTIVE, false);
+        _workflows[id] = Workflow(id, owner, hash, signature, workflowStatus, false);
 
         emit WorkflowRegistered(msg.sender, id, hash, signature);
+    }
+
+    // activateWorkflow updates the workflow state from PENDING to ACTIVE.
+    // Arguments:
+    //  - "id" is the workflow identifier.
+    //  - "status" is the workflow status.
+    // Permissions:
+    //  - Permitted on MAINCHAIN only.
+    //  - Only network can execute it.
+    function activateWorkflow(
+        uint256 id
+    ) public onlyMainchain onlyNetwork {
+        // Find the workflow in the list
+        Workflow storage workflow = _workflows[id];
+
+        // Must be PENDING
+        require(workflow.status == WorkflowStatus.PENDING, "Workflow must be pending");
+
+        // Update status
+        _workflows[id].status = WorkflowStatus.ACTIVE;
+
+        emit WorkflowActivated(id);
     }
 
     // pauseWorkflow pauses an existing active workflow.
     // Arguments:
     //  - "id" is the workflow identifier.
     // Permissions:
-    //  - Only workflow owner can pause an existing active workflow on MAINCHAIN.
-    //  - Only network can pause a workflow on SIDECHAIN.
+    //  - Permitted on MAINCHAIN only.
+    //  - Only workflow owner can pause an existing active workflow.
     function pauseWorkflow(
         uint256 id
-    ) public onlyWorkflowOwnerOrNetwork(id) {
+    ) public onlyMainchain onlyWorkflowOwner(id) {
         // Find the workflow in the list
         Workflow storage workflow = _workflows[id];
 
@@ -373,11 +395,11 @@ contract Registry {
     // Arguments:
     //  - "id" is the workflow identifier.
     // Permissions:
-    //  - Only workflow owner can resume an existing active workflow on MAINCHAIN.
-    //  - Only network can resume a workflow on SIDECHAIN.
+    //  - Permitted on MAINCHAIN only.
+    //  - Only workflow owner can resume an existing active workflow.
     function resumeWorkflow(
         uint256 id
-    ) public onlyWorkflowOwnerOrNetwork(id) {
+    ) public onlyMainchain onlyWorkflowOwner(id) {
         // Find the workflow in the list
         Workflow storage workflow = _workflows[id];
 
@@ -396,39 +418,19 @@ contract Registry {
     // Permissions:
     //  - Only workflow owner can cancel an existing active workflow on MAINCHAIN.
     //  - Only network can cancel a workflow on SIDECHAIN.
-    function cancelWorkflow(
+    function (
         uint256 id
     ) public onlyWorkflowOwnerOrNetwork(id) {
         // Find the workflow in the list
         Workflow storage workflow = _workflows[id];
 
+        // Check current workflow status
+        require(workflow.status != WorkflowStatus.CANCELLED, "Workflow is already cancelled");
+
         // Update status
         _workflows[id].status = WorkflowStatus.CANCELLED;
 
         emit WorkflowCancelled(id);
-    }
-
-    // updateWorkflowState updates the workflow state.
-    // Arguments:
-    //  - "id" is the workflow identifier.
-    //  - "status" is the workflow status.
-    // Permissions:
-    //  - Permitted on MAINCHAIN only.
-    //  - Only network can execute it.
-    function updateWorkflowState(
-        uint256 id,
-        WorkflowStatus status
-    ) public onlyNetwork {
-        // Find the workflow in the list
-        Workflow storage workflow = _workflows[id];
-
-        // Check current workflow status
-        require(workflow.status != status, "Workflow already has the given status");
-
-        // Update status
-        _workflows[id].status = status;
-
-        emit ChangeWorkflowStatus(id, status);
     }
 
     // getWorkflow returns the workflow by the given ID.
@@ -591,26 +593,11 @@ contract Registry {
     }
 
     modifier onlyNetwork {
-        if (_isMainChain) {
-            // Only active nodes can execute the function on the mainchain.
-            // The transaction must come directly from an active node.
-            bool found = false;
-            for (uint i = 0; i < _activeNodes.length; i++) {
-                if (_activeNodes[i] == msg.sender) {
-                    found = true;
-                    break;
-                }
-            }
-            require(found, "Operation is not permitted");
-            _;
-        } else {
-            // Only network can execute the function on the sidechain.
-            // The transaction must come from the network after reaching consensus.
-            // Basically, the transaction must come from the registry contract itself,
-            // namely from the perform function after passing all checks.
-            require(address(this) == msg.sender, "Operation is not permitted");
-            _;
-        }
+        // The transaction must come from the network after reaching consensus.
+        // Basically, the transaction must come from the registry contract itself,
+        // namely from the perform function after passing all checks.
+        require(address(this) == msg.sender, "Operation is not permitted");
+        _;
     }
 
     // onlyNodeOperator allows only active nodes to execute the transaction
@@ -623,6 +610,13 @@ contract Registry {
             }
         }
         require(found, "Operation is not permitted");
+        _;
+    }
+
+    // onlyWorkflowOwner checks that the given tx sender is an actual workflow owner
+    modifier onlyWorkflowOwner(uint256 id) {
+        Workflow storage workflow = _workflows[id];
+        require(workflow.owner == msg.sender, "Operation is not permitted");
         _;
     }
 
