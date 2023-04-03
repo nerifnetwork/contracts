@@ -42,7 +42,17 @@ contract Registry {
     // WorkflowRegistered is emitted when a workflow has been registered.
     event WorkflowRegistered(address owner, uint256 id, bytes hash, bytes signature);
 
-    // ChangeWorkflowStatus is emitted when a workflow status has been changed.
+    // WorkflowPaused is emitted when a workflow status has been changed to PAUSED.
+    event WorkflowPaused(uint256 id);
+
+    // WorkflowResumed is emitted when a workflow status has been changed from PAUSED to ACTIVE.
+    event WorkflowResumed(uint256 id);
+
+    // WorkflowCancelled is emitted when a workflow status has been cancelled.
+    event WorkflowCancelled(uint256 id);
+
+    // ChangeWorkflowStatus is emitted when a workflow status has been changed by the network.
+    // This event gets emitted when the workflow status has been successfully changed on all supported networks.
     event ChangeWorkflowStatus(uint256 id, WorkflowStatus status);
 
     // Performance is emitted when a client contract was executed
@@ -356,7 +366,7 @@ contract Registry {
         // Update status
         _workflows[id].status = WorkflowStatus.PAUSED;
 
-        emit ChangeWorkflowStatus(id, WorkflowStatus.PAUSED);
+        emit WorkflowPaused(id);
     }
 
     // resumeWorkflow resumes an existing paused workflow.
@@ -377,7 +387,7 @@ contract Registry {
         // Update status
         _workflows[id].status = WorkflowStatus.ACTIVE;
 
-        emit ChangeWorkflowStatus(id, WorkflowStatus.ACTIVE);
+        emit WorkflowResumed(id);
     }
 
     // cancelWorkflow cancels an existing workflow.
@@ -395,7 +405,30 @@ contract Registry {
         // Update status
         _workflows[id].status = WorkflowStatus.CANCELLED;
 
-        emit ChangeWorkflowStatus(id, WorkflowStatus.CANCELLED);
+        emit WorkflowCancelled(id);
+    }
+
+    // updateWorkflowState updates the workflow state.
+    // Arguments:
+    //  - "id" is the workflow identifier.
+    //  - "status" is the workflow status.
+    // Permissions:
+    //  - Permitted on MAINCHAIN only.
+    //  - Only network can execute it.
+    function updateWorkflowState(
+        uint256 id,
+        WorkflowStatus status
+    ) public onlyNetwork {
+        // Find the workflow in the list
+        Workflow storage workflow = _workflows[id];
+
+        // Check current workflow status
+        require(workflow.status != status, "Workflow already has the given status");
+
+        // Update status
+        _workflows[id].status = status;
+
+        emit ChangeWorkflowStatus(id, status);
     }
 
     // getWorkflow returns the workflow by the given ID.

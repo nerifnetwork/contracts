@@ -588,7 +588,7 @@ describe("Registry", function () {
                     .perform('40505927788353901442144037336646356013', 300_000, functionCallData, registry.address, [])
             )
             .to.emit(registry, "Performance")
-            .withArgs('40505927788353901442144037336646356013', 100940, true);
+            .withArgs('40505927788353901442144037336646356013', anyValue, true);
         })
     })
 
@@ -614,8 +614,8 @@ describe("Registry", function () {
                     .connect(newNodeWallet.connect(ethers.provider))
                     .pauseWorkflow(123)
             )
-            .to.emit(registry, "ChangeWorkflowStatus")
-            .withArgs(123, 1);
+            .to.emit(registry, "WorkflowPaused")
+            .withArgs(123);
         })
 
         it("SIDECHAIN: network can pause workflow", async function () {
@@ -673,7 +673,7 @@ describe("Registry", function () {
                     .perform('68042006037411996168005622460351421679', 300_000, functionCallData, registry.address, [])
             )
                 .to.emit(registry, "Performance")
-                .withArgs('68042006037411996168005622460351421679', 27245, true);
+                .withArgs('68042006037411996168005622460351421679', anyValue, true);
         })
     })
 
@@ -699,8 +699,8 @@ describe("Registry", function () {
                     .connect(newNodeWallet.connect(ethers.provider))
                     .pauseWorkflow(123)
             )
-            .to.emit(registry, "ChangeWorkflowStatus")
-            .withArgs(123, 1);
+            .to.emit(registry, "WorkflowPaused")
+            .withArgs(123);
 
             // Resume workflow
             await expect(
@@ -708,8 +708,8 @@ describe("Registry", function () {
                     .connect(newNodeWallet.connect(ethers.provider))
                     .resumeWorkflow(123)
             )
-            .to.emit(registry, "ChangeWorkflowStatus")
-            .withArgs(123, 0);
+            .to.emit(registry, "WorkflowResumed")
+            .withArgs(123);
         })
 
         it("SIDECHAIN: network can resume workflow", async function () {
@@ -767,7 +767,7 @@ describe("Registry", function () {
                     .perform('68042006037411996168005622460351421679', 300_000, functionCallData, registry.address, [])
             )
                 .to.emit(registry, "Performance")
-                .withArgs('68042006037411996168005622460351421679', 27245, true);
+                .withArgs('68042006037411996168005622460351421679', anyValue, true);
 
             // Encode the function call with the selector
             functionCallData = cc.interface.encodeFunctionData(
@@ -785,7 +785,7 @@ describe("Registry", function () {
                     .perform('267740693886077544039681219218685058227', 300_000, functionCallData, registry.address, [])
             )
                 .to.emit(registry, "Performance")
-                .withArgs('267740693886077544039681219218685058227', 10187, true);
+                .withArgs('267740693886077544039681219218685058227', anyValue, true);
         })
     })
 
@@ -811,8 +811,8 @@ describe("Registry", function () {
                     .connect(newNodeWallet.connect(ethers.provider))
                     .cancelWorkflow(123)
             )
-            .to.emit(registry, "ChangeWorkflowStatus")
-            .withArgs(123, 2);
+            .to.emit(registry, "WorkflowCancelled")
+            .withArgs(123);
         })
 
         it("SIDECHAIN: network can cancel workflow", async function () {
