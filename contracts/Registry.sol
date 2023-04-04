@@ -59,6 +59,41 @@ contract Registry {
     // Performance is emitted when a client contract was executed
     event Performance(uint256 id, uint256 gasUsed, bool success);
 
+    // Config contains the configuration options
+    struct Config {
+        // performanceOverhead is the cost of the performance transaction excluding the client contract call.
+        // Numbers are different depending on the chain.
+        // Metrics:
+        //  - Ethereum Goerli execution: 49,022
+        //  - BSC Testnet execution:     46,922
+        //  - Polygon Mumbai execution:  31,476
+        uint256 performanceOverhead;
+
+        // performancePremiumThreshold is the network premium threshold in percents.
+        // Numbers are different depending on the chain.
+        // Metrics:
+        //  - Ethereum Goerli execution: 10%
+        //  - BSC Testnet execution:     10%
+        //  - Polygon Mumbai execution:  10%
+        uint8 performancePremiumThreshold;
+
+        // registrationOverhead is the cost of the workflow registration.
+        // Numbers are different depending on the chain.
+        // Metrics:
+        //  - BSC Testnet cost:     115,520 (registration, sidechain)
+        //  - Ethereum Goerli cost: 122,420 (registration, sidechain)
+        //  - Polygon Mumbai cost:  67,282 (approval, mainchain)
+        uint256 registrationOverhead;
+
+        // cancellationOverhead is the cost of the workflow cancellation.
+        // Numbers are different depending on the chain.
+        // Metrics:
+        //  - BSC Testnet cost:     48,568
+        //  - Ethereum Goerli cost: 50,168
+        //  - Polygon Mumbai cost:
+        uint256 cancellationOverhead;
+    }
+
     // Workflow represents the workflow metadata model.
     struct Workflow {
         uint256 id;
@@ -77,6 +112,9 @@ contract Registry {
         bytes data;
     }
 
+    // config contains system configuration
+    Config public config;
+
     // _pendingNodes is the mapping between pending Nerif Network Nodes and approvers
     // This is used on the mainchain only.
     mapping(address => address[]) internal _pendingNodes;
@@ -93,45 +131,9 @@ contract Registry {
     // _isMainChain is the indicator whether the contract is deployed on the main chain
     bool internal _isMainChain;
 
-    // _performanceOverhead is the cost of the performance transaction excluding the client contract call.
-    // Numbers are different depending on the chain.
-    // Metrics:
-    //  - Ethereum Goerli execution: 49,022
-    //  - BSC Testnet execution:     46,922
-    //  - Polygon Mumbai execution:  31,476
-    uint256 internal _performanceOverhead;
-
-    // _performancePremiumThreshold is the network premium threshold in percents.
-    // Numbers are different depending on the chain.
-    // Metrics:
-    //  - Ethereum Goerli execution: 10%
-    //  - BSC Testnet execution:     10%
-    //  - Polygon Mumbai execution:  10%
-    uint8 internal _performancePremiumThreshold;
-
-    // _registrationOverhead is the cost of the workflow registration.
-    // Numbers are different depending on the chain.
-    // Metrics:
-    //  - BSC Testnet cost:     115,520 (registration, sidechain)
-    //  - Ethereum Goerli cost: 122,420 (registration, sidechain)
-    //  - Polygon Mumbai cost:  67,282 (approval, mainchain)
-    uint256 internal _registrationOverhead;
-
-    // _cancellationOverhead is the cost of the workflow cancellation.
-    // Numbers are different depending on the chain.
-    // Metrics:
-    //  - BSC Testnet cost:     48,568
-    //  - Ethereum Goerli cost: 50,168
-    //  - Polygon Mumbai cost:
-    uint256 internal _cancellationOverhead;
-
     constructor(
         address[] memory initialNodes,
-        bool isMainChain,
-        uint256 performanceOverhead,
-        uint8 performancePremiumThreshold,
-        uint256 registrationOverhead,
-        uint256 cancellationOverhead
+        bool isMainChain
     ) {
         require(initialNodes.length == MIN_REQUIRED_NODES, "Not enough nodes provided");
 
@@ -139,10 +141,6 @@ contract Registry {
 
         _activeNodes = initialNodes;
         _isMainChain = isMainChain;
-        _performanceOverhead = performanceOverhead;
-        _performancePremiumThreshold = performancePremiumThreshold;
-        _registrationOverhead = registrationOverhead;
-        _cancellationOverhead = cancellationOverhead;
 
         // Define internal workflows
         // TODO: Implement more elegant way
@@ -162,6 +160,14 @@ contract Registry {
         // Cancel workflow on the sidechain side
         Workflow memory workflowCancellationWorkflow = Workflow(219775546284901721155783592958414245131, address(0), "", "", WorkflowStatus.ACTIVE, true);
         _workflows[workflowCancellationWorkflow.id] = workflowCancellationWorkflow;
+    }
+
+    // setConfig sets the given configuration
+    // TODO: Only the network could update the config. Must pass consensus.
+    function setConfig(
+        Config calldata _config
+    ) public onlyNodeOperator {
+        config = _config;
     }
 
     function isMainChain() public view returns (bool) {
@@ -531,11 +537,11 @@ contract Registry {
 
         // Calculate amount to charge
         uint256 amountToCharge = gasUsed;
-        if (_performanceOverhead > 0) {
-            amountToCharge += _performanceOverhead;
+        if (config.performanceOverhead > 0) {
+            amountToCharge += config.performanceOverhead;
         }
-        if (_performancePremiumThreshold > 0) {
-            amountToCharge += amountToCharge / uint256(_performancePremiumThreshold);
+        if (config.performancePremiumThreshold > 0) {
+            amountToCharge += amountToCharge / uint256(config.performancePremiumThreshold);
         }
 
         if (!workflow.isInternal) {

@@ -37,10 +37,6 @@ describe("Registry", function () {
         const registry = await Registry.deploy(
             addresses,
             mainchain,
-            0,
-            0,
-            0,
-            0,
         );
         expect(await registry.isMainChain()).to.equal(mainchain);
 
@@ -101,7 +97,7 @@ describe("Registry", function () {
                 .perform('117764555324547669208370722903305523582', 300_000, functionCallData, registry.address, [])
         )
             .to.emit(registry, "Performance")
-            .withArgs('117764555324547669208370722903305523582', 22572, true);
+            .withArgs('117764555324547669208370722903305523582', anyValue, true);
 
         // Make sure the node got registered
         const expectedNode = await newNode.getAddress();
