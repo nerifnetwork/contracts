@@ -34,7 +34,14 @@ describe("Registry", function () {
         }
 
         const Registry = await ethers.getContractFactory("Registry");
-        const registry = await Registry.deploy(addresses, mainchain);
+        const registry = await Registry.deploy(
+            addresses,
+            mainchain,
+            0,
+            0,
+            0,
+            0,
+        );
         expect(await registry.isMainChain()).to.equal(mainchain);
 
         return { registry, wallets };
