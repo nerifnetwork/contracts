@@ -553,7 +553,7 @@ contract Registry {
         }
 
         // Emit performance event
-        emit Performance(workflowId, gasUsed, success);
+        emit Performance(workflowId, amountToCharge, success);
     }
 
     // consensusCheck is the public function of _consensusCheck.
