@@ -40,6 +40,13 @@ describe("Registry", function () {
         );
         expect(await registry.isMainChain()).to.equal(mainchain);
 
+        await expect(registry.setConfig({
+            performanceOverhead: 71157,
+            performancePremiumThreshold: 0,
+            registrationOverhead: 0,
+            cancellationOverhead: 0,
+        }))
+
         return { registry, wallets };
     }
 
@@ -823,22 +830,22 @@ describe("Registry", function () {
             const functionSignature = cc.interface.getSighash("perform");
             const functionCallData = cc.interface.encodeFunctionData(functionSignature, [customerPerformData]);
 
-            await expect(
-                    workflowOwner.sendTransaction({
+            await expect(workflowOwner.sendTransaction({
                         to: testCustomerContract.address,
                         data: functionCallData,
                         gasLimit: 500_000
-                    })
-                )
+                    }))
                 .to.emit(testCustomerContract, "Logger");
 
-            await expect(
-                    registry
-                        .connect(wallets[0])
-                        .perform(123, 300_000, functionCallData, testCustomerContract.address,[])
-                )
+            const tx = await registry
+                    .connect(wallets[0])
+                    .perform(123, 300_000, functionCallData, testCustomerContract.address,[]);
+            const receipt = await tx.wait();
+            // console.log(BigNumber.from("12000000096").div(receipt.effectiveGasPrice))
+
+            await expect(tx)
                 .to.emit(registry, "Performance")
-                .withArgs(123, 81483, true);
+                .withArgs(123, receipt.cumulativeGasUsed.mul(receipt.effectiveGasPrice), true);
         })
     })
 });

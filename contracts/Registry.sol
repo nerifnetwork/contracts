@@ -102,6 +102,7 @@ contract Registry {
         bytes signature;
         WorkflowStatus status;
         bool isInternal;
+        uint256 totalSpent;
     }
 
     // PerformPayload represents the structure of perform payload
@@ -146,19 +147,19 @@ contract Registry {
         // TODO: Implement more elegant way
 
         // Register an activated node on the sidechain
-        Workflow memory nodeActivationWorkflow = Workflow(97772660256052158796229912779610582517, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        Workflow memory nodeActivationWorkflow = Workflow(97772660256052158796229912779610582517, address(0), "", "", WorkflowStatus.ACTIVE, true, 0);
         _workflows[nodeActivationWorkflow.id] = nodeActivationWorkflow;
 
         // Unregister an active node on the sidechain
-        Workflow memory nodeDeactivationWorkflow = Workflow(117764555324547669208370722903305523582, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        Workflow memory nodeDeactivationWorkflow = Workflow(117764555324547669208370722903305523582, address(0), "", "", WorkflowStatus.ACTIVE, true, 0);
         _workflows[nodeDeactivationWorkflow.id] = nodeDeactivationWorkflow;
 
         // Activate workflow on the mainchain side
-        Workflow memory workflowCreationWorkflow = Workflow(40505927788353901442144037336646356013, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        Workflow memory workflowCreationWorkflow = Workflow(40505927788353901442144037336646356013, address(0), "", "", WorkflowStatus.ACTIVE, true, 0);
         _workflows[workflowCreationWorkflow.id] = workflowCreationWorkflow;
 
         // Cancel workflow on the sidechain side
-        Workflow memory workflowCancellationWorkflow = Workflow(219775546284901721155783592958414245131, address(0), "", "", WorkflowStatus.ACTIVE, true);
+        Workflow memory workflowCancellationWorkflow = Workflow(219775546284901721155783592958414245131, address(0), "", "", WorkflowStatus.ACTIVE, true, 0);
         _workflows[workflowCancellationWorkflow.id] = workflowCancellationWorkflow;
     }
 
@@ -330,7 +331,7 @@ contract Registry {
         emit BalanceFunded(addr, msg.value);
     }
 
-    // fundBalance funds the balance of the sender's public key with the given amount.
+    // getBalance returns the balance for the given address.
     // Permissions:
     //  - Anyone can get a balance.
     function getBalance(
@@ -389,7 +390,7 @@ contract Registry {
         }
 
         // Store workflow with ACTIVE status
-        _workflows[id] = Workflow(id, owner, hash, signature, workflowStatus, false);
+        _workflows[id] = Workflow(id, owner, hash, signature, workflowStatus, false, 0);
 
         emit WorkflowRegistered(msg.sender, id, hash, signature);
     }
@@ -544,12 +545,17 @@ contract Registry {
             amountToCharge += amountToCharge / uint256(config.performancePremiumThreshold);
         }
 
+        amountToCharge = amountToCharge * tx.gasprice;
+
         if (!workflow.isInternal) {
             // Charge workflow owner balance
             _balances[workflow.owner] -= amountToCharge;
 
             // Add balance to the executer's address
             _balances[msg.sender] += amountToCharge;
+
+            // Update total spent amount of the current workflow
+            _workflows[workflowId].totalSpent += amountToCharge;
         }
 
         // Emit performance event
