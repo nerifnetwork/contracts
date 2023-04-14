@@ -553,10 +553,10 @@ contract Registry {
 
             // Add balance to the executer's address
             _balances[msg.sender] += amountToCharge;
-
-            // Update total spent amount of the current workflow
-            _workflows[workflowId].totalSpent += amountToCharge;
         }
+
+        // Update total spent amount of the current workflow
+        _workflows[workflowId].totalSpent += amountToCharge;
 
         // Emit performance event
         emit Performance(workflowId, amountToCharge, success);
@@ -578,7 +578,7 @@ contract Registry {
         bytes memory data,
         bytes memory signature
     ) internal view returns (bool verified) {
-        // TODO: Implement
+        // TODO: Implement. At least 2/3 of active nodes must sign the data.
         return true;
     }
 
@@ -589,7 +589,7 @@ contract Registry {
         bytes memory data,
         bytes memory signature
     ) internal view returns (bool verified) {
-        // TODO: Implement
+        // TODO: Implement. At least 2/3 of active nodes must sign the data.
         return true;
     }
 
