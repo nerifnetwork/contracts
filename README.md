@@ -1,4 +1,4 @@
-# ChainFusion Contracts
+# Nerif Network Contracts
 
 This repository contains Solidity contracts with bridging logic.
 
@@ -38,7 +38,7 @@ First of all, copy `.env.example` into `.env` and set up all required variables 
 
 In this example we are deploying to `ternopil` testnet. To deploy to different chain, `--network` parameter should be changed.
 
-Deployment involves running two scripts in sequence. The first script is deployed once, on ChainFusion network.
+Deployment involves running two scripts in sequence. The first script is deployed once, on Nerif Network.
 
 ```
 $ npx hardhat --network ternopil run scripts/deploy-mainchain.ts
