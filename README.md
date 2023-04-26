@@ -36,18 +36,18 @@ First of all, copy `.env.example` into `.env` and set up all required variables 
 
 ### Deploy Contracts
 
-In this example we are deploying to `ternopil` testnet. To deploy to different chain, `--network` parameter should be changed.
+In this example we are deploying to `goerli` testnet. To deploy to different chain, `--network` parameter should be changed.
 
 Deployment involves running two scripts in sequence. The first script is deployed once, on Nerif Network.
 
 ```
-$ npx hardhat --network ternopil run scripts/deploy-mainchain.ts
+$ npx hardhat --network goerli run scripts/deploy-mainchain.ts
 ```
 
-The second script is executed for each new chain to deploy chain contracts, like `bg1`.
+The second script is executed for each new side chain to deploy chain contracts, like `mumbai`.
 
 ```
-$ npx hardhat --network bg1 run scripts/deploy-sidechain.ts
+$ npx hardhat --network mumbai run scripts/deploy-sidechain.ts
 ```
 
 ### Verify Contracts
@@ -61,5 +61,5 @@ $ npx hardhat --network goerli verify <CONTRACT_ADDRESS> <CONSTRUCTOR_PARAMETERS
 Or you can set `VERIFY` variable to `true` while deploying contracts to automatically verify them afterwards.
 
 ```
-$ VERIFY=true npx hardhat --network ternopil run scripts/deploy-mainchain.ts
+$ VERIFY=true npx hardhat --network goerli run scripts/deploy-mainchain.ts
 ```
