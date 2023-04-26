@@ -14,7 +14,7 @@ import {
 } from '../../typechain';
 
 const defaultSystemDeploymentParameters: SystemDeploymentParameters = {
-  minimalStake: ethers.utils.parseEther('100'),
+  minimalStake: ethers.utils.parseEther('0.01'),
   stakeWithdrawalPeriod: BigNumber.from(60),
   router: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
   erc20BridgeMediator: '0x0000000000000000000000000000000000000001',
@@ -113,7 +113,7 @@ export async function deploySystemContracts(options?: SystemDeploymentOptions): 
     for (const privateKey of params.stakingKeys) {
       const signer = new ethers.Wallet(privateKey, ethers.provider);
       const signerStaking = await ethers.getContractAt('Staking', res.staking.address, signer);
-      const msg = `Staking ${ethers.utils.formatEther(params.minimalStake)} CFN for: ${signer.address}`;
+      const msg = `Staking ${ethers.utils.formatEther(params.minimalStake)} NERIF for: ${signer.address}`;
       await deployer.sendTransaction(signerStaking.stake({ value: params.minimalStake }), msg);
     }
 

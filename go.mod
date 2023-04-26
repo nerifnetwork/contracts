@@ -1,4 +1,4 @@
-module gitlab.com/nerifnetwork/contracts
+module github.com/nerifnetwork/contracts
 
 go 1.19
 
