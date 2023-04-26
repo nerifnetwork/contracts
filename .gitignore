@@ -3,21 +3,15 @@ node_modules
 coverage
 coverage.json
 typechain
-typechain-types
+dist
 
 #Hardhat files
 cache
 artifacts
 
 
-node_modules
-.env
-coverage
-coverage.json
-typechain
-typechain-types
+.openzeppelin/.session
 
-#Hardhat files
-cache
-artifacts
-
+/contracts.json
+/contracts-*.json
+/bridgeconfig.yaml

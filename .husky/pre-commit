@@ -1,0 +1,22 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+HINT_START='\nRun: \033[0;32m'
+HINT_END='\033[0m\n\n'
+
+npm run compile
+
+if ! npm run prettier; then
+    printf "${HINT_START}npm run prettier:fix${HINT_END}"
+    exit 1
+fi
+
+if ! npm run solhint; then
+    printf "${HINT_START}npm run solhint:fix${HINT_END}"
+    exit 1
+fi
+
+if ! npm run eslint; then
+    printf "${HINT_START}npm run eslint:fix${HINT_END}"
+    exit 1
+fi

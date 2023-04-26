@@ -1,0 +1,26 @@
+FROM ethereum/client-go:alltools-v1.10.17
+
+WORKDIR /
+
+COPY artifacts/ artifacts/
+
+RUN mkdir bridge
+RUN mkdir system
+RUN mkdir interfaces
+
+# Sidechain contracts
+RUN abigen --abi artifacts/abi/sidechain/RelayBridge.sol/RelayBridge.json --pkg bridge --type RelayBridge --out bridge/relay-bridge.go
+RUN abigen --abi artifacts/abi/sidechain/SignerStorage.sol/SignerStorage.json --pkg bridge --type SignerStorage --out bridge/signer-storage.go
+
+# Mainchain contracts
+RUN abigen --abi artifacts/abi/mainchain/DKG.sol/DKG.json --pkg system --type DKG --out system/dkg.go
+RUN abigen --abi artifacts/abi/mainchain/Staking.sol/Staking.json --pkg system --type Staking --out system/staking.go
+RUN abigen --abi artifacts/abi/mainchain/EventRegistry.sol/EventRegistry.json --pkg system --type EventRegistry --out system/event-registry.go
+RUN abigen --abi artifacts/abi/mainchain/ContractRegistry.sol/ContractRegistry.json --pkg system --type ContractRegistry --out system/contract-registry.go
+RUN abigen --abi artifacts/abi/mainchain/SlashingVoting.sol/SlashingVoting.json --pkg system --type SlashingVoting --out system/slashing-voting.go
+RUN abigen --abi artifacts/abi/mainchain/BridgeAppFactory.sol/BridgeAppFactory.json --pkg system --type BridgeAppFactory --out system/bridge-app-factory.go
+RUN abigen --abi artifacts/abi/mainchain/BridgeApp.sol/BridgeApp.json --pkg system --type BridgeApp --out system/bridge-app.go
+
+# Interfaces
+RUN abigen --abi artifacts/abi/interfaces/IBridgeApp.sol/IBridgeApp.json --pkg interfaces --type IBridgeApp --out interfaces/ibridgeapp.go
+RUN abigen --abi artifacts/abi/interfaces/IBridgeMediator.sol/IBridgeMediator.json --pkg interfaces --type IBridgeMediator --out interfaces/ibridgemediator.go

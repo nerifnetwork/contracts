@@ -20,7 +20,7 @@ contract Registry {
     event BalanceWithdrawn(address workflowOwner, uint256 amount);
 
     // WorkflowRegistered is emitted when a workflow has been registered.
-    event WorkflowRegistered(address owner, uint256 id, bytes hash, bytes signature);
+    event WorkflowRegistered(address owner, uint256 id, bytes hash);
 
     // WorkflowActivated is emitted when a workflow status has been changed from PENDING to ACTIVE.
     // This event gets emitted when the workflow has been successfully registered on all supported networks.
@@ -41,7 +41,7 @@ contract Registry {
     // Config contains the configuration options
     struct Config {
         // performanceOverhead is the cost of the performance transaction excluding the client contract call.
-        // Numbers are different depending on the chain.
+        // Numbers are different depending on the sidechain.
         // Metrics:
         //  - Ethereum Goerli execution: 49,022
         //  - BSC Testnet execution:     46,922
@@ -49,7 +49,7 @@ contract Registry {
         uint256 performanceOverhead;
 
         // performancePremiumThreshold is the network premium threshold in percents.
-        // Numbers are different depending on the chain.
+        // Numbers are different depending on the sidechain.
         // Metrics:
         //  - Ethereum Goerli execution: 10%
         //  - BSC Testnet execution:     10%
@@ -57,7 +57,7 @@ contract Registry {
         uint8 performancePremiumThreshold;
 
         // registrationOverhead is the cost of the workflow registration.
-        // Numbers are different depending on the chain.
+        // Numbers are different depending on the sidechain.
         // Metrics:
         //  - BSC Testnet cost:     115,520 (registration, sidechain)
         //  - Ethereum Goerli cost: 122,420 (registration, sidechain)
@@ -65,7 +65,7 @@ contract Registry {
         uint256 registrationOverhead;
 
         // cancellationOverhead is the cost of the workflow cancellation.
-        // Numbers are different depending on the chain.
+        // Numbers are different depending on the sidechain.
         // Metrics:
         //  - BSC Testnet cost:     48,568
         //  - Ethereum Goerli cost: 50,168
@@ -78,7 +78,6 @@ contract Registry {
         uint256 id;
         address owner;
         bytes hash;
-        bytes signature;
         WorkflowStatus status;
         bool isInternal;
         uint256 totalSpent;
@@ -101,7 +100,7 @@ contract Registry {
     // _balances is the list of workflow owner balances;
     mapping(address => uint256) internal _balances;
 
-    // _isMainChain is the indicator whether the contract is deployed on the main chain
+    // _isMainChain is the indicator whether the contract is deployed on the main sidechain
     bool internal _isMainChain;
 
     constructor(
@@ -113,11 +112,11 @@ contract Registry {
         // TODO: Implement more elegant way
 
         // Activate workflow on the mainchain side
-        Workflow memory workflowCreationWorkflow = Workflow(40505927788353901442144037336646356013, address(0), "", "", WorkflowStatus.ACTIVE, true, 0);
+        Workflow memory workflowCreationWorkflow = Workflow(40505927788353901442144037336646356013, address(0), "", WorkflowStatus.ACTIVE, true, 0);
         _workflows[workflowCreationWorkflow.id] = workflowCreationWorkflow;
 
         // Cancel workflow on the sidechain side
-        Workflow memory workflowCancellationWorkflow = Workflow(219775546284901721155783592958414245131, address(0), "", "", WorkflowStatus.ACTIVE, true, 0);
+        Workflow memory workflowCancellationWorkflow = Workflow(219775546284901721155783592958414245131, address(0), "", WorkflowStatus.ACTIVE, true, 0);
         _workflows[workflowCancellationWorkflow.id] = workflowCancellationWorkflow;
     }
 
@@ -125,7 +124,7 @@ contract Registry {
     // TODO: Only the network could update the config. Must pass consensus.
     function setConfig(
         Config calldata _config
-    ) public onlyNodeOperator {
+    ) public onlySigner {
         config = _config;
     }
 
@@ -199,9 +198,9 @@ contract Registry {
         }
 
         // Store workflow with ACTIVE status
-        _workflows[id] = Workflow(id, owner, hash, signature, workflowStatus, false, 0);
+        _workflows[id] = Workflow(id, owner, hash, workflowStatus, false, 0);
 
-        emit WorkflowRegistered(msg.sender, id, hash, signature);
+        emit WorkflowRegistered(msg.sender, id, hash);
     }
 
     // activateWorkflow updates the workflow state from PENDING to ACTIVE.
@@ -314,7 +313,7 @@ contract Registry {
         uint256 gasAmount,
         bytes memory data,
         address target
-    ) public onlyNodeOperator {
+    ) public onlySigner {
         // Make sure the given payload was signed by the network
         bytes memory payload = abi.encode(workflowId, gasAmount, data, target);
 
@@ -439,15 +438,10 @@ contract Registry {
         _;
     }
 
-    // onlyNodeOperator allows only active nodes to execute the transaction
-    modifier onlyNodeOperator {
+    // onlySigner allows only the collective address to execute the transaction
+    modifier onlySigner {
         bool found = false;
-        for (uint i = 0; i < _activeNodes.length; i++) {
-            if (_activeNodes[i] == msg.sender) {
-                found = true;
-                break;
-            }
-        }
+        // TODO: Get the collective address and compare it with the tx sender
         require(found, "Operation is not permitted");
         _;
     }
