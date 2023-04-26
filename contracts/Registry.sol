@@ -5,12 +5,6 @@ pragma solidity ^0.8.18;
 contract Registry {
     uint256 internal constant PERFORM_GAS_CUSHION = 5_000;
 
-    // MIN_APPROVAL_THRESHOLD is the node approval threshold, i.e. 2/3 of the network or 66%
-    uint32 public constant MIN_APPROVAL_THRESHOLD = 66;
-
-    // MIN_REQUIRED_NODES is the minimum number of nodes needed to bootstrap the network.
-    uint8 public constant MIN_REQUIRED_NODES = 4;
-
     // WorkflowStatus represents the workflow status.
     enum WorkflowStatus {
         PENDING,
@@ -24,21 +18,6 @@ contract Registry {
 
     // BalanceWithdrawn is emitted when the balance of a workflow owner has been withdrawn
     event BalanceWithdrawn(address workflowOwner, uint256 amount);
-
-    // NodeRegistered is emitted when a node has been registered.
-    event NodeRegistered(address node);
-
-    // NodeApproved is emitted when a node has been approved by network participant.
-    event NodeApproved(address node, address approver);
-
-    // NodeActivated is emitted when a node has been approved by majority of the network.
-    event NodeActivated(address node);
-
-    // NodeUnregistered is emitted when a node has been approved by network participant.
-    event NodeUnregistered(address node);
-
-    // NodeRegistrationCancelled is emitted when a node registration has been cancelled.
-    event NodeRegistrationCancelled(address node);
 
     // WorkflowRegistered is emitted when a workflow has been registered.
     event WorkflowRegistered(address owner, uint256 id, bytes hash, bytes signature);
@@ -116,13 +95,6 @@ contract Registry {
     // config contains system configuration
     Config public config;
 
-    // _pendingNodes is the mapping between pending Nerif Network Nodes and approvers
-    // This is used on the mainchain only.
-    mapping(address => address[]) internal _pendingNodes;
-
-    // _activeNodes is the list of active Nerif Network Nodes addresses
-    address[] internal _activeNodes;
-
     // _workflows is the list of registered workflows
     mapping(uint256 => Workflow) internal _workflows;
 
@@ -133,26 +105,12 @@ contract Registry {
     bool internal _isMainChain;
 
     constructor(
-        address[] memory initialNodes,
         bool isMainChain
     ) {
-        require(initialNodes.length == MIN_REQUIRED_NODES, "Not enough nodes provided");
-
-        // TODO: Check that the given tokens have staked tokens within the staking contract
-
-        _activeNodes = initialNodes;
         _isMainChain = isMainChain;
 
         // Define internal workflows
         // TODO: Implement more elegant way
-
-        // Register an activated node on the sidechain
-        Workflow memory nodeActivationWorkflow = Workflow(97772660256052158796229912779610582517, address(0), "", "", WorkflowStatus.ACTIVE, true, 0);
-        _workflows[nodeActivationWorkflow.id] = nodeActivationWorkflow;
-
-        // Unregister an active node on the sidechain
-        Workflow memory nodeDeactivationWorkflow = Workflow(117764555324547669208370722903305523582, address(0), "", "", WorkflowStatus.ACTIVE, true, 0);
-        _workflows[nodeDeactivationWorkflow.id] = nodeDeactivationWorkflow;
 
         // Activate workflow on the mainchain side
         Workflow memory workflowCreationWorkflow = Workflow(40505927788353901442144037336646356013, address(0), "", "", WorkflowStatus.ACTIVE, true, 0);
@@ -173,150 +131,6 @@ contract Registry {
 
     function isMainChain() public view returns (bool) {
         return _isMainChain;
-    }
-
-    function getActiveNodes() public view returns (address[] memory) {
-        return _activeNodes;
-    }
-
-    // registerNode registers the newjoiner with the PENDING registration status.
-    // Meaning this function is allowed for active node operators only.
-    // This request can be approved by existing network participants using the function below.
-    //  - "node" is the newjoiner node address (public key).
-    // Permissions:
-    //  - Anyone can request to join the network.
-    //  - Only network can execute this function on SIDECHAIN.
-    function registerNode(
-        address node
-    ) public onlyMsgSenderOrNetwork(node) {
-        // Make sure this node does not exist in pending nodes list
-        require(_pendingNodes[node].length == 0, "Node with the given address was already registered");
-
-        // Make sure this node does not exist in active nodes list
-        bool isActivatedNode = false;
-        for (uint i = 0; i < _activeNodes.length; i++) {
-            if (_activeNodes[i] == node) {
-                isActivatedNode = true;
-                break;
-            }
-        }
-        require(!isActivatedNode, "Node with the given address is already active");
-
-        // TODO: Make sure the given node has staked tokens within the staking contract
-
-        // Is it is sidechain, it is assumed the Nerif Network got an approval from the mainchain
-        // and sent a sync transaction to the sidechain so the node has to be immediately activated
-        if (_isMainChain) {
-            // Add node to the pending list with 0 approvals
-            // FIXME: The first element is the zero address, should be fixed
-            _pendingNodes[node] = new address[](1);
-            _pendingNodes[node][0] = msg.sender;
-
-            emit NodeRegistered(node);
-        } else {
-            // Activate the node
-            _activateNode(node);
-        }
-    }
-
-    // approveRegistration approves PENDING registration by the given public key.
-    // Is the registration got >= 2/3 network approvals, the status gets changed to ACTIVE.
-    // Arguments.
-    //  - "node" is the node address (public key) to be approved.
-    // Permissions:
-    //  - Only active node operators can execute this function
-    //  - Not allowed on sidechain
-    function approveRegistration(
-        address node
-    ) public onlyNodeOperator onlyMainchain {
-        // Make sure the given node exists in the pending list
-        require(_pendingNodes[node].length > 0, "Node with the given address does not exist");
-
-        // Make sure the current tx sender has not approved it yet
-        bool alreadyApproved = false;
-        for (uint i = 0; i < _pendingNodes[node].length; i++) {
-            if (_pendingNodes[node][i] == msg.sender) {
-                alreadyApproved = true;
-                break;
-            }
-        }
-        require(!alreadyApproved, "Node has been already approved by tx sender");
-
-        // Add current tx sender to the approvers list
-        _pendingNodes[node].push(msg.sender);
-        emit NodeApproved(node, msg.sender);
-
-        // If the number of approvers >= 2/3 of all network participants, activate node and remove from pending
-        uint32 currentPercentage = uint32(100) * uint32(_pendingNodes[node].length) / uint32(_activeNodes.length);
-        if (currentPercentage >= MIN_APPROVAL_THRESHOLD) {
-            // Delete from pending nodes list
-            delete _pendingNodes[node];
-
-            // Activate the node
-            _activateNode(node);
-        }
-
-        // TODO: Node operator must cover approval costs
-    }
-
-    // _activateNode activates the given node and emitts the event
-    function _activateNode(address node) internal {
-        // Make sure the node is not activated yet
-        // Make sure the current tx sender has not approved it yet
-        bool alreadyActive = false;
-        for (uint i = 0; i < _activeNodes.length; i++) {
-            if (_activeNodes[i] == node) {
-                alreadyActive = true;
-                break;
-            }
-        }
-        require(!alreadyActive, "Node is already active");
-
-        // Add node to the active nodes list
-        _activeNodes.push(node);
-
-        emit NodeActivated(node);
-    }
-
-    // unregisterNode unregisters an existing Nerif Network Node from the active nodes list.
-    // Emits an event so Nerif Network will get informed about it and will exclude the node from the network.
-    // Arguments:
-    //  - "node" is the node address (public key) to unregister.
-    // Permissions:
-    //  - Only node can unregister itself
-    //  - Only network can unregister the node on SIDECHAIN
-    function unregisterNode(
-        address node
-    ) public onlyMsgSenderOrNetwork(node) {
-        bool found = false;
-        for (uint i = 0; i < _activeNodes.length; i++) {
-            if (_activeNodes[i] == node) {
-                _activeNodes[i] = _activeNodes[_activeNodes.length - 1];
-                _activeNodes.pop();
-                found = true;
-                break;
-            }
-        }
-
-        require(found, "Node not found");
-
-        emit NodeUnregistered(node);
-    }
-
-    // cancelNodeRegistration cancels node registration - deletes the given node from the pending nodes list.
-    // Arguments:
-    //  - "node" is the node address (public key).
-    // Permissions:
-    //  - Only node can unregister itself
-    //  - Only network can unregister the node on SIDECHAIN
-    function cancelNodeRegistration(
-        address node
-    ) public onlyMainchain onlyMsgSender(node) {
-        require(_pendingNodes[node].length > 0, "Node does not exist in the pending nodes list");
-
-        delete _pendingNodes[node];
-
-        emit NodeRegistrationCancelled(node);
     }
 
     // fundBalance funds the balance of the sender's public key with the given amount.
@@ -368,7 +182,6 @@ contract Registry {
     //  - "id" is the workflow identifier.
     //  - "owner" is the workflow owner address.
     //  - "hash" is the workflow hash.
-    //  - "signature" is the workflow hash signature made by workflow owner.
     // The given signature must correspond to the given hash and created by the transaction sender.
     // Permissions:
     //  - Only workflow owner can register a workflow on MAINCHAIN.
@@ -376,12 +189,8 @@ contract Registry {
     function registerWorkflow(
         uint256 id,
         address owner,
-        bytes calldata hash,
-        bytes calldata signature
+        bytes calldata hash
     ) public onlyMsgSenderOrNetwork(owner) {
-        // Check the given signature
-        require(_signatureCheck(owner, hash, signature), "Signature has not been verified");
-
         // Select the proper state
         WorkflowStatus workflowStatus = WorkflowStatus.ACTIVE;
         if (_isMainChain) {
@@ -498,19 +307,16 @@ contract Registry {
     //  - "gasAmount" is the maximum number of gas used to execute the transaction
     //  - "data" is the contract call data
     //  - "target" is the client contract address
-    //  - "signature" is the payload signature
     // Permissions:
     //  - Only network can execute this function
     function perform(
         uint256 workflowId,
         uint256 gasAmount,
         bytes memory data,
-        address target,
-        bytes memory signature
+        address target
     ) public onlyNodeOperator {
         // Make sure the given payload was signed by the network
         bytes memory payload = abi.encode(workflowId, gasAmount, data, target);
-        require(_consensusCheck(payload, signature), "Consensus check failed");
 
         // Get a workflow by ID
         Workflow storage workflow = _workflows[workflowId];
@@ -560,37 +366,6 @@ contract Registry {
 
         // Emit performance event
         emit Performance(workflowId, amountToCharge, success);
-    }
-
-    // consensusCheck is the public function of _consensusCheck.
-    // It could be used to verify that an action during the workflow execution is non-malicious.
-    // Permissions:
-    // - Anyone can do a consensus check
-    function consensusCheck(
-        bytes memory data,
-        bytes memory signature
-    ) public view returns (bool verified) {
-        return _consensusCheck(data, signature);
-    }
-
-    // _consensusCheck checks that the given data was signed by majority of the network.
-    function _consensusCheck(
-        bytes memory data,
-        bytes memory signature
-    ) internal view returns (bool verified) {
-        // TODO: Implement. At least 2/3 of active nodes must sign the data.
-        return true;
-    }
-
-    // _signatureCheck checks that the given data corresponds to the given signature
-    // and was signed by the given address.
-    function _signatureCheck(
-        address signer,
-        bytes memory data,
-        bytes memory signature
-    ) internal view returns (bool verified) {
-        // TODO: Implement. At least 2/3 of active nodes must sign the data.
-        return true;
     }
 
     // _callWithExactGas calls target address with exactly gasAmount gas and data as calldata
