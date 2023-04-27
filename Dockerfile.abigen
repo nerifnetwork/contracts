@@ -27,4 +27,4 @@ RUN abigen --abi artifacts/abi/mainchain/BridgeApp.sol/BridgeApp.json --pkg syst
 # Interfaces
 RUN abigen --abi artifacts/abi/interfaces/IBridgeApp.sol/IBridgeApp.json --pkg interfaces --type IBridgeApp --out interfaces/ibridgeapp.go
 RUN abigen --abi artifacts/abi/interfaces/IBridgeMediator.sol/IBridgeMediator.json --pkg interfaces --type IBridgeMediator --out interfaces/ibridgemediator.go
-RUN abigen --abi artifacts/abi/interfaces/INetworkAddress.sol/INetworkAddress.json --pkg interfaces --type INetworkAddress --out interfaces/inetworkaddress.go
+RUN abigen --abi artifacts/abi/interfaces/ISignerAddress.sol/ISignerAddress.json --pkg interfaces --type ISignerAddress --out interfaces/isigneraddress.go

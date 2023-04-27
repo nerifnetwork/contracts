@@ -11,6 +11,7 @@ import {
   EventRegistry,
   BridgeAppFactory,
   ValidatorRewardDistributionPool,
+  Registry,
 } from '../../typechain';
 
 const defaultSystemDeploymentParameters: SystemDeploymentParameters = {
@@ -47,6 +48,7 @@ export async function deploySystemContracts(options?: SystemDeploymentOptions): 
       ethers.getContractFactory('ValidatorRewardDistributionPool'),
       'ValidatorRewardDistributionPool'
     ),
+    registry: await deployer.deploy(ethers.getContractFactory('Registry'), 'Registry'),
   };
 
   deployer.log('Successfully deployed contracts\n');
@@ -64,6 +66,8 @@ export async function deploySystemContracts(options?: SystemDeploymentOptions): 
     res.dkg.initialize(res.contractRegistry.address, params.dkgDeadlinePeriod),
     'Initializing DKG'
   );
+
+  await deployer.sendTransaction(res.registry.initialize(res.dkg.address, true), 'Initializing Registry');
 
   await deployer.sendTransaction(res.contractRegistry.initialize(res.dkg.address), 'Initializing ContractRegistry');
 
@@ -216,6 +220,7 @@ export interface SystemDeployment {
   eventRegistry: EventRegistry;
   bridgeAppFactory: BridgeAppFactory;
   validatorRewardDistributionPool: ValidatorRewardDistributionPool;
+  registry: Registry;
 }
 
 export interface SystemDeploymentParameters {

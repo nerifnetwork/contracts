@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import "../interfaces/INetworkAddress.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "../interfaces/ISignerAddress.sol";
 
 // Registry is the internal smart contract needed to secure the network and support important features of Nerif.
-contract Registry {
+contract Registry is Initializable {
     enum WorkflowStatus {
         PENDING,
         ACTIVE,
@@ -66,7 +67,7 @@ contract Registry {
     mapping(uint256 => Workflow) internal workflows;
     mapping(address => uint256) internal balances;
     bool public isMainChain;
-    INetworkAddress public networkAddress;
+    ISignerAddress public networkAddress;
     uint256 public networkRewards;
 
     event BalanceFunded(address workflowOwner, uint256 amount);
@@ -93,7 +94,7 @@ contract Registry {
 
     // onlyNetwork permits transactions coming from the collective network address.
     modifier onlyNetwork() {
-        require(networkAddress.getAddress() == msg.sender, "Operation is not permitted");
+        require(networkAddress.getSignerAddress() == msg.sender, "Operation is not permitted");
         _;
     }
 
@@ -143,8 +144,8 @@ contract Registry {
         }
     }
 
-    constructor(address _networkAddress, bool _isMainChain) {
-        networkAddress = INetworkAddress(_networkAddress);
+    function initialize(address _networkAddress, bool _isMainChain) external initializer {
+        networkAddress = ISignerAddress(_networkAddress);
         isMainChain = _isMainChain;
 
         // Define internal workflows

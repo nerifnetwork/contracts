@@ -1,6 +1,6 @@
 import { ethers, config } from 'hardhat';
 import { HttpNetworkConfig } from 'hardhat/types';
-import { RelayBridge, SignerStorage } from '../../typechain';
+import { RelayBridge, SignerStorage, Registry } from '../../typechain';
 import { Deployer } from './deployer';
 
 const defaultBridgeDeploymentParameters: BridgeDeploymentParameters = {
@@ -60,6 +60,7 @@ export async function deployBridgeContracts(options?: BridgeDeploymentOptions): 
   const res: BridgeDeployment = {
     signerStorage: await deployer.deploy(ethers.getContractFactory('SignerStorage'), 'SignerStorage'),
     relayBridge: await deployer.deploy(ethers.getContractFactory('RelayBridge'), 'RelayBridge'),
+    registry: await deployer.deploy(ethers.getContractFactory('Registry'), 'Registry'),
   };
 
   deployer.log('Successfully deployed contracts\n');
@@ -67,6 +68,8 @@ export async function deployBridgeContracts(options?: BridgeDeploymentOptions): 
   deployer.log('Initializing contracts\n');
 
   await deployer.sendTransaction(res.signerStorage.initialize(initialSignerAddress), 'Initializing SignerStorage');
+
+  await deployer.sendTransaction(res.registry.initialize(res.signerStorage.address, false), 'Initializing Registry');
 
   await deployer.sendTransaction(
     res.relayBridge.initialize(res.signerStorage.address, params.bridgeValidatorFeePool),
@@ -112,6 +115,7 @@ export interface BridgeDeploymentResult extends BridgeDeployment, BridgeDeployme
 export interface BridgeDeployment {
   signerStorage: SignerStorage;
   relayBridge: RelayBridge;
+  registry: Registry;
 }
 
 export interface BridgeDeploymentParameters {

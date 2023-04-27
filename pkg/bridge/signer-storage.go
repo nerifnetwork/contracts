@@ -30,7 +30,7 @@ var (
 
 // SignerStorageMetaData contains all meta data concerning the SignerStorage contract.
 var SignerStorageMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"signer\",\"type\":\"address\"}],\"name\":\"SignerUpdated\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"getAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_signer\",\"type\":\"address\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_newSigner\",\"type\":\"address\"}],\"name\":\"setAddress\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"signer\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"signer\",\"type\":\"address\"}],\"name\":\"SignerUpdated\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"getSignerAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_signer\",\"type\":\"address\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_newSigner\",\"type\":\"address\"}],\"name\":\"setAddress\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"signer\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
 }
 
 // SignerStorageABI is the input ABI used to generate the binding from.
@@ -179,12 +179,12 @@ func (_SignerStorage *SignerStorageTransactorRaw) Transact(opts *bind.TransactOp
 	return _SignerStorage.Contract.contract.Transact(opts, method, params...)
 }
 
-// GetAddress is a free data retrieval call binding the contract method 0x38cc4831.
+// GetSignerAddress is a free data retrieval call binding the contract method 0x1a296e02.
 //
-// Solidity: function getAddress() view returns(address)
-func (_SignerStorage *SignerStorageCaller) GetAddress(opts *bind.CallOpts) (common.Address, error) {
+// Solidity: function getSignerAddress() view returns(address)
+func (_SignerStorage *SignerStorageCaller) GetSignerAddress(opts *bind.CallOpts) (common.Address, error) {
 	var out []interface{}
-	err := _SignerStorage.contract.Call(opts, &out, "getAddress")
+	err := _SignerStorage.contract.Call(opts, &out, "getSignerAddress")
 
 	if err != nil {
 		return *new(common.Address), err
@@ -196,18 +196,18 @@ func (_SignerStorage *SignerStorageCaller) GetAddress(opts *bind.CallOpts) (comm
 
 }
 
-// GetAddress is a free data retrieval call binding the contract method 0x38cc4831.
+// GetSignerAddress is a free data retrieval call binding the contract method 0x1a296e02.
 //
-// Solidity: function getAddress() view returns(address)
-func (_SignerStorage *SignerStorageSession) GetAddress() (common.Address, error) {
-	return _SignerStorage.Contract.GetAddress(&_SignerStorage.CallOpts)
+// Solidity: function getSignerAddress() view returns(address)
+func (_SignerStorage *SignerStorageSession) GetSignerAddress() (common.Address, error) {
+	return _SignerStorage.Contract.GetSignerAddress(&_SignerStorage.CallOpts)
 }
 
-// GetAddress is a free data retrieval call binding the contract method 0x38cc4831.
+// GetSignerAddress is a free data retrieval call binding the contract method 0x1a296e02.
 //
-// Solidity: function getAddress() view returns(address)
-func (_SignerStorage *SignerStorageCallerSession) GetAddress() (common.Address, error) {
-	return _SignerStorage.Contract.GetAddress(&_SignerStorage.CallOpts)
+// Solidity: function getSignerAddress() view returns(address)
+func (_SignerStorage *SignerStorageCallerSession) GetSignerAddress() (common.Address, error) {
+	return _SignerStorage.Contract.GetSignerAddress(&_SignerStorage.CallOpts)
 }
 
 // Signer is a free data retrieval call binding the contract method 0x238ac933.

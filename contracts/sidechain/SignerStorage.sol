@@ -2,15 +2,15 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "../interfaces/INetworkAddress.sol";
+import "../interfaces/ISignerAddress.sol";
 
-contract SignerStorage is Initializable, INetworkAddress {
+contract SignerStorage is ISignerAddress, Initializable {
     address public signer;
 
     event SignerUpdated(address signer);
 
     modifier onlySigner() {
-        require(this.getAddress() == msg.sender, "SignerOwnable: only signer");
+        require(this.getSignerAddress() == msg.sender, "SignerOwnable: only signer");
         _;
     }
 
@@ -31,7 +31,7 @@ contract SignerStorage is Initializable, INetworkAddress {
         emit SignerUpdated(_newSigner);
     }
 
-    function getAddress() public view returns (address) {
+    function getSignerAddress() public view returns (address) {
         return signer;
     }
 }

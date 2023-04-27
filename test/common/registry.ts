@@ -30,7 +30,9 @@ describe('Registry', function () {
     const mockNetworkAddress = await MockNetworkAddress.deploy(await network.getAddress());
 
     const Registry = await ethers.getContractFactory('Registry');
-    const registry = await Registry.deploy(mockNetworkAddress.address, mainchain);
+    const registry = await Registry.deploy();
+
+    await registry.initialize(mockNetworkAddress.address, mainchain);
 
     await expect(
       registry.setConfig({

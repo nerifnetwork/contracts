@@ -47,7 +47,7 @@ contract RelayBridge is Initializable {
     event Executed(bytes32 hash, uint256 sourceChain, uint256 destinationChain);
 
     modifier onlySigner() {
-        require(signerStorage.getAddress() == msg.sender, "SignerOwnable: only signer");
+        require(signerStorage.getSignerAddress() == msg.sender, "SignerOwnable: only signer");
         _;
     }
 

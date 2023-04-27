@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "../interfaces/ISignerAddress.sol";
 import "./Staking.sol";
 import "./ContractKeys.sol";
 import "./ContractRegistry.sol";
@@ -26,7 +27,7 @@ struct RoundData {
 
 // DKG represents the on-sidechain logic needed to perform distributed key generation process done by validators.
 // Once the DKG process is finished, a new collective/sender address could be stored.
-contract DKG is ContractKeys, Initializable {
+contract DKG is ISignerAddress, ContractKeys, Initializable {
     using ECDSA for bytes;
     using ECDSA for bytes32;
 

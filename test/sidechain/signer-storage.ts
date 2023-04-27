@@ -21,7 +21,7 @@ describe('SignerStorage', function () {
     await expect(signerStorage.setAddress(newSigner.address, { value }))
       .to.emit(signerStorage, 'SignerUpdated')
       .withArgs(newSigner.address);
-    expect(await signerStorage.getAddress()).to.equal(newSigner.address);
+    expect(await signerStorage.getSignerAddress()).to.equal(newSigner.address);
 
     const balanceNewSignerAfter = await ethers.provider.getBalance(newSigner.address);
     expect(balanceNewSignerAfter).to.be.equal(balanceNewSignerBefore.add(value));
