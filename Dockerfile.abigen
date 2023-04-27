@@ -8,6 +8,9 @@ RUN mkdir bridge
 RUN mkdir system
 RUN mkdir interfaces
 
+# Common contracts
+RUN abigen --abi artifacts/abi/common/Registry.sol/Registry.json --pkg system --type Registry --out system/registry.go
+
 # Sidechain contracts
 RUN abigen --abi artifacts/abi/sidechain/RelayBridge.sol/RelayBridge.json --pkg bridge --type RelayBridge --out bridge/relay-bridge.go
 RUN abigen --abi artifacts/abi/sidechain/SignerStorage.sol/SignerStorage.json --pkg bridge --type SignerStorage --out bridge/signer-storage.go
@@ -24,3 +27,4 @@ RUN abigen --abi artifacts/abi/mainchain/BridgeApp.sol/BridgeApp.json --pkg syst
 # Interfaces
 RUN abigen --abi artifacts/abi/interfaces/IBridgeApp.sol/IBridgeApp.json --pkg interfaces --type IBridgeApp --out interfaces/ibridgeapp.go
 RUN abigen --abi artifacts/abi/interfaces/IBridgeMediator.sol/IBridgeMediator.json --pkg interfaces --type IBridgeMediator --out interfaces/ibridgemediator.go
+RUN abigen --abi artifacts/abi/interfaces/INetworkAddress.sol/INetworkAddress.json --pkg interfaces --type INetworkAddress --out interfaces/inetworkaddress.go

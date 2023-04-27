@@ -1,42 +1,16 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
+
+import "../interfaces/INetworkAddress.sol";
 
 // Registry is the internal smart contract needed to secure the network and support important features of Nerif.
 contract Registry {
-    uint256 internal constant PERFORM_GAS_CUSHION = 5_000;
-
-    // WorkflowStatus represents the workflow status.
     enum WorkflowStatus {
         PENDING,
         ACTIVE,
         PAUSED,
         CANCELLED
     }
-
-    // BalanceFunded is emitted when the balance of a workflow owner has been funded
-    event BalanceFunded(address workflowOwner, uint256 amount);
-
-    // BalanceWithdrawn is emitted when the balance of a workflow owner has been withdrawn
-    event BalanceWithdrawn(address workflowOwner, uint256 amount);
-
-    // WorkflowRegistered is emitted when a workflow has been registered.
-    event WorkflowRegistered(address owner, uint256 id, bytes hash);
-
-    // WorkflowActivated is emitted when a workflow status has been changed from PENDING to ACTIVE.
-    // This event gets emitted when the workflow has been successfully registered on all supported networks.
-    event WorkflowActivated(uint256 id);
-
-    // WorkflowPaused is emitted when a workflow status has been changed to PAUSED.
-    event WorkflowPaused(uint256 id);
-
-    // WorkflowResumed is emitted when a workflow status has been changed from PAUSED to ACTIVE.
-    event WorkflowResumed(uint256 id);
-
-    // WorkflowCancelled is emitted when a workflow status has been cancelled.
-    event WorkflowCancelled(uint256 id);
-
-    // Performance is emitted when a client contract was executed
-    event Performance(uint256 id, uint256 gasUsed, bool success);
 
     // Config contains the configuration options
     struct Config {
@@ -47,7 +21,6 @@ contract Registry {
         //  - BSC Testnet execution:     46,922
         //  - Polygon Mumbai execution:  31,476
         uint256 performanceOverhead;
-
         // performancePremiumThreshold is the network premium threshold in percents.
         // Numbers are different depending on the sidechain.
         // Metrics:
@@ -55,7 +28,6 @@ contract Registry {
         //  - BSC Testnet execution:     10%
         //  - Polygon Mumbai execution:  10%
         uint8 performancePremiumThreshold;
-
         // registrationOverhead is the cost of the workflow registration.
         // Numbers are different depending on the sidechain.
         // Metrics:
@@ -63,7 +35,6 @@ contract Registry {
         //  - Ethereum Goerli cost: 122,420 (registration, sidechain)
         //  - Polygon Mumbai cost:  67,282 (approval, mainchain)
         uint256 registrationOverhead;
-
         // cancellationOverhead is the cost of the workflow cancellation.
         // Numbers are different depending on the sidechain.
         // Metrics:
@@ -73,7 +44,6 @@ contract Registry {
         uint256 cancellationOverhead;
     }
 
-    // Workflow represents the workflow metadata model.
     struct Workflow {
         uint256 id;
         address owner;
@@ -83,7 +53,6 @@ contract Registry {
         uint256 totalSpent;
     }
 
-    // PerformPayload represents the structure of perform payload
     struct PerformPayload {
         uint256 id;
         uint256 gasAmount;
@@ -91,83 +60,145 @@ contract Registry {
         bytes data;
     }
 
-    // config contains system configuration
+    uint256 internal constant PERFORM_GAS_CUSHION = 5_000;
+
     Config public config;
+    mapping(uint256 => Workflow) internal workflows;
+    mapping(address => uint256) internal balances;
+    bool public isMainChain;
+    INetworkAddress public networkAddress;
+    uint256 public networkRewards;
 
-    // _workflows is the list of registered workflows
-    mapping(uint256 => Workflow) internal _workflows;
+    event BalanceFunded(address workflowOwner, uint256 amount);
+    event BalanceWithdrawn(address workflowOwner, uint256 amount);
+    event WorkflowRegistered(address owner, uint256 id, bytes hash);
+    event WorkflowActivated(uint256 id);
+    event WorkflowPaused(uint256 id);
+    event WorkflowResumed(uint256 id);
+    event WorkflowCancelled(uint256 id);
+    event Performance(uint256 id, uint256 gasUsed, bool success);
 
-    // _balances is the list of workflow owner balances;
-    mapping(address => uint256) internal _balances;
+    // onlyMainchain permits transactions on the mainchain only
+    modifier onlyMainchain() {
+        require(isMainChain, "Operation is not permitted");
+        _;
+    }
 
-    // _isMainChain is the indicator whether the contract is deployed on the main sidechain
-    bool internal _isMainChain;
+    // onlyRegistry permits transaction coming from the contract itself.
+    // This is needed for those transaction that must pass the performance process.
+    modifier onlyRegistry() {
+        require(address(this) == msg.sender, "Operation is not permitted");
+        _;
+    }
 
-    constructor(
-        bool isMainChain
-    ) {
-        _isMainChain = isMainChain;
+    // onlyNetwork permits transactions coming from the collective network address.
+    modifier onlyNetwork() {
+        require(networkAddress.getAddress() == msg.sender, "Operation is not permitted");
+        _;
+    }
+
+    // onlyMsgSender checks that the given address is the transaction sender one.
+    modifier onlyMsgSender(address addr) {
+        require(addr == msg.sender, "Operation is not permitted");
+        _;
+    }
+
+    // onlyMsgSender modifier for mainchain OR onlyRegistry for sidechain
+    modifier onlyMsgSenderOrRegistry(address addr) {
+        if (isMainChain) {
+            require(addr == msg.sender, "Operation is not permitted");
+            _;
+        } else {
+            require(address(this) == msg.sender, "Operation is not permitted");
+            _;
+        }
+    }
+
+    // onlyExistingWorkflow checks that the given workflow exists.
+    modifier onlyExistingWorkflow(uint256 id) {
+        Workflow storage workflow = workflows[id];
+        require(workflow.id > 0, "Workflow does not exist");
+        _;
+    }
+
+    // onlyWorkflowOwner checks that the given tx sender is an actual workflow owner.
+    modifier onlyWorkflowOwner(uint256 id) {
+        Workflow storage workflow = workflows[id];
+        require(workflow.id > 0, "Workflow does not exist");
+        _;
+    }
+
+    modifier onlyWorkflowOwnerOrRegistry(uint256 id) {
+        if (isMainChain) {
+            Workflow storage workflow = workflows[id];
+            require(workflow.owner == msg.sender, "Operation is not permitted");
+            _;
+        } else {
+            // Only network can execute the function on the sidechain.
+            // The transaction must come from the network after reaching consensus.
+            // Basically, the transaction must come from the registry contract itself,
+            // namely from the perform function after passing all checks.
+            require(address(this) == msg.sender, "Operation is not permitted");
+            _;
+        }
+    }
+
+    constructor(address _networkAddress, bool _isMainChain) {
+        networkAddress = INetworkAddress(_networkAddress);
+        isMainChain = _isMainChain;
 
         // Define internal workflows
         // TODO: Implement more elegant way
 
         // Activate workflow on the mainchain side
-        Workflow memory workflowCreationWorkflow = Workflow(40505927788353901442144037336646356013, address(0), "", WorkflowStatus.ACTIVE, true, 0);
-        _workflows[workflowCreationWorkflow.id] = workflowCreationWorkflow;
+        Workflow memory workflowCreationWorkflow = Workflow(
+            40505927788353901442144037336646356013,
+            address(0),
+            "",
+            WorkflowStatus.ACTIVE,
+            true,
+            0
+        );
+        workflows[workflowCreationWorkflow.id] = workflowCreationWorkflow;
 
         // Cancel workflow on the sidechain side
-        Workflow memory workflowCancellationWorkflow = Workflow(219775546284901721155783592958414245131, address(0), "", WorkflowStatus.ACTIVE, true, 0);
-        _workflows[workflowCancellationWorkflow.id] = workflowCancellationWorkflow;
+        Workflow memory workflowCancellationWorkflow = Workflow(
+            219775546284901721155783592958414245131,
+            address(0),
+            "",
+            WorkflowStatus.ACTIVE,
+            true,
+            0
+        );
+        workflows[workflowCancellationWorkflow.id] = workflowCancellationWorkflow;
     }
 
     // setConfig sets the given configuration
-    // TODO: Only the network could update the config. Must pass consensus.
-    function setConfig(
-        Config calldata _config
-    ) public onlySigner {
+    function setConfig(Config calldata _config) public onlyNetwork {
         config = _config;
     }
 
-    function isMainChain() public view returns (bool) {
-        return _isMainChain;
-    }
-
     // fundBalance funds the balance of the sender's public key with the given amount.
-    // Permissions:
-    //  - Anyone can fund balance.
-    function fundBalance(
-        address addr
-    ) public payable onlyMsgSender(addr) {
+    function fundBalance(address addr) public payable onlyMsgSender(addr) {
         // Update the balance value
-        _balances[msg.sender] += msg.value;
+        balances[msg.sender] += msg.value;
 
         emit BalanceFunded(addr, msg.value);
-    }
-
-    // getBalance returns the balance for the given address.
-    // Permissions:
-    //  - Anyone can get a balance.
-    function getBalance(
-        address addr
-    ) view public returns (uint256 balance) {
-        return _balances[addr];
     }
 
     // withdrawBalance withdraws the remaining balance of the sender's public key.
     // Permissions:
     //  - Only balance owner can withdraw its balance.
-    // TODO: Handle cases when the withdrawal happens during the workflow execution.
-    function withdrawBalance(
-        address addr
-    ) public onlyMsgSender(addr) {
+    // TODO: Handle cases when the withdrawal happens during the workflow execution. Introduce withdrawal request.
+    function withdrawBalance(address addr) public onlyMsgSender(addr) {
         address payable sender = payable(msg.sender);
-        uint256 balance = _balances[sender];
+        uint256 balance = balances[sender];
 
         // Ensure the sender has a positive balance
         require(balance > 0, "No balance to withdraw");
 
         // Update the sender's balance
-        _balances[sender] = 0;
+        balances[sender] = 0;
 
         // Transfer the balance to the sender
         sender.transfer(balance);
@@ -184,22 +215,24 @@ contract Registry {
     // The given signature must correspond to the given hash and created by the transaction sender.
     // Permissions:
     //  - Only workflow owner can register a workflow on MAINCHAIN.
-    //  - Only network can register a workflow on SIDECHAIN.
+    //  - Only network can register a workflow on SIDECHAIN throught the regular performance process.
     function registerWorkflow(
         uint256 id,
         address owner,
         bytes calldata hash
-    ) public onlyMsgSenderOrNetwork(owner) {
-        // Select the proper state
+    ) public onlyMsgSenderOrRegistry(owner) {
+        // Use ACTIVE workflow status by default for sidechains
         WorkflowStatus workflowStatus = WorkflowStatus.ACTIVE;
-        if (_isMainChain) {
-            // It will be active after the workflow got registered on all supported networks.
+
+        // Or set the PENDING one for the mainchain
+        if (isMainChain) {
             workflowStatus = WorkflowStatus.PENDING;
         }
 
-        // Store workflow with ACTIVE status
-        _workflows[id] = Workflow(id, owner, hash, workflowStatus, false, 0);
+        // Store a new workflow
+        workflows[id] = Workflow(id, owner, hash, workflowStatus, false, 0);
 
+        // Emmit the event
         emit WorkflowRegistered(msg.sender, id, hash);
     }
 
@@ -209,18 +242,16 @@ contract Registry {
     //  - "status" is the workflow status.
     // Permissions:
     //  - Permitted on MAINCHAIN only.
-    //  - Only network can execute it.
-    function activateWorkflow(
-        uint256 id
-    ) public onlyMainchain onlyNetwork {
+    //  - Only network can execute it through the regular performance process.
+    function activateWorkflow(uint256 id) public onlyMainchain onlyRegistry onlyExistingWorkflow(id) {
         // Find the workflow in the list
-        Workflow storage workflow = _workflows[id];
+        Workflow storage workflow = workflows[id];
 
         // Must be PENDING
         require(workflow.status == WorkflowStatus.PENDING, "Workflow must be pending");
 
         // Update status
-        _workflows[id].status = WorkflowStatus.ACTIVE;
+        workflows[id].status = WorkflowStatus.ACTIVE;
 
         emit WorkflowActivated(id);
     }
@@ -231,17 +262,15 @@ contract Registry {
     // Permissions:
     //  - Permitted on MAINCHAIN only.
     //  - Only workflow owner can pause an existing active workflow.
-    function pauseWorkflow(
-        uint256 id
-    ) public onlyMainchain onlyWorkflowOwner(id) {
+    function pauseWorkflow(uint256 id) public onlyMainchain onlyExistingWorkflow(id) onlyWorkflowOwner(id) {
         // Find the workflow in the list
-        Workflow storage workflow = _workflows[id];
+        Workflow storage workflow = workflows[id];
 
         // Check current workflow status
         require(workflow.status == WorkflowStatus.ACTIVE, "Only active workflows could be paused");
 
         // Update status
-        _workflows[id].status = WorkflowStatus.PAUSED;
+        workflows[id].status = WorkflowStatus.PAUSED;
 
         emit WorkflowPaused(id);
     }
@@ -252,17 +281,15 @@ contract Registry {
     // Permissions:
     //  - Permitted on MAINCHAIN only.
     //  - Only workflow owner can resume an existing active workflow.
-    function resumeWorkflow(
-        uint256 id
-    ) public onlyMainchain onlyWorkflowOwner(id) {
+    function resumeWorkflow(uint256 id) public onlyMainchain onlyExistingWorkflow(id) onlyWorkflowOwner(id) {
         // Find the workflow in the list
-        Workflow storage workflow = _workflows[id];
+        Workflow storage workflow = workflows[id];
 
         // Check current workflow status
         require(workflow.status == WorkflowStatus.PAUSED, "Only paused workflows could be resumed");
 
         // Update status
-        _workflows[id].status = WorkflowStatus.ACTIVE;
+        workflows[id].status = WorkflowStatus.ACTIVE;
 
         emit WorkflowResumed(id);
     }
@@ -272,29 +299,18 @@ contract Registry {
     //  - "id" is the workflow identifier.
     // Permissions:
     //  - Only workflow owner can cancel an existing active workflow on MAINCHAIN.
-    //  - Only network can cancel a workflow on SIDECHAIN.
-    function cancelWorkflow(
-        uint256 id
-    ) public onlyWorkflowOwnerOrNetwork(id) {
+    //  - Only network can cancel a workflow on SIDECHAIN through the regular performance process.
+    function cancelWorkflow(uint256 id) public onlyExistingWorkflow(id) onlyWorkflowOwnerOrRegistry(id) {
         // Find the workflow in the list
-        Workflow storage workflow = _workflows[id];
+        Workflow storage workflow = workflows[id];
 
         // Check current workflow status
         require(workflow.status != WorkflowStatus.CANCELLED, "Workflow is already cancelled");
 
         // Update status
-        _workflows[id].status = WorkflowStatus.CANCELLED;
+        workflows[id].status = WorkflowStatus.CANCELLED;
 
         emit WorkflowCancelled(id);
-    }
-
-    // getWorkflow returns the workflow by the given ID.
-    // Permissions:
-    //  - Anyone can read a workflow
-    function getWorkflow(
-        uint256 id
-    ) view public returns (Workflow memory workflow) {
-        return _workflows[id];
     }
 
     // perform performs the contract execution defined in the registered workflow.
@@ -307,28 +323,22 @@ contract Registry {
     //  - "data" is the contract call data
     //  - "target" is the client contract address
     // Permissions:
-    //  - Only network can execute this function
+    //  - Only network can execute this function.
     function perform(
         uint256 workflowId,
         uint256 gasAmount,
         bytes memory data,
         address target
-    ) public onlySigner {
-        // Make sure the given payload was signed by the network
-        bytes memory payload = abi.encode(workflowId, gasAmount, data, target);
-
+    ) public onlyNetwork onlyExistingWorkflow(workflowId) {
         // Get a workflow by ID
-        Workflow storage workflow = _workflows[workflowId];
-
-        // Make sure workflow exists
-        require(workflow.id > 0, "Workflow does not exist");
+        Workflow storage workflow = workflows[workflowId];
 
         // Make sure the workflow is not paused
         require(workflow.status == WorkflowStatus.ACTIVE, "Workflow must be active");
 
         if (!workflow.isInternal) {
             // Make sure workflow owner has enough funds
-            require(_balances[workflow.owner] > 0, "Not enough funds on balance");
+            require(balances[workflow.owner] > 0, "Not enough funds on balance");
 
             // Cannot self-execute if not internal
             require(address(this) != target, "Operation is not permitted");
@@ -343,28 +353,48 @@ contract Registry {
 
         // Calculate amount to charge
         uint256 amountToCharge = gasUsed;
+
+        // Adding performance overhead if exists
         if (config.performanceOverhead > 0) {
             amountToCharge += config.performanceOverhead;
         }
+
+        // Adding performance premium
         if (config.performancePremiumThreshold > 0) {
             amountToCharge += amountToCharge / uint256(config.performancePremiumThreshold);
         }
 
+        // Calculate amount to charge
         amountToCharge = amountToCharge * tx.gasprice;
 
         if (!workflow.isInternal) {
-            // Charge workflow owner balance
-            _balances[workflow.owner] -= amountToCharge;
+            // Make sure owner has enough funds
+            require(balances[workflow.owner] >= amountToCharge, "Not enough funds on balance");
 
-            // Add balance to the executer's address
-            _balances[msg.sender] += amountToCharge;
+            // Charge workflow owner balance
+            balances[workflow.owner] -= amountToCharge;
+
+            // Move amount to the network rewards balance
+            networkRewards += amountToCharge;
         }
 
         // Update total spent amount of the current workflow
-        _workflows[workflowId].totalSpent += amountToCharge;
+        workflows[workflowId].totalSpent += amountToCharge;
 
         // Emit performance event
         emit Performance(workflowId, amountToCharge, success);
+    }
+
+    // getBalance returns the balance for the given address.
+    function getBalance(address addr) public view returns (uint256 balance) {
+        return balances[addr];
+    }
+
+    // getWorkflow returns the workflow by the given ID.
+    // Permissions:
+    //  - Anyone can read a workflow
+    function getWorkflow(uint256 id) public view returns (Workflow memory workflow) {
+        return workflows[id];
     }
 
     // _callWithExactGas calls target address with exactly gasAmount gas and data as calldata
@@ -399,68 +429,5 @@ contract Registry {
             success := call(gasAmount, target, 0, add(data, 0x20), mload(data), 0, 0)
         }
         return success;
-    }
-
-    modifier onlyWorkflowOwnerOrNetwork(uint256 id) {
-        if (_isMainChain) {
-            Workflow storage workflow = _workflows[id];
-            require(workflow.owner == msg.sender, "Operation is not permitted");
-            _;
-        } else {
-            // Only network can execute the function on the sidechain.
-            // The transaction must come from the network after reaching consensus.
-            // Basically, the transaction must come from the registry contract itself,
-            // namely from the perform function after passing all checks.
-            require(address(this) == msg.sender, "Operation is not permitted");
-            _;
-        }
-    }
-
-    modifier onlyMsgSenderOrNetwork(address addr) {
-        if (_isMainChain) {
-            require(addr == msg.sender, "Operation is not permitted");
-            _;
-        } else {
-            // Only network can execute the function on the sidechain.
-            // The transaction must come from the network after reaching consensus.
-            // Basically, the transaction must come from the registry contract itself,
-            // namely from the perform function after passing all checks.
-            require(address(this) == msg.sender, "Operation is not permitted");
-            _;
-        }
-    }
-
-    modifier onlyNetwork {
-        // The transaction must come from the network after reaching consensus.
-        // Basically, the transaction must come from the registry contract itself,
-        // namely from the perform function after passing all checks.
-        require(address(this) == msg.sender, "Operation is not permitted");
-        _;
-    }
-
-    // onlySigner allows only the collective address to execute the transaction
-    modifier onlySigner {
-        bool found = false;
-        // TODO: Get the collective address and compare it with the tx sender
-        require(found, "Operation is not permitted");
-        _;
-    }
-
-    // onlyWorkflowOwner checks that the given tx sender is an actual workflow owner
-    modifier onlyWorkflowOwner(uint256 id) {
-        Workflow storage workflow = _workflows[id];
-        require(workflow.owner == msg.sender, "Operation is not permitted");
-        _;
-    }
-
-    // onlyMsgSender checks that the given address is the message sender one
-    modifier onlyMsgSender(address addr) {
-        require(addr == msg.sender, "Operation is not permitted");
-        _;
-    }
-
-    modifier onlyMainchain {
-        require(_isMainChain, "Operation is not permitted");
-        _;
     }
 }
