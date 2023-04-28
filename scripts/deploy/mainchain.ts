@@ -9,7 +9,6 @@ import {
   SlashingVoting,
   ContractRegistry,
   EventRegistry,
-  BridgeAppFactory,
   ValidatorRewardDistributionPool,
   Registry,
 } from '../../typechain';
@@ -43,7 +42,6 @@ export async function deploySystemContracts(options?: SystemDeploymentOptions): 
     staking: await deployer.deploy(ethers.getContractFactory('Staking'), 'Staking'),
     dkg: await deployer.deploy(ethers.getContractFactory('DKG'), 'DKG'),
     slashingVoting: await deployer.deploy(ethers.getContractFactory('SlashingVoting'), 'SlashingVoting'),
-    bridgeAppFactory: await deployer.deploy(ethers.getContractFactory('BridgeAppFactory'), 'BridgeAppFactory'),
     validatorRewardDistributionPool: await deployer.deploy(
       ethers.getContractFactory('ValidatorRewardDistributionPool'),
       'ValidatorRewardDistributionPool'
@@ -218,7 +216,6 @@ export interface SystemDeployment {
   slashingVoting: SlashingVoting;
   contractRegistry: ContractRegistry;
   eventRegistry: EventRegistry;
-  bridgeAppFactory: BridgeAppFactory;
   validatorRewardDistributionPool: ValidatorRewardDistributionPool;
   registry: Registry;
 }

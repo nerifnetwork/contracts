@@ -1,11 +1,9 @@
 import { ethers, config } from 'hardhat';
 import { HttpNetworkConfig } from 'hardhat/types';
-import { RelayBridge, SignerStorage, Registry } from '../../typechain';
+import { SignerStorage, Registry } from '../../typechain';
 import { Deployer } from './deployer';
 
 const defaultBridgeDeploymentParameters: BridgeDeploymentParameters = {
-  bridgeValidatorFeePool: '0x0000000000000000000000000000000000000001',
-
   displayLogs: false,
   verify: false,
 };
@@ -59,7 +57,6 @@ export async function deployBridgeContracts(options?: BridgeDeploymentOptions): 
 
   const res: BridgeDeployment = {
     signerStorage: await deployer.deploy(ethers.getContractFactory('SignerStorage'), 'SignerStorage'),
-    relayBridge: await deployer.deploy(ethers.getContractFactory('RelayBridge'), 'RelayBridge'),
     registry: await deployer.deploy(ethers.getContractFactory('Registry'), 'Registry'),
   };
 
@@ -70,11 +67,6 @@ export async function deployBridgeContracts(options?: BridgeDeploymentOptions): 
   await deployer.sendTransaction(res.signerStorage.initialize(initialSignerAddress), 'Initializing SignerStorage');
 
   await deployer.sendTransaction(res.registry.initialize(res.signerStorage.address, false), 'Initializing Registry');
-
-  await deployer.sendTransaction(
-    res.relayBridge.initialize(res.signerStorage.address, params.bridgeValidatorFeePool),
-    'Initializing RelayBridge'
-  );
 
   deployer.log('Successfully initialized contracts\n');
 
@@ -103,10 +95,6 @@ function resolveParameters(options?: BridgeDeploymentOptions): BridgeDeploymentP
     parameters.verify = options.verify;
   }
 
-  if (options.bridgeValidatorFeePool !== undefined) {
-    parameters.bridgeValidatorFeePool = options.bridgeValidatorFeePool;
-  }
-
   return parameters;
 }
 
@@ -114,18 +102,15 @@ export interface BridgeDeploymentResult extends BridgeDeployment, BridgeDeployme
 
 export interface BridgeDeployment {
   signerStorage: SignerStorage;
-  relayBridge: RelayBridge;
   registry: Registry;
 }
 
 export interface BridgeDeploymentParameters {
-  bridgeValidatorFeePool: string;
   displayLogs: boolean;
   verify: boolean;
 }
 
 export interface BridgeDeploymentOptions {
-  bridgeValidatorFeePool?: string;
   homeDKGAddress?: string;
   homeNetwork?: string;
   displayLogs?: boolean;
