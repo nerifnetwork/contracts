@@ -1,19 +1,27 @@
 import { ethers } from 'hardhat';
 import { BigNumber } from 'ethers';
-import { deploySystemContracts, SystemDeploymentOptions, SystemDeploymentResult } from '../../scripts/deploy/mainchain';
-import { BridgeDeploymentOptions, BridgeDeploymentResult, deployBridgeContracts } from '../../scripts/deploy/sidechain';
+import {
+  deployMainchainContracts,
+  MainchainDeploymentOptions,
+  MainchainDeploymentResult,
+} from '../../scripts/deploy/mainchain';
+import {
+  SidechainDeploymentOptions,
+  SidechainDeploymentResult,
+  deploySidechainContracts,
+} from '../../scripts/deploy/sidechain';
 import { MockToken, MockDEXRouter } from '../../typechain';
 
-export async function deploySystem(options?: SystemDeploymentOptions): Promise<SystemDeploymentResult> {
-  return await deploySystemContracts(options);
+export async function deployMainchain(options?: MainchainDeploymentOptions): Promise<MainchainDeploymentResult> {
+  return await deployMainchainContracts(options);
 }
 
-export async function deployBridge(options?: BridgeDeploymentOptions): Promise<BridgeDeploymentResult> {
-  return await deployBridgeContracts(options);
+export async function deploySidechain(options?: SidechainDeploymentOptions): Promise<SidechainDeploymentResult> {
+  return await deploySidechainContracts(options);
 }
 
-export async function deploySystemWithMocks(
-  options?: SystemDeploymentOptions
+export async function deployMainchainWithMocks(
+  options?: MainchainDeploymentOptions
 ): Promise<SystemWithMocksDeploymentResult> {
   const MockToken = await ethers.getContractFactory('MockToken');
   const mockToken = await MockToken.deploy('Mock Token', 'MOCK', BigNumber.from('10000000000000000000000000'));
@@ -26,7 +34,7 @@ export async function deploySystemWithMocks(
   await mockToken.approve(mockDEXRouter.address, BigNumber.from('10000000000000000000000'));
 
   options = { router: mockDEXRouter.address };
-  const deployment = await deploySystemContracts(options);
+  const deployment = await deployMainchainContracts(options);
 
   return {
     mockToken: mockToken,
@@ -35,7 +43,7 @@ export async function deploySystemWithMocks(
   };
 }
 
-export interface SystemWithMocksDeploymentResult extends SystemDeploymentResult {
+export interface SystemWithMocksDeploymentResult extends MainchainDeploymentResult {
   mockToken: MockToken;
   mockDEXRouter: MockDEXRouter;
 }

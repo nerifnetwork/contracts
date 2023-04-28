@@ -1,5 +1,5 @@
 import { ethers, network } from 'hardhat';
-import { deployBridgeContracts } from './deploy/sidechain';
+import { deploySidechainContracts } from './deploy/sidechain';
 import { readChainContractsConfig, readContractsConfig, updateContractsConfig, writeChainContractsConfig } from './deploy/config';
 
 async function main() {
@@ -13,7 +13,7 @@ async function main() {
 
   const contractsConfig = await readChainContractsConfig(chainId);
 
-  const res = await deployBridgeContracts({
+  const res = await deploySidechainContracts({
     homeNetwork: homeNetwork,
     homeDKGAddress: dkgAddress,
     displayLogs: true,

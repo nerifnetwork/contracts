@@ -1,13 +1,13 @@
 import { expect } from 'chai';
 import { utils } from 'ethers';
 import { ethers } from 'hardhat';
-import { deployBridge } from '../utils/deploy';
+import { deploySidechain } from '../utils/deploy';
 
 describe('SignerStorage', function () {
   it('should set, get and emit event', async function () {
     const [signer, newSigner, user] = await ethers.getSigners();
 
-    const { signerStorage } = await deployBridge();
+    const { signerStorage } = await deploySidechain();
 
     const balanceSignerBefore = await ethers.provider.getBalance(signer.address);
     const balanceNewSignerBefore = await ethers.provider.getBalance(newSigner.address);

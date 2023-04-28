@@ -4,23 +4,21 @@ import { config } from 'hardhat';
 import { HttpNetworkConfig } from 'hardhat/types';
 import { ContractsConfig } from './config';
 
-export interface BridgeConfig {
+export interface SidechainConfig {
   [key: string]: Config | undefined;
 }
 
 export interface Config {
   chainId: Number;
   rpcURL: string;
-  bridgeContract: string;
   signerStorageContract: string;
   startBlock: Number;
 }
 
-export async function createBridgeConfig(contractConfigs: ContractsConfig[]): Promise<BridgeConfig> {
-  var bridgeConfig: BridgeConfig = {};
+export async function createSidechainConfig(contractConfigs: ContractsConfig[]): Promise<SidechainConfig> {
+  let sidechainConfig: SidechainConfig = {};
   contractConfigs.forEach(async function (contractConfig) {
     if (
-      contractConfig.relayBridge !== undefined &&
       contractConfig.signerStorage !== undefined &&
       contractConfig.startBlock !== undefined &&
       contractConfig.networkName !== undefined
@@ -33,24 +31,21 @@ export async function createBridgeConfig(contractConfigs: ContractsConfig[]): Pr
       const rpcURL = networkConfig.url;
       const chainId = networkConfig.chainId ?? 1;
 
-      var con: Config = {
+      sidechainConfig[contractConfig.networkName] = {
         chainId: chainId,
         rpcURL: rpcURL,
-        bridgeContract: contractConfig.relayBridge,
         signerStorageContract: contractConfig.signerStorage,
         startBlock: Number(contractConfig.startBlock),
       };
-
-      bridgeConfig[contractConfig.networkName] = con;
     }
   });
 
-  return bridgeConfig;
+  return sidechainConfig;
 }
 
-export async function writeBridgeConfig(bg: BridgeConfig): Promise<void> {
+export async function writeSidechainConfig(bg: SidechainConfig): Promise<void> {
   try {
-    await fs.writeFile('bridgeconfig.yaml', stringify(bg, null, 2));
+    await fs.writeFile('sidechainconfig.yaml', stringify(bg, null, 2));
   } catch (error) {
     console.error(error);
   }

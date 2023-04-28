@@ -4,7 +4,6 @@ WORKDIR /
 
 COPY artifacts/ artifacts/
 
-RUN mkdir bridge
 RUN mkdir system
 RUN mkdir interfaces
 

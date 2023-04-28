@@ -1,6 +1,6 @@
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { deploySystem } from '../utils/deploy';
+import { deployMainchain } from '../utils/deploy';
 
 describe('ContractRegistry', function () {
   it('should set and get contract address', async function () {
@@ -10,7 +10,7 @@ describe('ContractRegistry', function () {
     const otherKey = 'test2';
     const address = '0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF';
 
-    const { contractRegistry } = await deploySystem();
+    const { contractRegistry } = await deployMainchain();
 
     const contractRegistryOther = await ethers.getContractAt('ContractRegistry', contractRegistry.address, other);
 

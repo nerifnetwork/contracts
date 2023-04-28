@@ -1,6 +1,6 @@
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { deploySystemWithMocks } from '../utils/deploy';
+import { deployMainchainWithMocks } from '../utils/deploy';
 import { BigNumber } from 'ethers';
 
 describe('ValidatorRewardDistributionPool', function () {
@@ -9,7 +9,7 @@ describe('ValidatorRewardDistributionPool', function () {
     const totalReward = ethers.utils.parseEther('0.1');
     const minimalStake = ethers.utils.parseEther('100');
 
-    const { validatorRewardDistributionPool, staking, mockDEXRouter, mockToken } = await deploySystemWithMocks();
+    const { validatorRewardDistributionPool, staking, mockDEXRouter, mockToken } = await deployMainchainWithMocks();
 
     const staking2 = await ethers.getContractAt('Staking', staking.address, v2);
     const staking3 = await ethers.getContractAt('Staking', staking.address, v3);

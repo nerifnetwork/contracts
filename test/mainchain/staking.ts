@@ -2,13 +2,13 @@ import hre from 'hardhat';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
 import { ValidatorStatusActive, ValidatorStatusInactive } from '../utils/helpers';
-import { deploySystem } from '../utils/deploy';
+import { deployMainchain } from '../utils/deploy';
 import { hexValue } from 'ethers/lib/utils';
 
 describe('Staking', function () {
   it('should change minimal stake', async function () {
     const newMinimalStake = ethers.utils.parseEther('2');
-    const { staking } = await deploySystem();
+    const { staking } = await deployMainchain();
 
     await expect(staking.setMinimalStake(newMinimalStake))
       .to.emit(staking, 'MinimalStakeUpdated')
@@ -19,7 +19,7 @@ describe('Staking', function () {
 
   it('should set withdrawal period', async function () {
     const newWithdrawalPeriod = 2;
-    const { staking } = await deploySystem();
+    const { staking } = await deployMainchain();
 
     await expect(staking.setWithdrawalPeriod(newWithdrawalPeriod))
       .to.emit(staking, 'WithdrawalPeriodUpdated')
@@ -29,7 +29,7 @@ describe('Staking', function () {
   });
 
   it('should verify error at zero stake amount', async function () {
-    const { staking } = await deploySystem();
+    const { staking } = await deployMainchain();
 
     await expect(staking.stake({ value: 0 })).to.be.revertedWith('Staking: amount must be greater than zero');
   });
@@ -37,7 +37,7 @@ describe('Staking', function () {
   it('should verify staking more than minimal stake', async function () {
     const [owner] = await ethers.getSigners();
     const additionalStake = ethers.utils.parseEther('5');
-    const { staking, minimalStake } = await deploySystem();
+    const { staking, minimalStake } = await deployMainchain();
     await staking.stake({ value: minimalStake.add(additionalStake) });
 
     const { validator, stake, status } = await staking.stakes(owner.address);
@@ -48,7 +48,7 @@ describe('Staking', function () {
 
   it('should check if it is possible to stake several times', async function () {
     const [owner] = await ethers.getSigners();
-    const { staking, minimalStake } = await deploySystem();
+    const { staking, minimalStake } = await deployMainchain();
 
     await staking.stake({ value: minimalStake });
     await staking.stake({ value: minimalStake });
@@ -61,7 +61,7 @@ describe('Staking', function () {
 
   it('should check make validator active if new stake is more than minimum amount', async function () {
     const [owner] = await ethers.getSigners();
-    let { staking, minimalStake } = await deploySystem();
+    let { staking, minimalStake } = await deployMainchain();
 
     await staking.stake({ value: minimalStake.div(2) });
     var stake1 = await staking.stakes(owner.address);
@@ -79,7 +79,7 @@ describe('Staking', function () {
 
   it('should check if only slashing voting can slash', async function () {
     const [v1, v2] = await ethers.getSigners();
-    const { staking, minimalStake } = await deploySystem();
+    const { staking, minimalStake } = await deployMainchain();
 
     const staking2 = await ethers.getContractAt('Staking', staking.address, v2);
 
@@ -97,7 +97,7 @@ describe('Staking', function () {
     const secondReason: number = 1;
     const hre = require('hardhat');
 
-    const { staking, addressStorage, slashingVoting, minimalStake } = await deploySystem();
+    const { staking, addressStorage, slashingVoting, minimalStake } = await deployMainchain();
     await slashingVoting.setSlashingEpochs(2);
     await slashingVoting.setSlashingThresold(2);
 
@@ -133,7 +133,7 @@ describe('Staking', function () {
 
   it('should check if only validator with stake can announceWithdrawal', async function () {
     const [, v2] = await ethers.getSigners();
-    const { staking, minimalStake } = await deploySystem();
+    const { staking, minimalStake } = await deployMainchain();
 
     const staking2 = await ethers.getContractAt('Staking', staking.address, v2);
 
@@ -143,7 +143,7 @@ describe('Staking', function () {
   });
 
   it('should check if amount more than stake', async function () {
-    const { staking, minimalStake } = await deploySystem();
+    const { staking, minimalStake } = await deployMainchain();
 
     await staking.stake({ value: minimalStake });
     await expect(staking.announceWithdrawal(minimalStake.add(ethers.utils.parseEther('1')))).to.be.revertedWith(
@@ -153,7 +153,7 @@ describe('Staking', function () {
 
   it('should check if amount must be less or equal to stake', async function () {
     const [owner] = await ethers.getSigners();
-    const { staking, minimalStake } = await deploySystem();
+    const { staking, minimalStake } = await deployMainchain();
 
     await staking.stake({ value: minimalStake });
     await staking.announceWithdrawal(minimalStake);
@@ -165,7 +165,7 @@ describe('Staking', function () {
 
   it('should check if only validator with stake can withdraw', async function () {
     const [, v2] = await ethers.getSigners();
-    const { staking, minimalStake, stakeWithdrawalPeriod } = await deploySystem();
+    const { staking, minimalStake, stakeWithdrawalPeriod } = await deployMainchain();
 
     const staking2 = await ethers.getContractAt('Staking', staking.address, v2);
 
@@ -182,7 +182,7 @@ describe('Staking', function () {
     const reason: number = 0;
     const secondReason: number = 1;
     const hre = require('hardhat');
-    const { staking, slashingVoting, minimalStake } = await deploySystem();
+    const { staking, slashingVoting, minimalStake } = await deployMainchain();
     await slashingVoting.setSlashingEpochs(2);
     await slashingVoting.setSlashingThresold(2);
 
@@ -218,7 +218,7 @@ describe('Staking', function () {
     const secondReason: number = 1;
     const hre = require('hardhat');
 
-    const { staking, slashingVoting, minimalStake } = await deploySystem();
+    const { staking, slashingVoting, minimalStake } = await deployMainchain();
     await slashingVoting.setSlashingEpochs(2);
     await slashingVoting.setSlashingThresold(2);
 
@@ -261,7 +261,7 @@ describe('Staking', function () {
     const firstWithdrawal = ethers.utils.parseEther('3');
     const secondWithdrawal = ethers.utils.parseEther('2');
 
-    const { staking, stakeWithdrawalPeriod } = await deploySystem({ minimalStake });
+    const { staking, stakeWithdrawalPeriod } = await deployMainchain({ minimalStake });
 
     await staking.stake({ value: value });
 
@@ -279,7 +279,7 @@ describe('Staking', function () {
   });
 
   it('should check if withdrawalPeriod not passed', async function () {
-    const { staking, minimalStake } = await deploySystem();
+    const { staking, minimalStake } = await deployMainchain();
     await staking.setWithdrawalPeriod(1000000);
     await staking.stake({ value: minimalStake });
     await staking.announceWithdrawal(minimalStake);
@@ -289,7 +289,7 @@ describe('Staking', function () {
 
   it('should withdraw', async function () {
     const [owner] = await ethers.getSigners();
-    const { staking, minimalStake, stakeWithdrawalPeriod, addressStorage } = await deploySystem();
+    const { staking, minimalStake, stakeWithdrawalPeriod, addressStorage } = await deployMainchain();
 
     await staking.stake({ value: minimalStake });
     expect(await addressStorage.contains(owner.address)).to.equal(true);
@@ -309,7 +309,7 @@ describe('Staking', function () {
 
   it('should revoke withdrawal', async function () {
     const [owner] = await ethers.getSigners();
-    const { staking, minimalStake, addressStorage } = await deploySystem();
+    const { staking, minimalStake, addressStorage } = await deployMainchain();
 
     await staking.stake({ value: minimalStake });
 
@@ -331,7 +331,7 @@ describe('Staking', function () {
     const stake = ethers.utils.parseEther('5');
     const withdrawStake = ethers.utils.parseEther('10');
 
-    const { staking, dkg, stakeWithdrawalPeriod } = await deploySystem({ minimalStake });
+    const { staking, dkg, stakeWithdrawalPeriod } = await deployMainchain({ minimalStake });
     const staking1 = await ethers.getContractAt('Staking', staking.address, v1);
     const staking2 = await ethers.getContractAt('Staking', staking.address, v2);
     const staking3 = await ethers.getContractAt('Staking', staking.address, v3);
@@ -362,7 +362,7 @@ describe('Staking', function () {
     const withdrawal = ethers.utils.parseEther('3');
     const secondStake = ethers.utils.parseEther('2');
 
-    const { staking, stakeWithdrawalPeriod } = await deploySystem({ minimalStake });
+    const { staking, stakeWithdrawalPeriod } = await deployMainchain({ minimalStake });
 
     await staking.stake({ value: value });
     await staking.announceWithdrawal(withdrawal);
@@ -381,7 +381,7 @@ describe('Staking', function () {
     const reason: number = 0;
     const secondReason: number = 1;
     const hre = require('hardhat');
-    const { staking, slashingVoting } = await deploySystem();
+    const { staking, slashingVoting } = await deployMainchain();
     await slashingVoting.setSlashingEpochs(2);
     await slashingVoting.setSlashingThresold(2);
 

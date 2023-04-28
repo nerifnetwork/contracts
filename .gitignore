@@ -14,4 +14,4 @@ artifacts
 
 /contracts.json
 /contracts-*.json
-/bridgeconfig.yaml
+/sidechainconfig.yaml

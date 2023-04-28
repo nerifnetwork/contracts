@@ -1,7 +1,7 @@
 import hre from 'hardhat';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { deploySystem } from '../utils/deploy';
+import { deployMainchain } from '../utils/deploy';
 
 describe('DKG', function () {
   it('should broadcast all rounds', async function () {
@@ -21,7 +21,7 @@ describe('DKG', function () {
     const signature = await signer.signMessage(message);
     const signatureOther = await other.signMessage(message);
 
-    const { dkg, staking, minimalStake } = await deploySystem();
+    const { dkg, staking, minimalStake } = await deployMainchain();
 
     expect(await dkg.getGenerationsCount()).to.equal(1);
 
@@ -156,7 +156,7 @@ describe('DKG', function () {
 
   it('should get active and pending status', async function () {
     const [, signer] = await ethers.getSigners();
-    const { dkg, staking, minimalStake } = await deploySystem();
+    const { dkg, staking, minimalStake } = await deployMainchain();
 
     const PENDING: number = 0;
     const ACTIVE: number = 2;
@@ -195,7 +195,7 @@ describe('DKG', function () {
 
   it('should get expired status', async function () {
     const [, v1, v2] = await ethers.getSigners();
-    const { dkg, staking, minimalStake, dkgDeadlinePeriod } = await deploySystem();
+    const { dkg, staking, minimalStake, dkgDeadlinePeriod } = await deployMainchain();
     const data = ethers.utils.keccak256([1]);
 
     const PENDING: number = 0;
@@ -218,7 +218,7 @@ describe('DKG', function () {
 
   it('should check if we can set deadline period', async function () {
     const [, other] = await ethers.getSigners();
-    const { dkg } = await deploySystem();
+    const { dkg } = await deployMainchain();
     const dkgOther = await ethers.getContractAt('DKG', dkg.address, other);
 
     await dkg.setDeadlinePeriod(150);
@@ -230,7 +230,7 @@ describe('DKG', function () {
 
   it('should do not create new generartion if it not diferent from previous', async function () {
     const [, v1, v2] = await ethers.getSigners();
-    const { dkg, staking, minimalStake } = await deploySystem();
+    const { dkg, staking, minimalStake } = await deployMainchain();
 
     const staking1 = await ethers.getContractAt('Staking', staking.address, v1);
     const staking2 = await ethers.getContractAt('Staking', staking.address, v2);

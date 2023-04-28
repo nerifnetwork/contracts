@@ -1,6 +1,6 @@
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { deploySystem } from '../utils/deploy';
+import { deployMainchain } from '../utils/deploy';
 
 describe('EventRegistry', function () {
   it('should register events', async function () {
@@ -13,7 +13,7 @@ describe('EventRegistry', function () {
     const abiCoder = ethers.utils.defaultAbiCoder;
     const data = abiCoder.encode(['string'], ['dataforsend']);
 
-    const { staking, eventRegistry, minimalStake } = await deploySystem();
+    const { staking, eventRegistry, minimalStake } = await deployMainchain();
 
     const [, v1, v2, other] = await ethers.getSigners();
 

@@ -1,4 +1,4 @@
-import { readContractsConfig, createBridgeConfig, writeBridgeConfig } from './deploy/bridge-config';
+import { readContractsConfig, createSidechainConfig, writeSidechainConfig } from './deploy/sidechain-config';
 import { ContractsConfig } from './deploy/config';
 import glob from 'glob';
 
@@ -12,9 +12,9 @@ async function main() {
     configs.push(config);
   }
 
-  const bConfig = await createBridgeConfig(configs)
+  const bConfig = await createSidechainConfig(configs)
 
-  await writeBridgeConfig(bConfig)
+  await writeSidechainConfig(bConfig)
 }
 
 async function getContractsFiles(): Promise<string[]> {

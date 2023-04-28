@@ -13,11 +13,10 @@ import {
   Registry,
 } from '../../typechain';
 
-const defaultSystemDeploymentParameters: SystemDeploymentParameters = {
+const defaultSystemDeploymentParameters: MainchainDeploymentParameters = {
   minimalStake: ethers.utils.parseEther('0.01'),
   stakeWithdrawalPeriod: BigNumber.from(60),
   router: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
-  erc20BridgeMediator: '0x0000000000000000000000000000000000000001',
   slashingEpochs: BigNumber.from(3),
   slashingEpochPeriod: BigNumber.from(1000),
   slashingBansThresold: BigNumber.from(10),
@@ -29,13 +28,15 @@ const defaultSystemDeploymentParameters: SystemDeploymentParameters = {
   stakingKeys: [],
 };
 
-export async function deploySystemContracts(options?: SystemDeploymentOptions): Promise<SystemDeploymentResult> {
+export async function deployMainchainContracts(
+  options?: MainchainDeploymentOptions
+): Promise<MainchainDeploymentResult> {
   const params = resolveParameters(options);
   const deployer = new Deployer(params.displayLogs);
 
   deployer.log('Deploying contracts\n');
 
-  const res: SystemDeployment = {
+  const res: MainchainDeployment = {
     contractRegistry: await deployer.deploy(ethers.getContractFactory('ContractRegistry'), 'ContractRegistry'),
     eventRegistry: await deployer.deploy(ethers.getContractFactory('EventRegistry'), 'EventRegistry'),
     addressStorage: await deployer.deploy(ethers.getContractFactory('AddressStorage'), 'AddressStorage'),
@@ -153,7 +154,7 @@ async function waitSignerAddressUpdated(dkg: DKG, generation: BigNumber): Promis
   });
 }
 
-function resolveParameters(options?: SystemDeploymentOptions): SystemDeploymentParameters {
+function resolveParameters(options?: MainchainDeploymentOptions): MainchainDeploymentParameters {
   let parameters = defaultSystemDeploymentParameters;
 
   if (options === undefined) {
@@ -200,16 +201,12 @@ function resolveParameters(options?: SystemDeploymentOptions): SystemDeploymentP
     parameters.router = options.router;
   }
 
-  if (options.erc20BridgeMediator !== undefined) {
-    parameters.erc20BridgeMediator = options.erc20BridgeMediator;
-  }
-
   return parameters;
 }
 
-export interface SystemDeploymentResult extends SystemDeployment, SystemDeploymentParameters {}
+export interface MainchainDeploymentResult extends MainchainDeployment, MainchainDeploymentParameters {}
 
-export interface SystemDeployment {
+export interface MainchainDeployment {
   staking: Staking;
   addressStorage: AddressStorage;
   dkg: DKG;
@@ -220,7 +217,7 @@ export interface SystemDeployment {
   registry: Registry;
 }
 
-export interface SystemDeploymentParameters {
+export interface MainchainDeploymentParameters {
   minimalStake: BigNumber;
   stakeWithdrawalPeriod: BigNumber;
 
@@ -231,14 +228,13 @@ export interface SystemDeploymentParameters {
   dkgDeadlinePeriod: BigNumber;
 
   router: string;
-  erc20BridgeMediator: string;
 
   displayLogs: boolean;
   verify: boolean;
   stakingKeys: string[];
 }
 
-export interface SystemDeploymentOptions {
+export interface MainchainDeploymentOptions {
   minimalStake?: BigNumber;
   stakeWithdrawalPeriod?: BigNumber;
 
@@ -249,7 +245,6 @@ export interface SystemDeploymentOptions {
   dkgDeadlinePeriod?: BigNumber;
 
   router?: string;
-  erc20BridgeMediator?: string;
 
   displayLogs?: boolean;
   verify?: boolean;

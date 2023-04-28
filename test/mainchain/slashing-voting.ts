@@ -1,6 +1,6 @@
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { deploySystem } from '../utils/deploy';
+import { deployMainchain } from '../utils/deploy';
 import { BigNumber } from 'ethers';
 
 describe('SlashingVoting', function () {
@@ -9,7 +9,7 @@ describe('SlashingVoting', function () {
     const nonce = ethers.utils.arrayify(0);
     const reason = 0;
 
-    const { slashingVoting } = await deploySystem();
+    const { slashingVoting } = await deployMainchain();
 
     await expect(slashingVoting.voteWithReason(v2.address, reason, nonce)).to.be.revertedWith(
       'ValidatorOwnable: only validator'
@@ -21,7 +21,7 @@ describe('SlashingVoting', function () {
     const nonce = ethers.utils.arrayify(0);
     const reason = 0;
 
-    const { slashingVoting, staking, minimalStake } = await deploySystem();
+    const { slashingVoting, staking, minimalStake } = await deployMainchain();
 
     const staking1 = await ethers.getContractAt('Staking', staking.address, v1);
     const staking2 = await ethers.getContractAt('Staking', staking.address, v2);
@@ -41,7 +41,7 @@ describe('SlashingVoting', function () {
     const nonce = ethers.utils.arrayify(0);
     const reason: number = 0;
 
-    const { slashingVoting, staking, minimalStake } = await deploySystem();
+    const { slashingVoting, staking, minimalStake } = await deployMainchain();
 
     const slashingVoting2 = await ethers.getContractAt('SlashingVoting', slashingVoting.address, v2);
     const slashingVoting3 = await ethers.getContractAt('SlashingVoting', slashingVoting.address, v3);
@@ -69,7 +69,7 @@ describe('SlashingVoting', function () {
     const slashingEpochs = 3;
     const slashingThreshold = 4;
 
-    const { slashingVoting, staking, minimalStake, slashingEpochPeriod } = await deploySystem({
+    const { slashingVoting, staking, minimalStake, slashingEpochPeriod } = await deployMainchain({
       slashingEpochs: BigNumber.from(slashingEpochs),
       slashingBansThresold: BigNumber.from(slashingThreshold),
     });
@@ -121,7 +121,7 @@ describe('SlashingVoting', function () {
     const nonce = ethers.utils.arrayify(0);
     const reason: number = 0;
 
-    const { slashingVoting, staking, minimalStake } = await deploySystem();
+    const { slashingVoting, staking, minimalStake } = await deployMainchain();
     const staking2 = await ethers.getContractAt('Staking', staking.address, v2);
 
     await staking.stake({ value: minimalStake });
@@ -137,7 +137,7 @@ describe('SlashingVoting', function () {
     const [, v2] = await ethers.getSigners();
     const reasonProposal = 'offline';
 
-    const { slashingVoting, staking, minimalStake } = await deploySystem();
+    const { slashingVoting, staking, minimalStake } = await deployMainchain();
     const staking2 = await ethers.getContractAt('Staking', staking.address, v2);
 
     await expect(slashingVoting.createProposal(v2.address, reasonProposal)).to.be.revertedWith(
@@ -158,7 +158,7 @@ describe('SlashingVoting', function () {
     const [, v2, v3] = await ethers.getSigners();
     const reasonProposal = 'offline';
 
-    const { slashingVoting, staking, minimalStake } = await deploySystem();
+    const { slashingVoting, staking, minimalStake } = await deployMainchain();
 
     const slashingVoting2 = await ethers.getContractAt('SlashingVoting', slashingVoting.address, v2);
 
@@ -191,7 +191,7 @@ describe('SlashingVoting', function () {
     const [, v2, v3] = await ethers.getSigners();
     const reasonProposal = 'offline';
 
-    const { slashingVoting, staking, minimalStake } = await deploySystem();
+    const { slashingVoting, staking, minimalStake } = await deployMainchain();
 
     const slashingVoting2 = await ethers.getContractAt('SlashingVoting', slashingVoting.address, v2);
 

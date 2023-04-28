@@ -3,12 +3,14 @@ import { HttpNetworkConfig } from 'hardhat/types';
 import { SignerStorage, Registry } from '../../typechain';
 import { Deployer } from './deployer';
 
-const defaultBridgeDeploymentParameters: BridgeDeploymentParameters = {
+const defaultSidechainDeploymentParameters: SidechainDeploymentParameters = {
   displayLogs: false,
   verify: false,
 };
 
-export async function deployBridgeContracts(options?: BridgeDeploymentOptions): Promise<BridgeDeploymentResult> {
+export async function deploySidechainContracts(
+  options?: SidechainDeploymentOptions
+): Promise<SidechainDeploymentResult> {
   const params = resolveParameters(options);
   const deployer = new Deployer(params.displayLogs);
 
@@ -55,7 +57,7 @@ export async function deployBridgeContracts(options?: BridgeDeploymentOptions): 
 
   deployer.log('Deploying contracts\n');
 
-  const res: BridgeDeployment = {
+  const res: SidechainDeployment = {
     signerStorage: await deployer.deploy(ethers.getContractFactory('SignerStorage'), 'SignerStorage'),
     registry: await deployer.deploy(ethers.getContractFactory('Registry'), 'Registry'),
   };
@@ -80,8 +82,8 @@ export async function deployBridgeContracts(options?: BridgeDeploymentOptions): 
   };
 }
 
-function resolveParameters(options?: BridgeDeploymentOptions): BridgeDeploymentParameters {
-  let parameters = defaultBridgeDeploymentParameters;
+function resolveParameters(options?: SidechainDeploymentOptions): SidechainDeploymentParameters {
+  let parameters = defaultSidechainDeploymentParameters;
 
   if (options === undefined) {
     return parameters;
@@ -98,19 +100,19 @@ function resolveParameters(options?: BridgeDeploymentOptions): BridgeDeploymentP
   return parameters;
 }
 
-export interface BridgeDeploymentResult extends BridgeDeployment, BridgeDeploymentParameters {}
+export interface SidechainDeploymentResult extends SidechainDeployment, SidechainDeploymentParameters {}
 
-export interface BridgeDeployment {
+export interface SidechainDeployment {
   signerStorage: SignerStorage;
   registry: Registry;
 }
 
-export interface BridgeDeploymentParameters {
+export interface SidechainDeploymentParameters {
   displayLogs: boolean;
   verify: boolean;
 }
 
-export interface BridgeDeploymentOptions {
+export interface SidechainDeploymentOptions {
   homeDKGAddress?: string;
   homeNetwork?: string;
   displayLogs?: boolean;
