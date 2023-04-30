@@ -13,3 +13,9 @@ abigen: # Generate go files
 	docker cp $$CONTAINER:/system pkg/system; \
 	docker cp $$CONTAINER:/interfaces pkg/interfaces; \
 	docker rm -v $$CONTAINER
+
+.PHONY: deploy
+deploy:
+	npx hardhat --network mumbai run scripts/deploy-mainchain.ts
+	npx hardhat --network goerli run scripts/deploy-sidechain.ts
+	npx hardhat --network bsc-testnet run scripts/deploy-sidechain.ts

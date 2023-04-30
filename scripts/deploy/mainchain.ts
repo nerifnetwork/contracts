@@ -123,6 +123,8 @@ export async function deployMainchainContracts(
     const targetGeneration = BigNumber.from(params.stakingKeys.length - 1);
     deployer.log('Successfully staked\n');
 
+    // TODO: Ask to run the DKG process
+
     deployer.log(`Waiting for ${targetGeneration.toString()} generation\n`);
     await waitSignerAddressUpdated(res.dkg, targetGeneration);
     deployer.log(`Generation ${targetGeneration.toString()} complete\n`);

@@ -4,67 +4,71 @@ pragma solidity ^0.8.18;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "../interfaces/ISignerAddress.sol";
 
+// Config contains the configuration options
+struct Config {
+    // performanceOverhead is the cost of the performance transaction excluding the client contract call.
+    // Numbers are different depending on the sidechain.
+    // Metrics:
+    //  - Ethereum Goerli execution: 49,022
+    //  - BSC Testnet execution:     46,922
+    //  - Polygon Mumbai execution:  31,476
+    uint256 performanceOverhead;
+    // performancePremiumThreshold is the network premium threshold in percents.
+    // Numbers are different depending on the sidechain.
+    // Metrics:
+    //  - Ethereum Goerli execution: 10%
+    //  - BSC Testnet execution:     10%
+    //  - Polygon Mumbai execution:  10%
+    uint8 performancePremiumThreshold;
+    // registrationOverhead is the cost of the workflow registration.
+    // Numbers are different depending on the sidechain.
+    // Metrics:
+    //  - BSC Testnet cost:     115,520 (registration, sidechain)
+    //  - Ethereum Goerli cost: 122,420 (registration, sidechain)
+    //  - Polygon Mumbai cost:  67,282 (approval, mainchain)
+    uint256 registrationOverhead;
+    // cancellationOverhead is the cost of the workflow cancellation.
+    // Numbers are different depending on the sidechain.
+    // Metrics:
+    //  - BSC Testnet cost:     48,568
+    //  - Ethereum Goerli cost: 50,168
+    //  - Polygon Mumbai cost:
+    uint256 cancellationOverhead;
+    // maxWorkflowsPerAccount is the maximum number of workflows per user.
+    // 0 value means there is no limit.
+    uint16 maxWorkflowsPerAccount;
+}
+
+enum WorkflowStatus {
+    PENDING,
+    ACTIVE,
+    PAUSED,
+    CANCELLED
+}
+
+struct Workflow {
+    uint256 id;
+    address owner;
+    bytes hash;
+    WorkflowStatus status;
+    bool isInternal;
+    uint256 totalSpent;
+}
+
+struct PerformPayload {
+    uint256 id;
+    uint256 gasAmount;
+    address target;
+    bytes data;
+}
+
 // Registry is the internal smart contract needed to secure the network and support important features of Nerif.
 contract Registry is Initializable {
-    enum WorkflowStatus {
-        PENDING,
-        ACTIVE,
-        PAUSED,
-        CANCELLED
-    }
-
-    // Config contains the configuration options
-    struct Config {
-        // performanceOverhead is the cost of the performance transaction excluding the client contract call.
-        // Numbers are different depending on the sidechain.
-        // Metrics:
-        //  - Ethereum Goerli execution: 49,022
-        //  - BSC Testnet execution:     46,922
-        //  - Polygon Mumbai execution:  31,476
-        uint256 performanceOverhead;
-        // performancePremiumThreshold is the network premium threshold in percents.
-        // Numbers are different depending on the sidechain.
-        // Metrics:
-        //  - Ethereum Goerli execution: 10%
-        //  - BSC Testnet execution:     10%
-        //  - Polygon Mumbai execution:  10%
-        uint8 performancePremiumThreshold;
-        // registrationOverhead is the cost of the workflow registration.
-        // Numbers are different depending on the sidechain.
-        // Metrics:
-        //  - BSC Testnet cost:     115,520 (registration, sidechain)
-        //  - Ethereum Goerli cost: 122,420 (registration, sidechain)
-        //  - Polygon Mumbai cost:  67,282 (approval, mainchain)
-        uint256 registrationOverhead;
-        // cancellationOverhead is the cost of the workflow cancellation.
-        // Numbers are different depending on the sidechain.
-        // Metrics:
-        //  - BSC Testnet cost:     48,568
-        //  - Ethereum Goerli cost: 50,168
-        //  - Polygon Mumbai cost:
-        uint256 cancellationOverhead;
-    }
-
-    struct Workflow {
-        uint256 id;
-        address owner;
-        bytes hash;
-        WorkflowStatus status;
-        bool isInternal;
-        uint256 totalSpent;
-    }
-
-    struct PerformPayload {
-        uint256 id;
-        uint256 gasAmount;
-        address target;
-        bytes data;
-    }
-
     uint256 internal constant PERFORM_GAS_CUSHION = 5_000;
 
     Config public config;
     mapping(uint256 => Workflow) internal workflows;
+    mapping(address => uint16) internal workflowsPerAddress;
     mapping(address => uint256) internal balances;
     bool public isMainChain;
     ISignerAddress public networkAddress;
@@ -129,6 +133,8 @@ contract Registry is Initializable {
         _;
     }
 
+    // onlyWorkflowOwnerOrRegistry permits operation for the workflow owner if it is mainnet
+    // or for the network on sidechains.
     modifier onlyWorkflowOwnerOrRegistry(uint256 id) {
         if (isMainChain) {
             Workflow storage workflow = workflows[id];
@@ -222,6 +228,11 @@ contract Registry is Initializable {
         address owner,
         bytes calldata hash
     ) public onlyMsgSenderOrRegistry(owner) {
+        // Check if the given sender has capacity to create one more workflow
+        if (isMainChain && config.maxWorkflowsPerAccount > 0) {
+            require(workflowsPerAddress[msg.sender] < config.maxWorkflowsPerAccount, "Reached max workflows capacity");
+        }
+
         // Use ACTIVE workflow status by default for sidechains
         WorkflowStatus workflowStatus = WorkflowStatus.ACTIVE;
 
@@ -232,6 +243,7 @@ contract Registry is Initializable {
 
         // Store a new workflow
         workflows[id] = Workflow(id, owner, hash, workflowStatus, false, 0);
+        workflowsPerAddress[msg.sender]++;
 
         // Emmit the event
         emit WorkflowRegistered(msg.sender, id, hash);
@@ -310,6 +322,7 @@ contract Registry is Initializable {
 
         // Update status
         workflows[id].status = WorkflowStatus.CANCELLED;
+        workflowsPerAddress[msg.sender]--;
 
         emit WorkflowCancelled(id);
     }

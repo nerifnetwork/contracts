@@ -18,8 +18,7 @@ contract SignerStorage is ISignerAddress, Initializable {
         signer = _signer;
     }
 
-    function setAddress(address _newSigner) public payable {
-        require(signer == msg.sender, "SignerStorage: only signer");
+    function setAddress(address _newSigner) public payable onlySigner {
         signer = _newSigner;
 
         uint256 _value = msg.value;
