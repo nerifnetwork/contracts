@@ -300,9 +300,6 @@ contract Registry is Initializable, IRegistry {
         if (address(this) == target) {
             success = _callWithExactGas(gasAmount, target, data);
         } else {
-            // Check the target contract is not a gateway one
-            require(!_gatewayExists(target), "Registry: gateway cannot be executed");
-
             // Get workflow owner's gateway
             (IGateway existingGateway, ) = getGateway(workflow.owner);
 
@@ -487,16 +484,5 @@ contract Registry is Initializable, IRegistry {
             success := call(gasAmount, target, 0, add(data, 0x20), mload(data), 0, 0)
         }
         return success;
-    }
-
-    // _gatewayExists returns true if a gateway with the given address exists
-    function _gatewayExists(address gateway) private view returns (bool exists) {
-        for (uint256 i = 0; i < gateways.length; i++) {
-            if (address(gateways[i].gateway) == gateway) {
-                exists = true;
-                break;
-            }
-        }
-        return exists;
     }
 }
