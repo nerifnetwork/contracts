@@ -8,6 +8,8 @@ import "../interfaces/IGateway.sol";
 
 // TODO: 1. Charge user for the workflow registration and cancellation in order to perform the internal workflow.
 //          Charged amount to the reward distribution pool.
+// TODO: 2. Reward distribution on mainchain and sidechain logic.
+//          Mainchain: send to the reward distribution pool.
 
 // Registry is the internal smart contract needed to secure the network and support important features of Nerif.
 contract Registry is Initializable, IRegistry {
