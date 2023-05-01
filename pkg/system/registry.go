@@ -34,10 +34,11 @@ type RegistryConfig struct {
 	PerformancePremiumThreshold uint8
 	RegistrationOverhead        *big.Int
 	CancellationOverhead        *big.Int
+	MaxWorkflowsPerAccount      uint16
 }
 
-// RegistryWorkflow is an auto generated low-level Go binding around an user-defined struct.
-type RegistryWorkflow struct {
+// Workflow is an auto generated low-level Go binding around an user-defined struct.
+type Workflow struct {
 	Id         *big.Int
 	Owner      common.Address
 	Hash       []byte
@@ -48,7 +49,7 @@ type RegistryWorkflow struct {
 
 // RegistryMetaData contains all meta data concerning the Registry contract.
 var RegistryMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"workflowOwner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"BalanceFunded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"workflowOwner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"BalanceWithdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"gasUsed\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"success\",\"type\":\"bool\"}],\"name\":\"Performance\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"WorkflowActivated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"WorkflowCancelled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"WorkflowPaused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"hash\",\"type\":\"bytes\"}],\"name\":\"WorkflowRegistered\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"WorkflowResumed\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"activateWorkflow\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"cancelWorkflow\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"config\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"performanceOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint8\",\"name\":\"performancePremiumThreshold\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"registrationOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"cancellationOverhead\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"fundBalance\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"getBalance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"balance\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"getWorkflow\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"hash\",\"type\":\"bytes\"},{\"internalType\":\"enumRegistry.WorkflowStatus\",\"name\":\"status\",\"type\":\"uint8\"},{\"internalType\":\"bool\",\"name\":\"isInternal\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"totalSpent\",\"type\":\"uint256\"}],\"internalType\":\"structRegistry.Workflow\",\"name\":\"workflow\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_networkAddress\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"_isMainChain\",\"type\":\"bool\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"isMainChain\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"networkAddress\",\"outputs\":[{\"internalType\":\"contractISignerAddress\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"networkRewards\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"pauseWorkflow\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"workflowId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"gasAmount\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"internalType\":\"address\",\"name\":\"target\",\"type\":\"address\"}],\"name\":\"perform\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"hash\",\"type\":\"bytes\"}],\"name\":\"registerWorkflow\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"resumeWorkflow\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"performanceOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint8\",\"name\":\"performancePremiumThreshold\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"registrationOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"cancellationOverhead\",\"type\":\"uint256\"}],\"internalType\":\"structRegistry.Config\",\"name\":\"_config\",\"type\":\"tuple\"}],\"name\":\"setConfig\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"withdrawBalance\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"workflowOwner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"BalanceFunded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"workflowOwner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"BalanceWithdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"workflowOwner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"gateway\",\"type\":\"address\"}],\"name\":\"GatewaySet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"gasUsed\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"success\",\"type\":\"bool\"}],\"name\":\"Performance\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"WorkflowActivated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"WorkflowCancelled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"WorkflowPaused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"hash\",\"type\":\"bytes\"}],\"name\":\"WorkflowRegistered\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"WorkflowResumed\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"activateWorkflow\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"cancelWorkflow\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"config\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"performanceOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint8\",\"name\":\"performancePremiumThreshold\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"registrationOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"cancellationOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint16\",\"name\":\"maxWorkflowsPerAccount\",\"type\":\"uint16\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"fundBalance\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"getBalance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"balance\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"getGateway\",\"outputs\":[{\"internalType\":\"contractIGateway\",\"name\":\"gateway\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"getWorkflow\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"hash\",\"type\":\"bytes\"},{\"internalType\":\"enumWorkflowStatus\",\"name\":\"status\",\"type\":\"uint8\"},{\"internalType\":\"bool\",\"name\":\"isInternal\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"totalSpent\",\"type\":\"uint256\"}],\"internalType\":\"structWorkflow\",\"name\":\"workflow\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_networkAddress\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"_isMainChain\",\"type\":\"bool\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"isMainChain\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"networkAddress\",\"outputs\":[{\"internalType\":\"contractISignerAddress\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"networkRewards\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"pauseWorkflow\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"workflowId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"gasAmount\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"internalType\":\"address\",\"name\":\"target\",\"type\":\"address\"}],\"name\":\"perform\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"hash\",\"type\":\"bytes\"}],\"name\":\"registerWorkflow\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"resumeWorkflow\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"performanceOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint8\",\"name\":\"performancePremiumThreshold\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"registrationOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"cancellationOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint16\",\"name\":\"maxWorkflowsPerAccount\",\"type\":\"uint16\"}],\"internalType\":\"structRegistry.Config\",\"name\":\"_config\",\"type\":\"tuple\"}],\"name\":\"setConfig\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"gateway\",\"type\":\"address\"}],\"name\":\"setGateway\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"withdrawBalance\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // RegistryABI is the input ABI used to generate the binding from.
@@ -199,12 +200,13 @@ func (_Registry *RegistryTransactorRaw) Transact(opts *bind.TransactOpts, method
 
 // Config is a free data retrieval call binding the contract method 0x79502c55.
 //
-// Solidity: function config() view returns(uint256 performanceOverhead, uint8 performancePremiumThreshold, uint256 registrationOverhead, uint256 cancellationOverhead)
+// Solidity: function config() view returns(uint256 performanceOverhead, uint8 performancePremiumThreshold, uint256 registrationOverhead, uint256 cancellationOverhead, uint16 maxWorkflowsPerAccount)
 func (_Registry *RegistryCaller) Config(opts *bind.CallOpts) (struct {
 	PerformanceOverhead         *big.Int
 	PerformancePremiumThreshold uint8
 	RegistrationOverhead        *big.Int
 	CancellationOverhead        *big.Int
+	MaxWorkflowsPerAccount      uint16
 }, error) {
 	var out []interface{}
 	err := _Registry.contract.Call(opts, &out, "config")
@@ -214,6 +216,7 @@ func (_Registry *RegistryCaller) Config(opts *bind.CallOpts) (struct {
 		PerformancePremiumThreshold uint8
 		RegistrationOverhead        *big.Int
 		CancellationOverhead        *big.Int
+		MaxWorkflowsPerAccount      uint16
 	})
 	if err != nil {
 		return *outstruct, err
@@ -223,6 +226,7 @@ func (_Registry *RegistryCaller) Config(opts *bind.CallOpts) (struct {
 	outstruct.PerformancePremiumThreshold = *abi.ConvertType(out[1], new(uint8)).(*uint8)
 	outstruct.RegistrationOverhead = *abi.ConvertType(out[2], new(*big.Int)).(**big.Int)
 	outstruct.CancellationOverhead = *abi.ConvertType(out[3], new(*big.Int)).(**big.Int)
+	outstruct.MaxWorkflowsPerAccount = *abi.ConvertType(out[4], new(uint16)).(*uint16)
 
 	return *outstruct, err
 
@@ -230,24 +234,26 @@ func (_Registry *RegistryCaller) Config(opts *bind.CallOpts) (struct {
 
 // Config is a free data retrieval call binding the contract method 0x79502c55.
 //
-// Solidity: function config() view returns(uint256 performanceOverhead, uint8 performancePremiumThreshold, uint256 registrationOverhead, uint256 cancellationOverhead)
+// Solidity: function config() view returns(uint256 performanceOverhead, uint8 performancePremiumThreshold, uint256 registrationOverhead, uint256 cancellationOverhead, uint16 maxWorkflowsPerAccount)
 func (_Registry *RegistrySession) Config() (struct {
 	PerformanceOverhead         *big.Int
 	PerformancePremiumThreshold uint8
 	RegistrationOverhead        *big.Int
 	CancellationOverhead        *big.Int
+	MaxWorkflowsPerAccount      uint16
 }, error) {
 	return _Registry.Contract.Config(&_Registry.CallOpts)
 }
 
 // Config is a free data retrieval call binding the contract method 0x79502c55.
 //
-// Solidity: function config() view returns(uint256 performanceOverhead, uint8 performancePremiumThreshold, uint256 registrationOverhead, uint256 cancellationOverhead)
+// Solidity: function config() view returns(uint256 performanceOverhead, uint8 performancePremiumThreshold, uint256 registrationOverhead, uint256 cancellationOverhead, uint16 maxWorkflowsPerAccount)
 func (_Registry *RegistryCallerSession) Config() (struct {
 	PerformanceOverhead         *big.Int
 	PerformancePremiumThreshold uint8
 	RegistrationOverhead        *big.Int
 	CancellationOverhead        *big.Int
+	MaxWorkflowsPerAccount      uint16
 }, error) {
 	return _Registry.Contract.Config(&_Registry.CallOpts)
 }
@@ -283,18 +289,63 @@ func (_Registry *RegistryCallerSession) GetBalance(addr common.Address) (*big.In
 	return _Registry.Contract.GetBalance(&_Registry.CallOpts, addr)
 }
 
+// GetGateway is a free data retrieval call binding the contract method 0xbda009fe.
+//
+// Solidity: function getGateway(address owner) view returns(address gateway, uint256 index)
+func (_Registry *RegistryCaller) GetGateway(opts *bind.CallOpts, owner common.Address) (struct {
+	Gateway common.Address
+	Index   *big.Int
+}, error) {
+	var out []interface{}
+	err := _Registry.contract.Call(opts, &out, "getGateway", owner)
+
+	outstruct := new(struct {
+		Gateway common.Address
+		Index   *big.Int
+	})
+	if err != nil {
+		return *outstruct, err
+	}
+
+	outstruct.Gateway = *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+	outstruct.Index = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
+
+	return *outstruct, err
+
+}
+
+// GetGateway is a free data retrieval call binding the contract method 0xbda009fe.
+//
+// Solidity: function getGateway(address owner) view returns(address gateway, uint256 index)
+func (_Registry *RegistrySession) GetGateway(owner common.Address) (struct {
+	Gateway common.Address
+	Index   *big.Int
+}, error) {
+	return _Registry.Contract.GetGateway(&_Registry.CallOpts, owner)
+}
+
+// GetGateway is a free data retrieval call binding the contract method 0xbda009fe.
+//
+// Solidity: function getGateway(address owner) view returns(address gateway, uint256 index)
+func (_Registry *RegistryCallerSession) GetGateway(owner common.Address) (struct {
+	Gateway common.Address
+	Index   *big.Int
+}, error) {
+	return _Registry.Contract.GetGateway(&_Registry.CallOpts, owner)
+}
+
 // GetWorkflow is a free data retrieval call binding the contract method 0xeec7b03c.
 //
 // Solidity: function getWorkflow(uint256 id) view returns((uint256,address,bytes,uint8,bool,uint256) workflow)
-func (_Registry *RegistryCaller) GetWorkflow(opts *bind.CallOpts, id *big.Int) (RegistryWorkflow, error) {
+func (_Registry *RegistryCaller) GetWorkflow(opts *bind.CallOpts, id *big.Int) (Workflow, error) {
 	var out []interface{}
 	err := _Registry.contract.Call(opts, &out, "getWorkflow", id)
 
 	if err != nil {
-		return *new(RegistryWorkflow), err
+		return *new(Workflow), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(RegistryWorkflow)).(*RegistryWorkflow)
+	out0 := *abi.ConvertType(out[0], new(Workflow)).(*Workflow)
 
 	return out0, err
 
@@ -303,14 +354,14 @@ func (_Registry *RegistryCaller) GetWorkflow(opts *bind.CallOpts, id *big.Int) (
 // GetWorkflow is a free data retrieval call binding the contract method 0xeec7b03c.
 //
 // Solidity: function getWorkflow(uint256 id) view returns((uint256,address,bytes,uint8,bool,uint256) workflow)
-func (_Registry *RegistrySession) GetWorkflow(id *big.Int) (RegistryWorkflow, error) {
+func (_Registry *RegistrySession) GetWorkflow(id *big.Int) (Workflow, error) {
 	return _Registry.Contract.GetWorkflow(&_Registry.CallOpts, id)
 }
 
 // GetWorkflow is a free data retrieval call binding the contract method 0xeec7b03c.
 //
 // Solidity: function getWorkflow(uint256 id) view returns((uint256,address,bytes,uint8,bool,uint256) workflow)
-func (_Registry *RegistryCallerSession) GetWorkflow(id *big.Int) (RegistryWorkflow, error) {
+func (_Registry *RegistryCallerSession) GetWorkflow(id *big.Int) (Workflow, error) {
 	return _Registry.Contract.GetWorkflow(&_Registry.CallOpts, id)
 }
 
@@ -575,25 +626,46 @@ func (_Registry *RegistryTransactorSession) ResumeWorkflow(id *big.Int) (*types.
 	return _Registry.Contract.ResumeWorkflow(&_Registry.TransactOpts, id)
 }
 
-// SetConfig is a paid mutator transaction binding the contract method 0xb5d3032d.
+// SetConfig is a paid mutator transaction binding the contract method 0x2ad5d340.
 //
-// Solidity: function setConfig((uint256,uint8,uint256,uint256) _config) returns()
+// Solidity: function setConfig((uint256,uint8,uint256,uint256,uint16) _config) returns()
 func (_Registry *RegistryTransactor) SetConfig(opts *bind.TransactOpts, _config RegistryConfig) (*types.Transaction, error) {
 	return _Registry.contract.Transact(opts, "setConfig", _config)
 }
 
-// SetConfig is a paid mutator transaction binding the contract method 0xb5d3032d.
+// SetConfig is a paid mutator transaction binding the contract method 0x2ad5d340.
 //
-// Solidity: function setConfig((uint256,uint8,uint256,uint256) _config) returns()
+// Solidity: function setConfig((uint256,uint8,uint256,uint256,uint16) _config) returns()
 func (_Registry *RegistrySession) SetConfig(_config RegistryConfig) (*types.Transaction, error) {
 	return _Registry.Contract.SetConfig(&_Registry.TransactOpts, _config)
 }
 
-// SetConfig is a paid mutator transaction binding the contract method 0xb5d3032d.
+// SetConfig is a paid mutator transaction binding the contract method 0x2ad5d340.
 //
-// Solidity: function setConfig((uint256,uint8,uint256,uint256) _config) returns()
+// Solidity: function setConfig((uint256,uint8,uint256,uint256,uint16) _config) returns()
 func (_Registry *RegistryTransactorSession) SetConfig(_config RegistryConfig) (*types.Transaction, error) {
 	return _Registry.Contract.SetConfig(&_Registry.TransactOpts, _config)
+}
+
+// SetGateway is a paid mutator transaction binding the contract method 0x774c208a.
+//
+// Solidity: function setGateway(address owner, address gateway) returns()
+func (_Registry *RegistryTransactor) SetGateway(opts *bind.TransactOpts, owner common.Address, gateway common.Address) (*types.Transaction, error) {
+	return _Registry.contract.Transact(opts, "setGateway", owner, gateway)
+}
+
+// SetGateway is a paid mutator transaction binding the contract method 0x774c208a.
+//
+// Solidity: function setGateway(address owner, address gateway) returns()
+func (_Registry *RegistrySession) SetGateway(owner common.Address, gateway common.Address) (*types.Transaction, error) {
+	return _Registry.Contract.SetGateway(&_Registry.TransactOpts, owner, gateway)
+}
+
+// SetGateway is a paid mutator transaction binding the contract method 0x774c208a.
+//
+// Solidity: function setGateway(address owner, address gateway) returns()
+func (_Registry *RegistryTransactorSession) SetGateway(owner common.Address, gateway common.Address) (*types.Transaction, error) {
+	return _Registry.Contract.SetGateway(&_Registry.TransactOpts, owner, gateway)
 }
 
 // WithdrawBalance is a paid mutator transaction binding the contract method 0x756af45f.
@@ -881,6 +953,141 @@ func (_Registry *RegistryFilterer) WatchBalanceWithdrawn(opts *bind.WatchOpts, s
 func (_Registry *RegistryFilterer) ParseBalanceWithdrawn(log types.Log) (*RegistryBalanceWithdrawn, error) {
 	event := new(RegistryBalanceWithdrawn)
 	if err := _Registry.contract.UnpackLog(event, "BalanceWithdrawn", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// RegistryGatewaySetIterator is returned from FilterGatewaySet and is used to iterate over the raw logs and unpacked data for GatewaySet events raised by the Registry contract.
+type RegistryGatewaySetIterator struct {
+	Event *RegistryGatewaySet // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *RegistryGatewaySetIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(RegistryGatewaySet)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(RegistryGatewaySet)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *RegistryGatewaySetIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *RegistryGatewaySetIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// RegistryGatewaySet represents a GatewaySet event raised by the Registry contract.
+type RegistryGatewaySet struct {
+	WorkflowOwner common.Address
+	Gateway       common.Address
+	Raw           types.Log // Blockchain specific contextual infos
+}
+
+// FilterGatewaySet is a free log retrieval operation binding the contract event 0x812ca95fe4492a9e2d1f2723c2c40c03a60a27b059581ae20ac4e4d73bfba354.
+//
+// Solidity: event GatewaySet(address workflowOwner, address gateway)
+func (_Registry *RegistryFilterer) FilterGatewaySet(opts *bind.FilterOpts) (*RegistryGatewaySetIterator, error) {
+
+	logs, sub, err := _Registry.contract.FilterLogs(opts, "GatewaySet")
+	if err != nil {
+		return nil, err
+	}
+	return &RegistryGatewaySetIterator{contract: _Registry.contract, event: "GatewaySet", logs: logs, sub: sub}, nil
+}
+
+// WatchGatewaySet is a free log subscription operation binding the contract event 0x812ca95fe4492a9e2d1f2723c2c40c03a60a27b059581ae20ac4e4d73bfba354.
+//
+// Solidity: event GatewaySet(address workflowOwner, address gateway)
+func (_Registry *RegistryFilterer) WatchGatewaySet(opts *bind.WatchOpts, sink chan<- *RegistryGatewaySet) (event.Subscription, error) {
+
+	logs, sub, err := _Registry.contract.WatchLogs(opts, "GatewaySet")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(RegistryGatewaySet)
+				if err := _Registry.contract.UnpackLog(event, "GatewaySet", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseGatewaySet is a log parse operation binding the contract event 0x812ca95fe4492a9e2d1f2723c2c40c03a60a27b059581ae20ac4e4d73bfba354.
+//
+// Solidity: event GatewaySet(address workflowOwner, address gateway)
+func (_Registry *RegistryFilterer) ParseGatewaySet(log types.Log) (*RegistryGatewaySet, error) {
+	event := new(RegistryGatewaySet)
+	if err := _Registry.contract.UnpackLog(event, "GatewaySet", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
