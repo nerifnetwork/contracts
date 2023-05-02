@@ -32,7 +32,7 @@ describe('Registry', function () {
     const Registry = await ethers.getContractFactory('Registry');
     const registry = await Registry.deploy();
 
-    await registry.initialize(network.address, mockNetworkAddress.address, mainchain);
+    await registry.initialize(mockNetworkAddress.address, mainchain);
 
     await expect(
       registry.setConfig({
