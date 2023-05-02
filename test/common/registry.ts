@@ -40,6 +40,7 @@ describe('Registry', function () {
         performancePremiumThreshold: 0,
         registrationOverhead: 0,
         cancellationOverhead: 0,
+        maxWorkflowsPerAccount: 0,
       })
     );
 
@@ -143,6 +144,14 @@ describe('Registry', function () {
 
       const newNodeWallet = await createRandomWallet();
       const nodeAddress = await newNodeWallet.getAddress();
+      const newNodeProvider = newNodeWallet.connect(ethers.provider);
+
+      // Register gateway
+      const Gateway = await ethers.getContractFactory('Gateway');
+      const gateway = await Gateway.connect(newNodeProvider).deploy();
+      await expect(registry.connect(newNodeProvider).setGateway(nodeAddress, gateway.address))
+        .to.emit(registry, 'GatewaySet')
+        .withArgs(nodeAddress, gateway.address);
 
       // Register workflow
       await expect(registry.connect(newNodeWallet.connect(ethers.provider)).registerWorkflow(123, nodeAddress, []))
@@ -160,6 +169,14 @@ describe('Registry', function () {
 
       const newNodeWallet = await createRandomWallet();
       const nodeAddress = await newNodeWallet.getAddress();
+      const newNodeProvider = newNodeWallet.connect(ethers.provider);
+
+      // Register gateway
+      const Gateway = await ethers.getContractFactory('Gateway');
+      const gateway = await Gateway.connect(newNodeProvider).deploy();
+      await expect(registry.connect(newNodeProvider).setGateway(nodeAddress, gateway.address))
+        .to.emit(registry, 'GatewaySet')
+        .withArgs(nodeAddress, gateway.address);
 
       // Create a contract ABI instance
       const cc = new ethers.Contract(registry.address, registryContractABI.abi);
@@ -171,8 +188,6 @@ describe('Registry', function () {
         ethers.utils.solidityPack(['address'], [nodeAddress]),
         ethers.utils.solidityPack(['bytes'], ['0x00']),
       ]);
-
-      console.log(await registry.networkAddress());
 
       await expect(
         registry
@@ -196,6 +211,14 @@ describe('Registry', function () {
 
       const newNodeWallet = await createRandomWallet();
       const nodeAddress = await newNodeWallet.getAddress();
+      const newNodeProvider = newNodeWallet.connect(ethers.provider);
+
+      // Register gateway
+      const Gateway = await ethers.getContractFactory('Gateway');
+      const gateway = await Gateway.connect(newNodeProvider).deploy();
+      await expect(registry.connect(newNodeProvider).setGateway(nodeAddress, gateway.address))
+        .to.emit(registry, 'GatewaySet')
+        .withArgs(nodeAddress, gateway.address);
 
       // Register workflow
       await expect(
@@ -222,6 +245,14 @@ describe('Registry', function () {
 
       const newNodeWallet = await createRandomWallet();
       const nodeAddress = await newNodeWallet.getAddress();
+      const newNodeProvider = newNodeWallet.connect(ethers.provider);
+
+      // Register gateway
+      const Gateway = await ethers.getContractFactory('Gateway');
+      const gateway = await Gateway.connect(newNodeProvider).deploy();
+      await expect(registry.connect(newNodeProvider).setGateway(nodeAddress, gateway.address))
+        .to.emit(registry, 'GatewaySet')
+        .withArgs(nodeAddress, gateway.address);
 
       // Register workflow
       await expect(
@@ -252,6 +283,14 @@ describe('Registry', function () {
 
       const newNodeWallet = await createRandomWallet();
       const nodeAddress = await newNodeWallet.getAddress();
+      const newNodeProvider = newNodeWallet.connect(ethers.provider);
+
+      // Register gateway
+      const Gateway = await ethers.getContractFactory('Gateway');
+      const gateway = await Gateway.connect(newNodeProvider).deploy();
+      await expect(registry.connect(newNodeProvider).setGateway(nodeAddress, gateway.address))
+        .to.emit(registry, 'GatewaySet')
+        .withArgs(nodeAddress, gateway.address);
 
       // Register workflow
       await expect(
@@ -272,6 +311,14 @@ describe('Registry', function () {
 
       const newNodeWallet = await createRandomWallet();
       const nodeAddress = await newNodeWallet.getAddress();
+      const newNodeProvider = newNodeWallet.connect(ethers.provider);
+
+      // Register gateway
+      const Gateway = await ethers.getContractFactory('Gateway');
+      const gateway = await Gateway.connect(newNodeProvider).deploy();
+      await expect(registry.connect(newNodeProvider).setGateway(nodeAddress, gateway.address))
+        .to.emit(registry, 'GatewaySet')
+        .withArgs(nodeAddress, gateway.address);
 
       // Create a contract ABI instance
       const cc = new ethers.Contract(registry.address, registryContractABI.abi);
@@ -326,6 +373,14 @@ describe('Registry', function () {
         .to.emit(registry, 'BalanceFunded')
         .withArgs(workflowOwnerAddress, anyValue);
 
+      // Register gateway
+      const Gateway = await ethers.getContractFactory('Gateway');
+      const gateway = await Gateway.connect(workflowOwner).deploy();
+      await gateway.initialize(registry.address);
+      await expect(registry.connect(workflowOwner).setGateway(workflowOwnerAddress, gateway.address))
+        .to.emit(registry, 'GatewaySet')
+        .withArgs(workflowOwnerAddress, gateway.address);
+
       // Register workflow
       await expect(registry.connect(workflowOwner).registerWorkflow(workflowID, workflowOwnerAddress, []))
         .to.emit(registry, 'WorkflowRegistered')
@@ -338,7 +393,7 @@ describe('Registry', function () {
       // Create a contract ABI instance
       const cc = new ethers.Contract(testCustomerContract.address, tccABI.abi);
 
-      const customerPerformData = ethers.utils.solidityPack(['uint256', 'uint', 'uint256'], [0, 0, 100000]);
+      const customerPerformData = ethers.utils.solidityPack(['uint256', 'uint', 'uint256'], [7, 0, 100000]);
 
       // Encode the function call with the selector
       const functionSignature = cc.interface.getSighash('perform');
@@ -351,6 +406,7 @@ describe('Registry', function () {
           gasLimit: 500_000,
         })
       ).to.emit(testCustomerContract, 'Logger');
+      await expect(await testCustomerContract.counter(7)).to.equal(1);
 
       const tx = await registry
         .connect(network)
@@ -359,6 +415,7 @@ describe('Registry', function () {
       // console.log(BigNumber.from("12000000096").div(receipt.effectiveGasPrice))
 
       await expect(tx).to.emit(registry, 'Performance').withArgs(123, anyValue, true);
+      await expect(await testCustomerContract.counter(7)).to.equal(2);
     });
   });
 });

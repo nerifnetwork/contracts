@@ -1,6 +1,6 @@
 import { ethers, config } from 'hardhat';
 import { HttpNetworkConfig } from 'hardhat/types';
-import { SignerStorage, Registry } from '../../typechain';
+import { SignerStorage } from '../../typechain';
 import { Deployer } from './deployer';
 
 const defaultSidechainDeploymentParameters: SidechainDeploymentParameters = {
@@ -59,7 +59,6 @@ export async function deploySidechainContracts(
 
   const res: SidechainDeployment = {
     signerStorage: await deployer.deploy(ethers.getContractFactory('SignerStorage'), 'SignerStorage'),
-    registry: await deployer.deploy(ethers.getContractFactory('Registry'), 'Registry'),
   };
 
   deployer.log('Successfully deployed contracts\n');
@@ -67,8 +66,6 @@ export async function deploySidechainContracts(
   deployer.log('Initializing contracts\n');
 
   await deployer.sendTransaction(res.signerStorage.initialize(initialSignerAddress), 'Initializing SignerStorage');
-
-  await deployer.sendTransaction(res.registry.initialize(res.signerStorage.address, false), 'Initializing Registry');
 
   deployer.log('Successfully initialized contracts\n');
 
@@ -104,7 +101,6 @@ export interface SidechainDeploymentResult extends SidechainDeployment, Sidechai
 
 export interface SidechainDeployment {
   signerStorage: SignerStorage;
-  registry: Registry;
 }
 
 export interface SidechainDeploymentParameters {
