@@ -224,6 +224,7 @@ contract Registry is Initializable, IRegistry {
 
         // Transfer rewards
         addr.transfer(networkRewards);
+        networkRewards = 0;
 
         // Emit an event to log the withdrawal transaction
         emit RewardsWithdrawn(addr, networkRewards);
