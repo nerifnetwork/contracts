@@ -106,7 +106,6 @@ export async function deployMainchainContracts(
 
   deployer.log('Successfully initialized contracts\n');
 
-  let signerAddress: string = '';
   if (params.stakingKeys.length > 0) {
     deployer.log('Staking for initial validators\n');
 
@@ -123,8 +122,8 @@ export async function deployMainchainContracts(
     deployer.log(`Run DKG for the given address: ${res.dkg.address}\n`);
 
     deployer.log(`Waiting for ${targetGeneration.toString()} generation\n`);
-    signerAddress = await waitSignerAddressUpdated(res.dkg, targetGeneration);
-    deployer.log(`Generation ${targetGeneration.toString()} with ${signerAddress} address complete\n`);
+    res.signerAddress = await waitSignerAddressUpdated(res.dkg, targetGeneration);
+    deployer.log(`Generation ${targetGeneration.toString()} with ${res.signerAddress} address complete\n`);
   }
 
   if (params.verify) {
@@ -134,7 +133,6 @@ export async function deployMainchainContracts(
   return {
     ...res,
     ...params,
-    signerAddress: signerAddress,
   };
 }
 
