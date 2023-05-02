@@ -1,5 +1,5 @@
 import { ethers, network } from 'hardhat';
-import { deployRegistryContracts } from './deploy/registry';
+import { deployGatewayContracts } from './deploy/gateway';
 import {
     readChainContractsConfig,
     readContractsConfig,
@@ -16,11 +16,10 @@ async function main() {
     const homeContractsConfig = await readContractsConfig();
     const contractsConfig = await readChainContractsConfig(chainId);
     const isMainchain = contractsConfig.networkName === undefined || homeContractsConfig.networkName === contractsConfig.networkName;
-    const signerStorage = isMainchain ? homeContractsConfig.dkg : contractsConfig.signerStorage;
+    const registry = isMainchain ? homeContractsConfig.registry : contractsConfig.registry;
 
-    const res = await deployRegistryContracts({
-        signerStorage: signerStorage,
-        isMainchain: isMainchain,
+    const res = await deployGatewayContracts({
+        registry: registry,
         displayLogs: true,
         verify: verify,
     });

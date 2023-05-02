@@ -74,6 +74,7 @@ contract Registry is Initializable, IRegistry {
 
     event BalanceFunded(address workflowOwner, uint256 amount);
     event BalanceWithdrawn(address workflowOwner, uint256 amount);
+    event RewardsWithdrawn(address addr, uint256 amount);
     event GatewaySet(address workflowOwner, address gateway);
     event WorkflowRegistered(address owner, uint256 id, bytes hash);
     event WorkflowActivated(uint256 id);
@@ -211,6 +212,21 @@ contract Registry is Initializable, IRegistry {
 
         // Emit an event to log the withdrawal transaction
         emit BalanceWithdrawn(sender, balance);
+    }
+
+    // withdrawRewards sends network rewards to the rewards withdrawal address
+    function withdrawRewards() external {
+        require(networkRewards > 0, "Registry: nothing to withdraw");
+        require(address(networkAddress) != address(0x0), "Registry: signer storage address is not specified");
+
+        address payable addr = payable(networkAddress.getSignerAddress());
+        require(addr != address(0x0), "Registry: withdrawal address is not specified");
+
+        // Transfer rewards
+        addr.transfer(networkRewards);
+
+        // Emit an event to log the withdrawal transaction
+        emit RewardsWithdrawn(addr, networkRewards);
     }
 
     // setGateway sets gateway for the given owner address.
