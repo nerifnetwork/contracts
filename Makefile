@@ -15,7 +15,13 @@ abigen: # Generate go files
 	docker rm -v $$CONTAINER
 
 .PHONY: deploy
-deploy:
+deploy-system:
 	npx hardhat --network mumbai run scripts/deploy-mainchain.ts
 	npx hardhat --network goerli run scripts/deploy-sidechain.ts
 	npx hardhat --network bsc-testnet run scripts/deploy-sidechain.ts
+
+.PHONY: deploy
+deploy-registries:
+	npx hardhat --network mumbai run scripts/deploy-registry.ts
+	npx hardhat --network goerli run scripts/deploy-registry.ts
+	npx hardhat --network bsc-testnet run scripts/deploy-registry.ts
