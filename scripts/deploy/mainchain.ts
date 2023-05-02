@@ -10,7 +10,6 @@ import {
   ContractRegistry,
   EventRegistry,
   ValidatorRewardDistributionPool,
-  Registry,
 } from '../../typechain';
 
 const defaultSystemDeploymentParameters: MainchainDeploymentParameters = {
@@ -47,7 +46,6 @@ export async function deployMainchainContracts(
       ethers.getContractFactory('ValidatorRewardDistributionPool'),
       'ValidatorRewardDistributionPool'
     ),
-    registry: await deployer.deploy(ethers.getContractFactory('Registry'), 'Registry'),
   };
 
   deployer.log('Successfully deployed contracts\n');
@@ -65,8 +63,6 @@ export async function deployMainchainContracts(
     res.dkg.initialize(res.contractRegistry.address, params.dkgDeadlinePeriod),
     'Initializing DKG'
   );
-
-  await deployer.sendTransaction(res.registry.initialize(res.dkg.address, true), 'Initializing Registry');
 
   await deployer.sendTransaction(res.contractRegistry.initialize(res.dkg.address), 'Initializing ContractRegistry');
 
@@ -110,6 +106,7 @@ export async function deployMainchainContracts(
 
   deployer.log('Successfully initialized contracts\n');
 
+  let signerAddress: string = '';
   if (params.stakingKeys.length > 0) {
     deployer.log('Staking for initial validators\n');
 
@@ -123,11 +120,11 @@ export async function deployMainchainContracts(
     const targetGeneration = BigNumber.from(params.stakingKeys.length - 1);
     deployer.log('Successfully staked\n');
 
-    // TODO: Ask to run the DKG process
+    deployer.log(`Run DKG for the given address: ${res.dkg.address}\n`);
 
     deployer.log(`Waiting for ${targetGeneration.toString()} generation\n`);
-    await waitSignerAddressUpdated(res.dkg, targetGeneration);
-    deployer.log(`Generation ${targetGeneration.toString()} complete\n`);
+    signerAddress = await waitSignerAddressUpdated(res.dkg, targetGeneration);
+    deployer.log(`Generation ${targetGeneration.toString()} with ${signerAddress} address complete\n`);
   }
 
   if (params.verify) {
@@ -137,6 +134,7 @@ export async function deployMainchainContracts(
   return {
     ...res,
     ...params,
+    signerAddress: signerAddress,
   };
 }
 
@@ -216,7 +214,7 @@ export interface MainchainDeployment {
   contractRegistry: ContractRegistry;
   eventRegistry: EventRegistry;
   validatorRewardDistributionPool: ValidatorRewardDistributionPool;
-  registry: Registry;
+  signerAddress?: string;
 }
 
 export interface MainchainDeploymentParameters {

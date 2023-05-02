@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import { utils } from 'ethers';
 import { ethers } from 'hardhat';
 import { deploySidechain } from '../utils/deploy';
 
@@ -12,7 +11,7 @@ describe('SignerStorage', function () {
     const balanceSignerBefore = await ethers.provider.getBalance(signer.address);
     const balanceNewSignerBefore = await ethers.provider.getBalance(newSigner.address);
 
-    const estimatedTxFee = utils.parseEther('0.04');
+    const estimatedTxFee = ethers.utils.parseEther('0.04');
 
     const value = balanceSignerBefore.sub(estimatedTxFee);
 

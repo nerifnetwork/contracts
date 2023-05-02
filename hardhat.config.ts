@@ -23,16 +23,6 @@ const accounts = process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KE
 const config: HardhatUserConfig = {
   solidity: "0.8.18",
   networks: {
-    localhost: {
-      chainId: 1337,
-      accounts,
-      gasPrice: 10000000000,
-    },
-    sepolia: {
-      chainId: 11155111,
-      url: 'https://rpc.sepolia.org',
-      accounts,
-    },
     goerli: {
       chainId: 5,
       url: `https://goerli.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
@@ -48,21 +38,6 @@ const config: HardhatUserConfig = {
       url: 'https://rpc-mumbai.maticvigil.com',
       accounts,
     },
-    fuji: {
-      chainId: 43113,
-      url: 'https://api.avax-test.network/ext/bc/C/rpc',
-      accounts,
-    },
-    'q-testnet': {
-      chainId: 35443,
-      url: 'https://rpc.qtestnet.org',
-      accounts,
-    },
-    'fantom-testnet': {
-      chainId: 4002,
-      url: 'https://rpc.testnet.fantom.network',
-      accounts,
-    },
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
@@ -71,22 +46,6 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,
     customChains: [
-      {
-        network: "localhost",
-        chainId: 1337,
-        urls: {
-          apiURL: "http://localhost:4000/api",
-          browserURL: "http://localhost:4000"
-        }
-      },
-      {
-        network: "sepolia",
-        chainId: 11155111,
-        urls: {
-          apiURL: "https://sepolia.etherscan.io/api",
-          browserURL: "https://sepolia.etherscan.io"
-        }
-      },
       {
         network: "goerli",
         chainId: 5,
@@ -109,30 +68,6 @@ const config: HardhatUserConfig = {
         urls: {
           apiURL: "https://mumbai.polygonscan.com/api",
           browserURL: "https://mumbai.polygonscan.com"
-        }
-      },
-      {
-        network: 'fuji',
-        chainId: 43113,
-        urls: {
-          apiURL: "https://testnet.snowtrace.io/api",
-          browserURL: "https://testnet.snowtrace.io"
-        }
-      },
-      {
-        network: "q-testnet",
-        chainId: 35443,
-        urls: {
-          apiURL: "https://explorer.qtestnet.org/api",
-          browserURL: "https://explorer.qtestnet.org"
-        }
-      },
-      {
-        network: "fantom-testnet",
-        chainId: 4002,
-        urls: {
-          apiURL: "https://testnet.ftmscan.com/api",
-          browserURL: "https://testnet.ftmscan.com"
         }
       },
     ]

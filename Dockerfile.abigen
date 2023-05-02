@@ -9,6 +9,7 @@ RUN mkdir interfaces
 
 # Common contracts
 RUN abigen --abi artifacts/abi/common/Registry.sol/Registry.json --pkg system --type Registry --out system/registry.go
+RUN abigen --abi artifacts/abi/common/Gateway.sol/Gateway.json --pkg system --type Gateway --out system/gateway.go
 
 # Sidechain contracts
 RUN abigen --abi artifacts/abi/sidechain/SignerStorage.sol/SignerStorage.json --pkg system --type SignerStorage --out system/signer-storage.go
@@ -22,3 +23,4 @@ RUN abigen --abi artifacts/abi/mainchain/SlashingVoting.sol/SlashingVoting.json 
 
 # Interfaces
 RUN abigen --abi artifacts/abi/interfaces/ISignerAddress.sol/ISignerAddress.json --pkg interfaces --type ISignerAddress --out interfaces/isigneraddress.go
+RUN abigen --abi artifacts/abi/interfaces/IGateway.sol/IGateway.json --pkg interfaces --type IGateway --out interfaces/igateway.go
