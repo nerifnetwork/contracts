@@ -6,6 +6,7 @@ import "../interfaces/ISignerAddress.sol";
 import "../interfaces/SignerOwnable.sol";
 
 // SignerStorage is the simple collective signer address storage contract.
+// This is used on sidechains only. Mainchain uses DKG contract instead.
 contract SignerStorage is Initializable, ISignerAddress, SignerOwnable {
     address private signer;
 

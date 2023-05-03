@@ -5,6 +5,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 // AddressStorage is the simple addresses storage contract.
+// Currently, this is used by staking contract in order to store validators.
 contract AddressStorage is Ownable, Initializable {
     mapping(address => uint256) internal indexMap;
     address[] internal addrList;

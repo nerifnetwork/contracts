@@ -10,6 +10,7 @@ import "./ContractKeys.sol";
 import "./SlashingVoting.sol";
 import "./RewardDistributionPool.sol";
 
+// Staking is the staking contract mechanism.
 contract Staking is ContractKeys, SignerOwnable, Initializable {
     enum ValidatorStatus {
         INACTIVE,

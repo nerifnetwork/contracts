@@ -24,6 +24,8 @@ enum SlashingReasonGroup {
     REASON_GROUP_SIGNING
 }
 
+// SlashingVoting represents the validator slashing mechanism.
+// It allows validators to vote for slashing of a specific validator.
 contract SlashingVoting is ContractKeys, ValidatorOwnable, SignerOwnable, Initializable {
     struct SlashingProposal {
         address validator;
