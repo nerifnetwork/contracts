@@ -3,13 +3,13 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../common/SignerOwnable.sol";
-import "./ContractRegistry.sol";
+import "../interfaces/SignerOwnable.sol";
+import "../common/ContractRegistry.sol";
+import "../common/Globals.sol";
 import "./Staking.sol";
 import "./ContractKeys.sol";
-import "../sidechain/Globals.sol";
 
-contract ValidatorRewardDistributionPool is Initializable, ContractKeys, SignerOwnable {
+contract RewardDistributionPool is Initializable, ContractKeys, SignerOwnable {
     struct RewardPosition {
         uint256 balance;
         uint256 lastRewardPoints;
@@ -36,7 +36,7 @@ contract ValidatorRewardDistributionPool is Initializable, ContractKeys, SignerO
     function distributeRewards() public {
         uint256 amount = address(this).balance;
 
-        require(amount > 0, "ValidatorRewardDistributionPool: amount must be greater than 0");
+        require(amount > 0, "RewardDistributionPool: amount must be greater than 0");
 
         _updateLastRewardPoints();
 
@@ -84,13 +84,13 @@ contract ValidatorRewardDistributionPool is Initializable, ContractKeys, SignerO
     function _sendRewards(address _receiver) private {
         uint256 reward = rewardPositions[msg.sender].balance;
 
-        require(reward > 0, "ValidatorRewardDistributionPool: reward must be greater than 0");
+        require(reward > 0, "RewardDistributionPool: reward must be greater than 0");
 
         rewardPositions[msg.sender].balance -= reward;
 
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, ) = _receiver.call{value: reward, gas: 21000}("");
-        require(success, "ValidatorRewardDistributionPool: transfer failed");
+        require(success, "RewardDistributionPool: transfer failed");
 
         emit CollectRewards(msg.sender, reward);
     }

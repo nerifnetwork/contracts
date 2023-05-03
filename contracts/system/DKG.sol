@@ -5,9 +5,9 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "../interfaces/ISignerAddress.sol";
+import "../common/ContractRegistry.sol";
 import "./Staking.sol";
 import "./ContractKeys.sol";
-import "./ContractRegistry.sol";
 import "./SlashingVoting.sol";
 
 struct GenerationInfo {

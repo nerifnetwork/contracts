@@ -8,7 +8,7 @@ import {
   DKG,
   SlashingVoting,
   ContractRegistry,
-  ValidatorRewardDistributionPool,
+  RewardDistributionPool,
 } from '../../typechain';
 
 const defaultSystemDeploymentParameters: MainchainDeploymentParameters = {
@@ -39,9 +39,9 @@ export async function deployMainchainContracts(
     staking: await deployer.deploy(ethers.getContractFactory('Staking'), 'Staking'),
     dkg: await deployer.deploy(ethers.getContractFactory('DKG'), 'DKG'),
     slashingVoting: await deployer.deploy(ethers.getContractFactory('SlashingVoting'), 'SlashingVoting'),
-    validatorRewardDistributionPool: await deployer.deploy(
-      ethers.getContractFactory('ValidatorRewardDistributionPool'),
-      'ValidatorRewardDistributionPool'
+    rewardDistributionPool: await deployer.deploy(
+      ethers.getContractFactory('RewardDistributionPool'),
+      'RewardDistributionPool'
     ),
   };
 
@@ -87,16 +87,16 @@ export async function deployMainchainContracts(
   );
 
   await deployer.sendTransaction(
-    res.validatorRewardDistributionPool.initialize(res.contractRegistry.address, res.dkg.address),
-    'Initializing ValidatorRewardDistributionPool'
+    res.rewardDistributionPool.initialize(res.contractRegistry.address, res.dkg.address),
+    'Initializing RewardDistributionPool'
   );
 
   await res.contractRegistry.setContract(await res.slashingVoting.SLASHING_VOTING_KEY(), res.slashingVoting.address);
   await res.contractRegistry.setContract(await res.staking.STAKING_KEY(), res.staking.address);
   await res.contractRegistry.setContract(await res.dkg.DKG_KEY(), res.dkg.address);
   await res.contractRegistry.setContract(
-    await res.validatorRewardDistributionPool.VALIDATOR_REWARD_DISTRIBUTION_POOL_KEY(),
-    res.validatorRewardDistributionPool.address
+    await res.rewardDistributionPool.REWARD_DISTRIBUTION_POOL_KEY(),
+    res.rewardDistributionPool.address
   );
 
   deployer.log('Successfully initialized contracts\n');
@@ -202,7 +202,7 @@ export interface MainchainDeployment {
   dkg: DKG;
   slashingVoting: SlashingVoting;
   contractRegistry: ContractRegistry;
-  validatorRewardDistributionPool: ValidatorRewardDistributionPool;
+  rewardDistributionPool: RewardDistributionPool;
   signerAddress?: string;
 }
 

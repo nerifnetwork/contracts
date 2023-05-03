@@ -11,12 +11,12 @@ describe('SignerStorage', function () {
     const balanceSignerBefore = await ethers.provider.getBalance(signer.address);
     const balanceNewSignerBefore = await ethers.provider.getBalance(newSigner.address);
 
-    const estimatedTxFee = ethers.utils.parseEther('0.04');
+    const estimatedTxFee = ethers.utils.parseEther('0.1');
 
     const value = balanceSignerBefore.sub(estimatedTxFee);
 
     const newUser = await ethers.getContractAt('SignerStorage', signerStorage.address, user);
-    await expect(newUser.setAddress(newSigner.address, { value })).to.be.revertedWith('SignerStorage: only signer');
+    await expect(newUser.setAddress(newSigner.address, { value })).to.be.revertedWith('SignerOwnable: only signer');
     await expect(signerStorage.setAddress(newSigner.address, { value }))
       .to.emit(signerStorage, 'SignerUpdated')
       .withArgs(newSigner.address);

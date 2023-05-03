@@ -2,8 +2,7 @@
 pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "./SignerOwnable.sol";
-import "../interfaces/IRegistry.sol";
+import "../interfaces/SignerOwnable.sol";
 import "../interfaces/IGateway.sol";
 
 // TODO: 1. Charge user for the workflow registration and cancellation in order to perform the internal workflow.
@@ -11,8 +10,26 @@ import "../interfaces/IGateway.sol";
 // TODO: 2. Reward distribution on mainchain and sidechain logic.
 //          Mainchain: send to the reward distribution pool.
 
+// WorkflowStatus is the list of workflow statuses.
+enum WorkflowStatus {
+    PENDING,
+    ACTIVE,
+    PAUSED,
+    CANCELLED
+}
+
+// Workflow is the workflow model.
+struct Workflow {
+    uint256 id;
+    address owner;
+    bytes hash;
+    WorkflowStatus status;
+    bool isInternal;
+    uint256 totalSpent;
+}
+
 // Registry is the internal smart contract needed to secure the network and support important features of Nerif.
-contract Registry is Initializable, IRegistry, SignerOwnable {
+contract Registry is Initializable, SignerOwnable {
     // Config contains the configuration options
     struct Config {
         // performanceOverhead is the cost of the performance transaction excluding the client contract call.

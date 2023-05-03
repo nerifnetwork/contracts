@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../interfaces/ISignerAddress.sol";
+import "./ISignerAddress.sol";
 
 abstract contract SignerOwnable {
     ISignerAddress public signerGetter;

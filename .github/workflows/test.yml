@@ -1,0 +1,26 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches:
+      - "*"
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install packages
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+
+      - name: Build
+        run: |
+          npm install
+          npx hardhat compile
+          npx hardhat typechain

@@ -2,13 +2,13 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "../interfaces/SignerOwnable.sol";
 import "../common/AddressStorage.sol";
-import "../common/SignerOwnable.sol";
+import "../common/ContractRegistry.sol";
 import "./DKG.sol";
 import "./ContractKeys.sol";
-import "./ContractRegistry.sol";
 import "./SlashingVoting.sol";
-import "./ValidatorRewardDistributionPool.sol";
+import "./RewardDistributionPool.sol";
 
 contract Staking is ContractKeys, SignerOwnable, Initializable {
     enum ValidatorStatus {
@@ -50,10 +50,10 @@ contract Staking is ContractKeys, SignerOwnable, Initializable {
         _;
     }
 
-    modifier onlyValidatorRewardDistributionPool() {
+    modifier onlyRewardDistributionPool() {
         require(
-            msg.sender == address(_validatorRewardDistributionPoolContract()),
-            "Staking: only ValidatorRewardDistributionPool contract"
+            msg.sender == address(_rewardDistributionPoolContract()),
+            "Staking: only RewardDistributionPool contract"
         );
         _;
     }
@@ -75,7 +75,7 @@ contract Staking is ContractKeys, SignerOwnable, Initializable {
         addressStorage = AddressStorage(_validatorStorage);
     }
 
-    function addRewardsToStake(address _validator, uint256 _amount) external onlyValidatorRewardDistributionPool {
+    function addRewardsToStake(address _validator, uint256 _amount) external onlyRewardDistributionPool {
         stakes[_validator].stake += _amount;
         totalStake += _amount;
     }
@@ -219,10 +219,7 @@ contract Staking is ContractKeys, SignerOwnable, Initializable {
         return SlashingVoting(contractRegistry.getContract(SLASHING_VOTING_KEY));
     }
 
-    function _validatorRewardDistributionPoolContract() private view returns (ValidatorRewardDistributionPool) {
-        return
-            ValidatorRewardDistributionPool(
-                payable(contractRegistry.getContract(VALIDATOR_REWARD_DISTRIBUTION_POOL_KEY))
-            );
+    function _rewardDistributionPoolContract() private view returns (RewardDistributionPool) {
+        return RewardDistributionPool(payable(contractRegistry.getContract(REWARD_DISTRIBUTION_POOL_KEY)));
     }
 }

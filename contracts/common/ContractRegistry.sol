@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "../common/SignerOwnable.sol";
+import "../interfaces/SignerOwnable.sol";
 
 // ContractRegistry is the contract that stores other contracts of the system.
 // It just simply stores a mapping between the contract name and its address.

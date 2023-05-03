@@ -5,7 +5,7 @@ import { Signer, Wallet } from 'ethers';
 import { Registry } from '../../typechain';
 
 const tccABI = require('../../artifacts/contracts/test/TestCustomerContract.sol/TestCustomerContract.json');
-const registryContractABI = require('../../artifacts/contracts/common/Registry.sol/Registry.json');
+const registryContractABI = require('../../artifacts/contracts/operational/Registry.sol/Registry.json');
 
 describe('Registry', function () {
   async function createRandomWallet(fund: string = '10') {
@@ -26,13 +26,14 @@ describe('Registry', function () {
   async function deployRegistry(mainchain: boolean = true) {
     const [network] = await ethers.getSigners();
 
-    const MockNetworkAddress = await ethers.getContractFactory('MockNetworkAddress');
-    const mockNetworkAddress = await MockNetworkAddress.deploy(await network.getAddress());
+    const SignerStorageFactory = await ethers.getContractFactory('SignerStorage');
+    const signerStorage = await SignerStorageFactory.deploy();
+    await expect(await signerStorage.initialize(await network.getAddress()));
 
     const Registry = await ethers.getContractFactory('Registry');
     const registry = await Registry.deploy();
 
-    await registry.initialize(mockNetworkAddress.address, mainchain);
+    await registry.initialize(signerStorage.address, mainchain);
 
     await expect(
       registry.setConfig({

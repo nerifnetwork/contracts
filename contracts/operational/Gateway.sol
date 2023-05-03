@@ -3,8 +3,8 @@ pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../interfaces/IRegistry.sol";
 import "../interfaces/IGateway.sol";
+import "./Registry.sol";
 
 contract Gateway is Initializable, Ownable, IGateway {
     struct Config {
@@ -15,7 +15,7 @@ contract Gateway is Initializable, Ownable, IGateway {
 
     uint256 internal constant PERFORM_GAS_CUSHION = 5_000;
 
-    IRegistry public registry;
+    Registry public registry;
     Config internal config;
 
     // onlyRegistry permits transactions coming from the registry contract.
@@ -66,7 +66,7 @@ contract Gateway is Initializable, Ownable, IGateway {
     }
 
     function initialize(address _registry) external initializer {
-        registry = IRegistry(_registry);
+        registry = Registry(_registry);
     }
 
     function perform(

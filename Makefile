@@ -16,6 +16,8 @@ abigen: # Generate go files
 	docker build -f Dockerfile.abigen -t extract-abi .
 	rm -rf pkg/*
 	CONTAINER=`docker create extract-abi --name extract-abi`; \
+	docker cp $$CONTAINER:/common pkg/common; \
+	docker cp $$CONTAINER:/operational pkg/operational; \
 	docker cp $$CONTAINER:/system pkg/system; \
 	docker cp $$CONTAINER:/interfaces pkg/interfaces; \
 	docker rm -v $$CONTAINER

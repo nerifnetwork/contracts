@@ -3,8 +3,8 @@
 This repository contains Solidity contracts needed to bootstrap and run Nerif Network.
 
 The setup consists of twy types of contracts:
-- **system** contracts are needed to secure the network, such as staking contract, slashing mechanism, etc.
-- **operational** contracts are needed to make the network work: registry, signer storage, and gateway.
+- [**system**](./contracts/system) contracts are needed to secure the network, such as staking contract, slashing mechanism, etc.
+- [**operational**](./contracts/operational) contracts are needed to make the network work: registry, signer storage, and gateway.
 
 ## Set up environment
 
@@ -56,7 +56,7 @@ If the current validator have not staked, the node will ask for approval to stak
 To verify contracts, you need to specify network, contract address and constructor parameters (if present).
 
 ```
-$ npx hardhat --network goerli verify <CONTRACT_ADDRESS> <CONSTRUCTOR_PARAMETERS>
+$ npx hardhat --network <network-name> verify <CONTRACT_ADDRESS> <CONSTRUCTOR_PARAMETERS>
 ```
 
 Or you can set `VERIFY` variable to `true` while deploying contracts to automatically verify them afterwards.
@@ -64,3 +64,7 @@ Or you can set `VERIFY` variable to `true` while deploying contracts to automati
 ```
 $ VERIFY=true make deploy
 ```
+
+## TODO
+
+1. Send rewards to the rewards distribution pool

@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+// AddressStorage is the simple addresses storage contract.
 contract AddressStorage is Ownable, Initializable {
     mapping(address => uint256) internal indexMap;
     address[] internal addrList;
