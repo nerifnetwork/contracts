@@ -68,3 +68,4 @@ $ VERIFY=true make deploy
 ## TODO
 
 1. Send rewards to the rewards distribution pool
+2. Fund the generated collective address OR ask validators to fund it
