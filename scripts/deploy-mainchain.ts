@@ -7,13 +7,11 @@ async function main() {
 
   const contractsConfig = await readContractsConfig();
   const stakingKeys = !process.env.STAKING_KEYS ? [] : (process.env.STAKING_KEYS).trim().split(',');
-  const router = contractsConfig.router ?? process.env.ROUTER_ADDRESS;
 
   const res = await deployMainchainContracts({
     displayLogs: true,
     verify,
     stakingKeys,
-    router
   });
 
   contractsConfig.networkName = network.name;

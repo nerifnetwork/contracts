@@ -1,7 +1,7 @@
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { deployMainchainWithMocks } from '../utils/deploy';
 import { BigNumber } from 'ethers';
+import { deployMainchain } from '../utils/deploy';
 
 describe('ValidatorRewardDistributionPool', function () {
   it('should collect rewards', async function () {
@@ -9,7 +9,7 @@ describe('ValidatorRewardDistributionPool', function () {
     const totalReward = ethers.utils.parseEther('0.1');
     const minimalStake = ethers.utils.parseEther('100');
 
-    const { validatorRewardDistributionPool, staking, mockDEXRouter, mockToken } = await deployMainchainWithMocks();
+    const { validatorRewardDistributionPool, staking } = await deployMainchain();
 
     const staking2 = await ethers.getContractAt('Staking', staking.address, v2);
     const staking3 = await ethers.getContractAt('Staking', staking.address, v3);
@@ -32,10 +32,6 @@ describe('ValidatorRewardDistributionPool', function () {
       v4
     );
 
-    await expect(validatorRewardDistributionPool2.setRouter(v2.address)).to.be.revertedWith(
-      'SignerOwnable: only signer'
-    );
-
     await staking2.stake({ value: minimalStake });
     await staking3.stake({ value: minimalStake });
 
@@ -52,15 +48,11 @@ describe('ValidatorRewardDistributionPool', function () {
 
     await (
       await signer.sendTransaction({
-        to: mockDEXRouter.address,
+        to: validatorRewardDistributionPool.address,
         value: totalReward,
       })
     ).wait();
 
-    await mockToken.approve(validatorRewardDistributionPool.address, totalReward);
-    await mockToken.transfer(validatorRewardDistributionPool.address, totalReward);
-
-    await validatorRewardDistributionPool.distribute(mockToken.address);
     await validatorRewardDistributionPool.distributeRewards();
 
     let validator3BalanceBefore = await ethers.provider.getBalance(v3.address);
@@ -95,14 +87,11 @@ describe('ValidatorRewardDistributionPool', function () {
 
     await (
       await signer.sendTransaction({
-        to: mockDEXRouter.address,
+        to: validatorRewardDistributionPool.address,
         value: totalReward,
       })
     ).wait();
 
-    await mockToken.transfer(validatorRewardDistributionPool.address, totalReward);
-
-    await validatorRewardDistributionPool.distribute(mockToken.address);
     await validatorRewardDistributionPool.distributeRewards();
 
     let validator4BalanceBefore = await ethers.provider.getBalance(v4.address);
@@ -133,17 +122,14 @@ describe('ValidatorRewardDistributionPool', function () {
     expect(validator3BalanceAfte).to.equal(validator3BalanceBefore.add(reward).sub(txFee1));
     expect(validator2BalanceAfte).to.equal(validator2BalanceBefore.add(reward).sub(txFee2));
 
+    await validatorRewardDistributionPool.distributeRewards();
+
     await (
       await signer.sendTransaction({
-        to: mockDEXRouter.address,
+        to: validatorRewardDistributionPool.address,
         value: totalReward,
       })
     ).wait();
-
-    await mockToken.transfer(validatorRewardDistributionPool.address, totalReward);
-
-    await validatorRewardDistributionPool.distribute(mockToken.address);
-    await validatorRewardDistributionPool.distributeRewards();
 
     reward = BigNumber.from('33333333333333300');
 

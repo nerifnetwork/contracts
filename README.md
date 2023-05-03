@@ -1,54 +1,55 @@
 # Nerif Network Contracts
 
-This repository contains Solidity contracts with bridging logic.
+This repository contains Solidity contracts needed to bootstrap and run Nerif Network.
 
-RelayBridge is a cross-chain system that acts as a bridge to transfer tokens and assets between two different blockchain platforms.
+The setup consists of twy types of contracts:
+- **system** contracts are needed to secure the network, such as staking contract, slashing mechanism, etc.
+- **operational** contracts are needed to make the network work: registry, signer storage, and gateway.
 
-RelayBridge provides blockchain interoperability by connecting different blockchain networks. Thus, it allows users to experience the distinctive features of each network and the additional benefits of a chain of nodes.
+## Set up environment
 
-When a user initiates a token transfer from chain A to chain B, the assets are first sent to a relay node on chain A. The relay node then sends the same number of tokens to chain B and maintains liquidity at destination B.
+The first step is to initialize environment by running the following command:
 
-RelayBridge provides interaction between blockchain networks using various consensus mechanisms. They enable interoperable token transfer, data transfer, digital asset transfer, and smart contract instruction transfer between two different platforms. With RelayBridges, users can deploy digital assets stored on one chain to applications running on another, facilitating fast and low-cost transactions for tokens hosted on a less scalable blockchain.
-
-## Development
-
-### Install Packages
-
-```
-$ npm install
+```bash
+$ make init
 ```
 
-### Compile Contracts
-
-```
-$ npm run compile
-```
+The command installs node packages, compiles contracts, and creates `.env` config file with default mocked values.
+Those values must be replaced with the real ones.
 
 ### Run Tests
 
-```
+The following command runs tests:
+
+```bash
 $ npm run test
 ```
 
-## Deployment and Verification
+## Deployment
 
-First of all, copy `.env.example` into `.env` and set up all required variables inside
+The current hardhat configuration supports 3 ENV-compatible networks: Goerli, Mumbai, BSC Testnet.
+More networks could be added if needed.
 
-### Deploy Contracts
+In this example, `mumbai` is going to be a mainchain.
+That means this network is going to be used for system contracts deployment as well as operational ones.
+Other sidechains include operational contracts only. 
 
-In this example we are deploying to `goerli` testnet. To deploy to different chain, `--network` parameter should be changed.
+In order to deploy to another chain, `--network` parameter should be changed.
 
-Deployment involves running two scripts in sequence. The first script is deployed once, on Nerif Network.
+The following command deploys all contracts in the proper order on all supported chains:
 
+```bash
+$ make deploy
 ```
-$ npx hardhat --network goerli run scripts/deploy-mainchain.ts
-```
 
-The second script is executed for each new side chain to deploy chain contracts, like `mumbai`.
+*Node: take a look at the Makefile*
 
-```
-$ npx hardhat --network mumbai run scripts/deploy-sidechain.ts
-```
+After system contracts are deployed on mainchain, the script asks to start DKG process in order to set up a collective signer address.
+This address is going to be used within another contracts across all supported chains.
+
+During the network bootstrap, each node requests a DKG contract address in order to start the process.
+Each network participant (Nerif Node) **must stake** a specific number of tokens in order to join the network, and it should be done before starting the node.
+If the current validator have not staked, the node will ask for approval to stake tokens.
 
 ### Verify Contracts
 
@@ -61,5 +62,5 @@ $ npx hardhat --network goerli verify <CONTRACT_ADDRESS> <CONSTRUCTOR_PARAMETERS
 Or you can set `VERIFY` variable to `true` while deploying contracts to automatically verify them afterwards.
 
 ```
-$ VERIFY=true npx hardhat --network goerli run scripts/deploy-mainchain.ts
+$ VERIFY=true make deploy
 ```

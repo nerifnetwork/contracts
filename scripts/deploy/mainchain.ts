@@ -8,14 +8,12 @@ import {
   DKG,
   SlashingVoting,
   ContractRegistry,
-  EventRegistry,
   ValidatorRewardDistributionPool,
 } from '../../typechain';
 
 const defaultSystemDeploymentParameters: MainchainDeploymentParameters = {
   minimalStake: ethers.utils.parseEther('0.01'),
   stakeWithdrawalPeriod: BigNumber.from(60),
-  router: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
   slashingEpochs: BigNumber.from(3),
   slashingEpochPeriod: BigNumber.from(1000),
   slashingBansThresold: BigNumber.from(10),
@@ -37,7 +35,6 @@ export async function deployMainchainContracts(
 
   const res: MainchainDeployment = {
     contractRegistry: await deployer.deploy(ethers.getContractFactory('ContractRegistry'), 'ContractRegistry'),
-    eventRegistry: await deployer.deploy(ethers.getContractFactory('EventRegistry'), 'EventRegistry'),
     addressStorage: await deployer.deploy(ethers.getContractFactory('AddressStorage'), 'AddressStorage'),
     staking: await deployer.deploy(ethers.getContractFactory('Staking'), 'Staking'),
     dkg: await deployer.deploy(ethers.getContractFactory('DKG'), 'DKG'),
@@ -89,16 +86,14 @@ export async function deployMainchainContracts(
     'Initializing SlashingVoting'
   );
 
-  await deployer.sendTransaction(res.eventRegistry.initialize(res.staking.address), 'Initializing EventRegistry');
   await deployer.sendTransaction(
-    res.validatorRewardDistributionPool.initialize(res.contractRegistry.address, params.router, res.dkg.address),
+    res.validatorRewardDistributionPool.initialize(res.contractRegistry.address, res.dkg.address),
     'Initializing ValidatorRewardDistributionPool'
   );
 
   await res.contractRegistry.setContract(await res.slashingVoting.SLASHING_VOTING_KEY(), res.slashingVoting.address);
   await res.contractRegistry.setContract(await res.staking.STAKING_KEY(), res.staking.address);
   await res.contractRegistry.setContract(await res.dkg.DKG_KEY(), res.dkg.address);
-  await res.contractRegistry.setContract(await res.eventRegistry.EVENT_REGISTRY_KEY(), res.eventRegistry.address);
   await res.contractRegistry.setContract(
     await res.validatorRewardDistributionPool.VALIDATOR_REWARD_DISTRIBUTION_POOL_KEY(),
     res.validatorRewardDistributionPool.address
@@ -109,6 +104,7 @@ export async function deployMainchainContracts(
   if (params.stakingKeys.length > 0) {
     deployer.log('Staking for initial validators\n');
 
+    // TODO: Move this logic to Nerif Node.
     for (const privateKey of params.stakingKeys) {
       const signer = new ethers.Wallet(privateKey, ethers.provider);
       const signerStaking = await ethers.getContractAt('Staking', res.staking.address, signer);
@@ -195,10 +191,6 @@ function resolveParameters(options?: MainchainDeploymentOptions): MainchainDeplo
     parameters.stakingKeys = options.stakingKeys;
   }
 
-  if (options.router !== undefined) {
-    parameters.router = options.router;
-  }
-
   return parameters;
 }
 
@@ -210,7 +202,6 @@ export interface MainchainDeployment {
   dkg: DKG;
   slashingVoting: SlashingVoting;
   contractRegistry: ContractRegistry;
-  eventRegistry: EventRegistry;
   validatorRewardDistributionPool: ValidatorRewardDistributionPool;
   signerAddress?: string;
 }
@@ -224,8 +215,6 @@ export interface MainchainDeploymentParameters {
   slashingBansThresold: BigNumber;
 
   dkgDeadlinePeriod: BigNumber;
-
-  router: string;
 
   displayLogs: boolean;
   verify: boolean;
@@ -241,8 +230,6 @@ export interface MainchainDeploymentOptions {
   slashingBansThresold?: BigNumber;
 
   dkgDeadlinePeriod?: BigNumber;
-
-  router?: string;
 
   displayLogs?: boolean;
   verify?: boolean;

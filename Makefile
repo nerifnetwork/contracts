@@ -2,6 +2,12 @@
 help: # Display this help
 	@awk 'BEGIN{FS=":.*#";printf "Usage:\n  make <target>\n\nTargets:\n"}/^[a-zA-Z_-]+:.*?#/{printf"  %-10s %s\n",$$1,$$2}' $(MAKEFILE_LIST)
 
+.PHONY: init
+init:
+	npm install
+	npm run compile
+	cp .env.example .env
+
 .PHONY: abigen
 abigen: # Generate go files
 	rm -rf artifacts/

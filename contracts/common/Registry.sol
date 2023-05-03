@@ -2,7 +2,7 @@
 pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "../interfaces/ISignerAddress.sol";
+import "./SignerOwnable.sol";
 import "../interfaces/IRegistry.sol";
 import "../interfaces/IGateway.sol";
 
@@ -12,7 +12,7 @@ import "../interfaces/IGateway.sol";
 //          Mainchain: send to the reward distribution pool.
 
 // Registry is the internal smart contract needed to secure the network and support important features of Nerif.
-contract Registry is Initializable, IRegistry {
+contract Registry is Initializable, IRegistry, SignerOwnable {
     // Config contains the configuration options
     struct Config {
         // performanceOverhead is the cost of the performance transaction excluding the client contract call.
@@ -69,7 +69,6 @@ contract Registry is Initializable, IRegistry {
     mapping(address => uint16) internal workflowsPerAddress;
     mapping(address => uint256) internal balances;
     bool public isMainChain;
-    ISignerAddress public networkAddress;
     uint256 public networkRewards;
 
     event BalanceFunded(address workflowOwner, uint256 amount);
@@ -93,12 +92,6 @@ contract Registry is Initializable, IRegistry {
     // This is needed for those transaction that must pass the performance process.
     modifier onlyRegistry() {
         require(address(this) == msg.sender, "Registry: operation is not permitted");
-        _;
-    }
-
-    // onlyNetwork permits transactions coming from the collective network address.
-    modifier onlyNetwork() {
-        require(networkAddress.getSignerAddress() == msg.sender, "Registry: operation is not permitted");
         _;
     }
 
@@ -150,8 +143,8 @@ contract Registry is Initializable, IRegistry {
         }
     }
 
-    function initialize(address _networkAddress, bool _isMainChain) external initializer {
-        networkAddress = ISignerAddress(_networkAddress);
+    function initialize(address _signerGetterAddress, bool _isMainChain) external initializer {
+        _setSignerGetter(_signerGetterAddress);
         isMainChain = _isMainChain;
 
         // Define internal workflows
@@ -181,7 +174,7 @@ contract Registry is Initializable, IRegistry {
     }
 
     // setConfig sets the given configuration
-    function setConfig(Config calldata _config) external onlyNetwork {
+    function setConfig(Config calldata _config) external onlySigner {
         config = _config;
     }
 
@@ -217,9 +210,9 @@ contract Registry is Initializable, IRegistry {
     // withdrawRewards sends network rewards to the rewards withdrawal address
     function withdrawRewards() external {
         require(networkRewards > 0, "Registry: nothing to withdraw");
-        require(address(networkAddress) != address(0x0), "Registry: signer storage address is not specified");
+        require(address(signerGetter) != address(0x0), "Registry: signer storage address is not specified");
 
-        address payable addr = payable(networkAddress.getSignerAddress());
+        address payable addr = payable(signerGetter.getSignerAddress());
         require(addr != address(0x0), "Registry: withdrawal address is not specified");
 
         // Transfer rewards
@@ -296,7 +289,7 @@ contract Registry is Initializable, IRegistry {
         uint256 gasAmount,
         bytes calldata data,
         address target
-    ) external onlyNetwork onlyExistingWorkflow(workflowId) {
+    ) external onlySigner onlyExistingWorkflow(workflowId) {
         // Get a workflow by ID
         Workflow memory workflow = workflows[workflowId];
 
@@ -469,6 +462,16 @@ contract Registry is Initializable, IRegistry {
             }
         }
         return (gateway, index);
+    }
+
+    // getWorkflowOwnerBalance returns the current balance of the given workflow ID.
+    function getWorkflowOwnerBalance(uint256 id) public view returns (uint256) {
+        // Find the workflow in the list
+        Workflow memory workflow = workflows[id];
+        require(workflow.owner != address(0x0), "Registry: workflow does not exist");
+
+        // Return owner's balance
+        return balances[workflow.owner];
     }
 
     // _callWithExactGas calls target address with exactly gasAmount gas and data as calldata

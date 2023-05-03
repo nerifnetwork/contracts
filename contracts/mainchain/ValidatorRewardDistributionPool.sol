@@ -3,11 +3,10 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../interfaces/IDEXV2Router02.sol";
+import "../common/SignerOwnable.sol";
 import "./ContractRegistry.sol";
 import "./Staking.sol";
 import "./ContractKeys.sol";
-import "./SignerOwnable.sol";
 import "../sidechain/Globals.sol";
 
 contract ValidatorRewardDistributionPool is Initializable, ContractKeys, SignerOwnable {
@@ -17,7 +16,6 @@ contract ValidatorRewardDistributionPool is Initializable, ContractKeys, SignerO
     }
 
     ContractRegistry public contractRegistry;
-    IDEXV2Router02 public dexRouter;
 
     uint256 public collectedRewards;
     uint256 public totalRewardPoints;
@@ -26,25 +24,13 @@ contract ValidatorRewardDistributionPool is Initializable, ContractKeys, SignerO
     mapping(address => RewardPosition) public rewardPositions;
 
     event CollectRewards(address validator, uint256 amount);
-    event RouterUpdated(address router);
 
     // solhint-disable-next-line no-empty-blocks
     receive() external payable {}
 
-    function initialize(
-        address _contractRegistry,
-        address _router,
-        address _signerGetterAddress
-    ) external initializer {
+    function initialize(address _contractRegistry, address _signerGetterAddress) external initializer {
         _setSignerGetter(_signerGetterAddress);
-        setRouter(_router);
         contractRegistry = ContractRegistry(_contractRegistry);
-    }
-
-    function setRouter(address _router) public onlySigner {
-        dexRouter = IDEXV2Router02(_router);
-
-        emit RouterUpdated(_router);
     }
 
     function distributeRewards() public {
@@ -57,19 +43,6 @@ contract ValidatorRewardDistributionPool is Initializable, ContractKeys, SignerO
         providedStake = _stakingContract().getTotalStake();
         totalRewardPoints += (amount * BASE_DIVISOR) / providedStake;
         collectedRewards += amount;
-    }
-
-    function distribute(address _token) public {
-        // solhint-disable-next-line not-rely-on-time
-        uint256 deadline = block.timestamp + 1;
-        uint256 amountIn = IERC20(_token).balanceOf(address(this));
-
-        address[] memory path = _createPath(_token, dexRouter.wcfn());
-        uint256[] memory amountsOut = dexRouter.getAmountsOut(amountIn, path);
-
-        IERC20(_token).approve(address(dexRouter), amountIn);
-
-        dexRouter.swapExactTokensForETH(amountIn, amountsOut[amountsOut.length - 1], path, address(this), deadline);
     }
 
     function collectRewards() public {

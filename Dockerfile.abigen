@@ -17,7 +17,6 @@ RUN abigen --abi artifacts/abi/sidechain/SignerStorage.sol/SignerStorage.json --
 # Mainchain contracts
 RUN abigen --abi artifacts/abi/mainchain/DKG.sol/DKG.json --pkg system --type DKG --out system/dkg.go
 RUN abigen --abi artifacts/abi/mainchain/Staking.sol/Staking.json --pkg system --type Staking --out system/staking.go
-RUN abigen --abi artifacts/abi/mainchain/EventRegistry.sol/EventRegistry.json --pkg system --type EventRegistry --out system/event-registry.go
 RUN abigen --abi artifacts/abi/mainchain/ContractRegistry.sol/ContractRegistry.json --pkg system --type ContractRegistry --out system/contract-registry.go
 RUN abigen --abi artifacts/abi/mainchain/SlashingVoting.sol/SlashingVoting.json --pkg system --type SlashingVoting --out system/slashing-voting.go
 

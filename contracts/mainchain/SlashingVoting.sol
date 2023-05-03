@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "./SignerOwnable.sol";
+import "../common/SignerOwnable.sol";
 import "./ContractKeys.sol";
 import "./ContractRegistry.sol";
 import "./ValidatorOwnable.sol";

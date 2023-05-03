@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "../common/AddressStorage.sol";
+import "../common/SignerOwnable.sol";
 import "./DKG.sol";
-import "./SignerOwnable.sol";
 import "./ContractKeys.sol";
 import "./ContractRegistry.sol";
 import "./SlashingVoting.sol";
