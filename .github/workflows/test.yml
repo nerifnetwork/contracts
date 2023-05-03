@@ -24,3 +24,7 @@ jobs:
           npm install
           npx hardhat compile
           npx hardhat typechain
+
+      - name: Test
+        run: |
+          npm run test
