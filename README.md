@@ -6,6 +6,8 @@ The setup consists of twy types of contracts:
 - [**system**](./contracts/system) contracts are needed to secure the network, such as staking contract, slashing mechanism, etc.
 - [**operational**](./contracts/operational) contracts are needed to make the network work: registry, signer storage, and gateway.
 
+![structure.png](./docs/structure.png)
+
 ## Set up environment
 
 The first step is to initialize environment by running the following command:
