@@ -37,7 +37,7 @@ type GatewayConfig struct {
 
 // GatewayMetaData contains all meta data concerning the Gateway contract.
 var GatewayMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"getConfig\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256[]\",\"name\":\"knownWorkflows\",\"type\":\"uint256[]\"},{\"internalType\":\"address[]\",\"name\":\"knownWorkflowOwners\",\"type\":\"address[]\"},{\"internalType\":\"address[]\",\"name\":\"knownCustomerContracts\",\"type\":\"address[]\"}],\"internalType\":\"structGateway.Config\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_registry\",\"type\":\"address\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"target\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"payload\",\"type\":\"bytes\"}],\"name\":\"perform\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"registry\",\"outputs\":[{\"internalType\":\"contractRegistry\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256[]\",\"name\":\"knownWorkflows\",\"type\":\"uint256[]\"},{\"internalType\":\"address[]\",\"name\":\"knownWorkflowOwners\",\"type\":\"address[]\"},{\"internalType\":\"address[]\",\"name\":\"knownCustomerContracts\",\"type\":\"address[]\"}],\"internalType\":\"structGateway.Config\",\"name\":\"_config\",\"type\":\"tuple\"}],\"name\":\"setConfig\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"getConfig\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256[]\",\"name\":\"knownWorkflows\",\"type\":\"uint256[]\"},{\"internalType\":\"address[]\",\"name\":\"knownWorkflowOwners\",\"type\":\"address[]\"},{\"internalType\":\"address[]\",\"name\":\"knownCustomerContracts\",\"type\":\"address[]\"}],\"internalType\":\"structGateway.Config\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_registry\",\"type\":\"address\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"target\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"payload\",\"type\":\"bytes\"}],\"name\":\"perform\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"registry\",\"outputs\":[{\"internalType\":\"contractRegistry\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256[]\",\"name\":\"knownWorkflows\",\"type\":\"uint256[]\"},{\"internalType\":\"address[]\",\"name\":\"knownWorkflowOwners\",\"type\":\"address[]\"},{\"internalType\":\"address[]\",\"name\":\"knownCustomerContracts\",\"type\":\"address[]\"}],\"internalType\":\"structGateway.Config\",\"name\":\"_config\",\"type\":\"tuple\"}],\"name\":\"setConfig\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_registry\",\"type\":\"address\"}],\"name\":\"setRegistry\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // GatewayABI is the input ABI used to generate the binding from.
@@ -361,6 +361,27 @@ func (_Gateway *GatewaySession) SetConfig(_config GatewayConfig) (*types.Transac
 // Solidity: function setConfig((uint256[],address[],address[]) _config) returns()
 func (_Gateway *GatewayTransactorSession) SetConfig(_config GatewayConfig) (*types.Transaction, error) {
 	return _Gateway.Contract.SetConfig(&_Gateway.TransactOpts, _config)
+}
+
+// SetRegistry is a paid mutator transaction binding the contract method 0xa91ee0dc.
+//
+// Solidity: function setRegistry(address _registry) returns()
+func (_Gateway *GatewayTransactor) SetRegistry(opts *bind.TransactOpts, _registry common.Address) (*types.Transaction, error) {
+	return _Gateway.contract.Transact(opts, "setRegistry", _registry)
+}
+
+// SetRegistry is a paid mutator transaction binding the contract method 0xa91ee0dc.
+//
+// Solidity: function setRegistry(address _registry) returns()
+func (_Gateway *GatewaySession) SetRegistry(_registry common.Address) (*types.Transaction, error) {
+	return _Gateway.Contract.SetRegistry(&_Gateway.TransactOpts, _registry)
+}
+
+// SetRegistry is a paid mutator transaction binding the contract method 0xa91ee0dc.
+//
+// Solidity: function setRegistry(address _registry) returns()
+func (_Gateway *GatewayTransactorSession) SetRegistry(_registry common.Address) (*types.Transaction, error) {
+	return _Gateway.Contract.SetRegistry(&_Gateway.TransactOpts, _registry)
 }
 
 // TransferOwnership is a paid mutator transaction binding the contract method 0xf2fde38b.

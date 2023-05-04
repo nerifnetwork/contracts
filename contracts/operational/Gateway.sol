@@ -66,7 +66,7 @@ contract Gateway is Initializable, Ownable, IGateway {
     }
 
     function initialize(address _registry) external initializer {
-        registry = Registry(_registry);
+        setRegistry(_registry);
     }
 
     function perform(
@@ -86,5 +86,10 @@ contract Gateway is Initializable, Ownable, IGateway {
     // getKnownWorkflows returns the list of known workflows
     function getConfig() external view returns (Config memory) {
         return config;
+    }
+
+    // setRegistry sets the given registry
+    function setRegistry(address _registry) public onlyOwner {
+        registry = Registry(_registry);
     }
 }

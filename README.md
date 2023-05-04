@@ -58,7 +58,7 @@ If the current validator have not staked, the node will ask for approval to stak
 To verify contracts, you need to specify network, contract address and constructor parameters (if present).
 
 ```
-$ npx hardhat --network <network-name> verify <CONTRACT_ADDRESS> <CONSTRUCTOR_PARAMETERS>
+$ npx hardhat verify --network <network-name> <CONTRACT_ADDRESS> <CONSTRUCTOR_PARAMETERS>
 ```
 
 Or you can set `VERIFY` variable to `true` while deploying contracts to automatically verify them afterwards.
