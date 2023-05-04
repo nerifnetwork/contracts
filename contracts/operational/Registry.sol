@@ -83,7 +83,7 @@ contract Registry is Initializable, SignerOwnable {
     Config public config;
     Gateway[] internal gateways;
     mapping(uint256 => Workflow) internal workflows;
-    mapping(address => uint16) internal workflowsPerAddress;
+    mapping(address => uint64) internal workflowsPerAddress;
     mapping(address => uint256) internal balances;
     bool public isMainChain;
     uint256 public networkRewards;
