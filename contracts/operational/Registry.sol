@@ -485,13 +485,14 @@ contract Registry is Initializable, SignerOwnable {
     function getWorkflowOwnerBalance(uint256 id) public view returns (uint256) {
         // Find the workflow in the list
         Workflow memory workflow = workflows[id];
-        require(workflow.owner != address(0x0), "Registry: workflow does not exist");
 
         // Return just 1 for internal workflows so the workflow engine can identify that the workflow owner has funds.
         // TODO: Implement internal workflows logic in more accurate way
         if (workflow.isInternal) {
             return 1;
         }
+
+        require(workflow.owner != address(0x0), "Registry: workflow does not exist");
 
         // Return owner's balance
         return balances[workflow.owner];
