@@ -29,8 +29,7 @@ Nerif Network has incorporated slashing protection functionality to address mali
 
 ### [**RewardDistributionPool**](./contracts/system/RewardDistributionPool.sol)
 
-The proper rewards distribution logic incentivizes validators to power the network. 
-The reward distribution pool contract takes care of it.
+The reward distribution pool contract implements the proper rewards distribution logic that incentivizes validators to join and power the network. 
 
 ## Operational
 
@@ -38,15 +37,20 @@ The reward distribution pool contract takes care of it.
 
 ### [**Registry**](./contracts/operational/Registry.sol)
 
-TBD...
+This contract provides several features to run the network such as billing mechanism, customer contract execution, workflows management, etc.
+Registry contract is an entrypoint of all transactions coming from Nerif Network.
 
 ### [**Gateway**](./contracts/operational/Gateway.sol)
 
-TBD...
+The gateway contract is needed as a security entrypoint of all transactions coming from the registry to the customer contract.
+Basically, it checks that the given transaction is a part of the given workflow which belongs to the "trusted" user before forwarding it to the customer contract.
+
+The gateway contract belongs to the network user and should be deployed and registered per registry by a user itself. 
+Nerif App provides a well UX-ed interface that allows doing it easily. 
 
 ### [**SignerStorage**](./contracts/operational/SignerStorage.sol)
 
-TBD...
+Simple contract needed to store a collective address generated during DKG.
 
 ## Set up environment
 
