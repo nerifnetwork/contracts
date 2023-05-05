@@ -2,12 +2,9 @@ import hre from 'hardhat';
 import { ethers } from 'hardhat';
 import { BaseContract, Contract, ContractTransaction } from 'ethers';
 
-export interface ContractsObject {
-  [key: string]: Contract;
-}
-
 export interface ContractFactory<C extends Contract> {
   deploy(): Promise<C>;
+  attach(address: String): C; // eslint-disable-line no-unused-vars
 }
 
 export class Deployer {
@@ -17,9 +14,22 @@ export class Deployer {
     this.displayLogs = displayLogs;
   }
 
-  public async deploy<C extends Contract>(factoryPromise: Promise<ContractFactory<C>>, name?: String): Promise<C> {
+  public async deploy<C extends Contract>(
+    factoryPromise: Promise<ContractFactory<C>>,
+    name?: String,
+    existingAddress?: String
+  ): Promise<C> {
     if (name === undefined) {
       name = 'Contract';
+    }
+
+    if (existingAddress && existingAddress.length > 0) {
+      if (this.displayLogs) {
+        console.log(`Using existing ${name} contract with address ${existingAddress}\n`);
+      }
+
+      const factory = await factoryPromise;
+      return factory.attach(existingAddress);
     }
 
     if (this.displayLogs) {

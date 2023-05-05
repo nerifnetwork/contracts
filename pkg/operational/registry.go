@@ -49,7 +49,7 @@ type Workflow struct {
 
 // RegistryMetaData contains all meta data concerning the Registry contract.
 var RegistryMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"workflowOwner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"BalanceFunded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"workflowOwner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"BalanceWithdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"workflowOwner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"gateway\",\"type\":\"address\"}],\"name\":\"GatewaySet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"gasUsed\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"success\",\"type\":\"bool\"}],\"name\":\"Performance\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"RewardsWithdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"WorkflowActivated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"WorkflowCancelled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"WorkflowPaused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"hash\",\"type\":\"bytes\"}],\"name\":\"WorkflowRegistered\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"WorkflowResumed\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"activateWorkflow\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"cancelWorkflow\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"config\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"performanceOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint8\",\"name\":\"performancePremiumThreshold\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"registrationOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"cancellationOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint16\",\"name\":\"maxWorkflowsPerAccount\",\"type\":\"uint16\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"fundBalance\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"getBalance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"balance\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"getGateway\",\"outputs\":[{\"internalType\":\"contractIGateway\",\"name\":\"gateway\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"getWorkflow\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"hash\",\"type\":\"bytes\"},{\"internalType\":\"enumWorkflowStatus\",\"name\":\"status\",\"type\":\"uint8\"},{\"internalType\":\"bool\",\"name\":\"isInternal\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"totalSpent\",\"type\":\"uint256\"}],\"internalType\":\"structWorkflow\",\"name\":\"workflow\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"getWorkflowOwnerBalance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_signerGetterAddress\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"_isMainChain\",\"type\":\"bool\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"isMainChain\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"networkRewards\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"pauseWorkflow\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"workflowId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"gasAmount\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"internalType\":\"address\",\"name\":\"target\",\"type\":\"address\"}],\"name\":\"perform\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"hash\",\"type\":\"bytes\"}],\"name\":\"registerWorkflow\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"resumeWorkflow\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"performanceOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint8\",\"name\":\"performancePremiumThreshold\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"registrationOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"cancellationOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint16\",\"name\":\"maxWorkflowsPerAccount\",\"type\":\"uint16\"}],\"internalType\":\"structRegistry.Config\",\"name\":\"_config\",\"type\":\"tuple\"}],\"name\":\"setConfig\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"gateway\",\"type\":\"address\"}],\"name\":\"setGateway\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"signerGetter\",\"outputs\":[{\"internalType\":\"contractISignerAddress\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"withdrawBalance\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"withdrawRewards\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"workflowOwner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"BalanceFunded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"workflowOwner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"BalanceWithdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"workflowOwner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"gateway\",\"type\":\"address\"}],\"name\":\"GatewaySet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"gasUsed\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"success\",\"type\":\"bool\"}],\"name\":\"Performance\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"RewardsWithdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"WorkflowActivated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"WorkflowCancelled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"WorkflowPaused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"hash\",\"type\":\"bytes\"}],\"name\":\"WorkflowRegistered\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"WorkflowResumed\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"activateWorkflow\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"cancelWorkflow\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"config\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"performanceOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint8\",\"name\":\"performancePremiumThreshold\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"registrationOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"cancellationOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint16\",\"name\":\"maxWorkflowsPerAccount\",\"type\":\"uint16\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"fundBalance\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"gatewayStorage\",\"outputs\":[{\"internalType\":\"contractGatewayStorage\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"getBalance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"balance\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"getWorkflow\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"hash\",\"type\":\"bytes\"},{\"internalType\":\"enumWorkflowStatus\",\"name\":\"status\",\"type\":\"uint8\"},{\"internalType\":\"bool\",\"name\":\"isInternal\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"totalSpent\",\"type\":\"uint256\"}],\"internalType\":\"structWorkflow\",\"name\":\"workflow\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"getWorkflowOwnerBalance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bool\",\"name\":\"_isMainChain\",\"type\":\"bool\"},{\"internalType\":\"address\",\"name\":\"_workflowStorage\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_gatewayStorage\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_signerGetterAddress\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"performanceOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint8\",\"name\":\"performancePremiumThreshold\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"registrationOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"cancellationOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint16\",\"name\":\"maxWorkflowsPerAccount\",\"type\":\"uint16\"}],\"internalType\":\"structRegistry.Config\",\"name\":\"_config\",\"type\":\"tuple\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"isMainChain\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"networkRewards\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"pauseWorkflow\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"workflowId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"gasAmount\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"internalType\":\"address\",\"name\":\"target\",\"type\":\"address\"}],\"name\":\"perform\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"hash\",\"type\":\"bytes\"}],\"name\":\"registerWorkflow\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"resumeWorkflow\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"performanceOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint8\",\"name\":\"performancePremiumThreshold\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"registrationOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"cancellationOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint16\",\"name\":\"maxWorkflowsPerAccount\",\"type\":\"uint16\"}],\"internalType\":\"structRegistry.Config\",\"name\":\"_config\",\"type\":\"tuple\"}],\"name\":\"setConfig\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"gateway\",\"type\":\"address\"}],\"name\":\"setGateway\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"signerGetter\",\"outputs\":[{\"internalType\":\"contractISignerAddress\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"withdrawBalance\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"withdrawRewards\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"workflowStorage\",\"outputs\":[{\"internalType\":\"contractWorkflowStorage\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
 }
 
 // RegistryABI is the input ABI used to generate the binding from.
@@ -258,6 +258,37 @@ func (_Registry *RegistryCallerSession) Config() (struct {
 	return _Registry.Contract.Config(&_Registry.CallOpts)
 }
 
+// GatewayStorage is a free data retrieval call binding the contract method 0xaf011ac7.
+//
+// Solidity: function gatewayStorage() view returns(address)
+func (_Registry *RegistryCaller) GatewayStorage(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _Registry.contract.Call(opts, &out, "gatewayStorage")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// GatewayStorage is a free data retrieval call binding the contract method 0xaf011ac7.
+//
+// Solidity: function gatewayStorage() view returns(address)
+func (_Registry *RegistrySession) GatewayStorage() (common.Address, error) {
+	return _Registry.Contract.GatewayStorage(&_Registry.CallOpts)
+}
+
+// GatewayStorage is a free data retrieval call binding the contract method 0xaf011ac7.
+//
+// Solidity: function gatewayStorage() view returns(address)
+func (_Registry *RegistryCallerSession) GatewayStorage() (common.Address, error) {
+	return _Registry.Contract.GatewayStorage(&_Registry.CallOpts)
+}
+
 // GetBalance is a free data retrieval call binding the contract method 0xf8b2cb4f.
 //
 // Solidity: function getBalance(address addr) view returns(uint256 balance)
@@ -287,51 +318,6 @@ func (_Registry *RegistrySession) GetBalance(addr common.Address) (*big.Int, err
 // Solidity: function getBalance(address addr) view returns(uint256 balance)
 func (_Registry *RegistryCallerSession) GetBalance(addr common.Address) (*big.Int, error) {
 	return _Registry.Contract.GetBalance(&_Registry.CallOpts, addr)
-}
-
-// GetGateway is a free data retrieval call binding the contract method 0xbda009fe.
-//
-// Solidity: function getGateway(address owner) view returns(address gateway, uint256 index)
-func (_Registry *RegistryCaller) GetGateway(opts *bind.CallOpts, owner common.Address) (struct {
-	Gateway common.Address
-	Index   *big.Int
-}, error) {
-	var out []interface{}
-	err := _Registry.contract.Call(opts, &out, "getGateway", owner)
-
-	outstruct := new(struct {
-		Gateway common.Address
-		Index   *big.Int
-	})
-	if err != nil {
-		return *outstruct, err
-	}
-
-	outstruct.Gateway = *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-	outstruct.Index = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
-
-	return *outstruct, err
-
-}
-
-// GetGateway is a free data retrieval call binding the contract method 0xbda009fe.
-//
-// Solidity: function getGateway(address owner) view returns(address gateway, uint256 index)
-func (_Registry *RegistrySession) GetGateway(owner common.Address) (struct {
-	Gateway common.Address
-	Index   *big.Int
-}, error) {
-	return _Registry.Contract.GetGateway(&_Registry.CallOpts, owner)
-}
-
-// GetGateway is a free data retrieval call binding the contract method 0xbda009fe.
-//
-// Solidity: function getGateway(address owner) view returns(address gateway, uint256 index)
-func (_Registry *RegistryCallerSession) GetGateway(owner common.Address) (struct {
-	Gateway common.Address
-	Index   *big.Int
-}, error) {
-	return _Registry.Contract.GetGateway(&_Registry.CallOpts, owner)
 }
 
 // GetWorkflow is a free data retrieval call binding the contract method 0xeec7b03c.
@@ -489,6 +475,37 @@ func (_Registry *RegistryCallerSession) SignerGetter() (common.Address, error) {
 	return _Registry.Contract.SignerGetter(&_Registry.CallOpts)
 }
 
+// WorkflowStorage is a free data retrieval call binding the contract method 0x59e13cd3.
+//
+// Solidity: function workflowStorage() view returns(address)
+func (_Registry *RegistryCaller) WorkflowStorage(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _Registry.contract.Call(opts, &out, "workflowStorage")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// WorkflowStorage is a free data retrieval call binding the contract method 0x59e13cd3.
+//
+// Solidity: function workflowStorage() view returns(address)
+func (_Registry *RegistrySession) WorkflowStorage() (common.Address, error) {
+	return _Registry.Contract.WorkflowStorage(&_Registry.CallOpts)
+}
+
+// WorkflowStorage is a free data retrieval call binding the contract method 0x59e13cd3.
+//
+// Solidity: function workflowStorage() view returns(address)
+func (_Registry *RegistryCallerSession) WorkflowStorage() (common.Address, error) {
+	return _Registry.Contract.WorkflowStorage(&_Registry.CallOpts)
+}
+
 // ActivateWorkflow is a paid mutator transaction binding the contract method 0x5902c15e.
 //
 // Solidity: function activateWorkflow(uint256 id) returns()
@@ -552,25 +569,25 @@ func (_Registry *RegistryTransactorSession) FundBalance(addr common.Address) (*t
 	return _Registry.Contract.FundBalance(&_Registry.TransactOpts, addr)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0x400ada75.
+// Initialize is a paid mutator transaction binding the contract method 0xe3870a24.
 //
-// Solidity: function initialize(address _signerGetterAddress, bool _isMainChain) returns()
-func (_Registry *RegistryTransactor) Initialize(opts *bind.TransactOpts, _signerGetterAddress common.Address, _isMainChain bool) (*types.Transaction, error) {
-	return _Registry.contract.Transact(opts, "initialize", _signerGetterAddress, _isMainChain)
+// Solidity: function initialize(bool _isMainChain, address _workflowStorage, address _gatewayStorage, address _signerGetterAddress, (uint256,uint8,uint256,uint256,uint16) _config) returns()
+func (_Registry *RegistryTransactor) Initialize(opts *bind.TransactOpts, _isMainChain bool, _workflowStorage common.Address, _gatewayStorage common.Address, _signerGetterAddress common.Address, _config RegistryConfig) (*types.Transaction, error) {
+	return _Registry.contract.Transact(opts, "initialize", _isMainChain, _workflowStorage, _gatewayStorage, _signerGetterAddress, _config)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0x400ada75.
+// Initialize is a paid mutator transaction binding the contract method 0xe3870a24.
 //
-// Solidity: function initialize(address _signerGetterAddress, bool _isMainChain) returns()
-func (_Registry *RegistrySession) Initialize(_signerGetterAddress common.Address, _isMainChain bool) (*types.Transaction, error) {
-	return _Registry.Contract.Initialize(&_Registry.TransactOpts, _signerGetterAddress, _isMainChain)
+// Solidity: function initialize(bool _isMainChain, address _workflowStorage, address _gatewayStorage, address _signerGetterAddress, (uint256,uint8,uint256,uint256,uint16) _config) returns()
+func (_Registry *RegistrySession) Initialize(_isMainChain bool, _workflowStorage common.Address, _gatewayStorage common.Address, _signerGetterAddress common.Address, _config RegistryConfig) (*types.Transaction, error) {
+	return _Registry.Contract.Initialize(&_Registry.TransactOpts, _isMainChain, _workflowStorage, _gatewayStorage, _signerGetterAddress, _config)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0x400ada75.
+// Initialize is a paid mutator transaction binding the contract method 0xe3870a24.
 //
-// Solidity: function initialize(address _signerGetterAddress, bool _isMainChain) returns()
-func (_Registry *RegistryTransactorSession) Initialize(_signerGetterAddress common.Address, _isMainChain bool) (*types.Transaction, error) {
-	return _Registry.Contract.Initialize(&_Registry.TransactOpts, _signerGetterAddress, _isMainChain)
+// Solidity: function initialize(bool _isMainChain, address _workflowStorage, address _gatewayStorage, address _signerGetterAddress, (uint256,uint8,uint256,uint256,uint16) _config) returns()
+func (_Registry *RegistryTransactorSession) Initialize(_isMainChain bool, _workflowStorage common.Address, _gatewayStorage common.Address, _signerGetterAddress common.Address, _config RegistryConfig) (*types.Transaction, error) {
+	return _Registry.Contract.Initialize(&_Registry.TransactOpts, _isMainChain, _workflowStorage, _gatewayStorage, _signerGetterAddress, _config)
 }
 
 // PauseWorkflow is a paid mutator transaction binding the contract method 0x0813ce96.
