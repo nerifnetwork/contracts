@@ -4,29 +4,13 @@ pragma solidity ^0.8.18;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "../interfaces/SignerOwnable.sol";
 import "../interfaces/IGateway.sol";
+import "./WorkflowStorage.sol";
+import "./GatewayStorage.sol";
 
 // TODO: 1. Charge user for the workflow registration and cancellation in order to perform the internal workflow.
 //          Charged amount to the reward distribution pool.
 // TODO: 2. Reward distribution on mainchain and sidechain logic.
 //          Mainchain: send to the reward distribution pool.
-
-// WorkflowStatus is the list of workflow statuses.
-enum WorkflowStatus {
-    PENDING,
-    ACTIVE,
-    PAUSED,
-    CANCELLED
-}
-
-// Workflow is the workflow model.
-struct Workflow {
-    uint256 id;
-    address owner;
-    bytes hash;
-    WorkflowStatus status;
-    bool isInternal;
-    uint256 totalSpent;
-}
 
 // Registry is the internal smart contract needed to secure the network and support important features of Nerif.
 contract Registry is Initializable, SignerOwnable {
@@ -80,12 +64,11 @@ contract Registry is Initializable, SignerOwnable {
     uint256 internal constant PERFORM_GAS_CUSHION = 5_000;
     string internal constant GATEWAY_PERFORM_FUNC_SIGNATURE = "perform(uint256,address,bytes)";
 
-    Config public config;
-    Gateway[] internal gateways;
-    mapping(uint256 => Workflow) internal workflows;
-    mapping(address => uint64) internal workflowsPerAddress;
-    mapping(address => uint256) internal balances;
     bool public isMainChain;
+    WorkflowStorage public workflowStorage;
+    GatewayStorage public gatewayStorage;
+    Config public config;
+    mapping(address => uint256) internal balances;
     uint256 public networkRewards;
 
     event BalanceFunded(address workflowOwner, uint256 amount);
@@ -131,15 +114,15 @@ contract Registry is Initializable, SignerOwnable {
 
     // onlyExistingWorkflow checks that the given workflow exists.
     modifier onlyExistingWorkflow(uint256 id) {
-        Workflow storage workflow = workflows[id];
+        Workflow memory workflow = workflowStorage.getWorkflow(id);
         require(workflow.id > 0, "Registry: workflow does not exist");
         _;
     }
 
     // onlyWorkflowOwner checks that the given tx sender is an actual workflow owner.
     modifier onlyWorkflowOwner(uint256 id) {
-        Workflow storage workflow = workflows[id];
-        require(workflow.id > 0, "Registry: workflow does not exist");
+        Workflow memory workflow = workflowStorage.getWorkflow(id);
+        require(workflow.owner == msg.sender, "Registry: workflow does not exist");
         _;
     }
 
@@ -147,7 +130,7 @@ contract Registry is Initializable, SignerOwnable {
     // or for the network on sidechains.
     modifier onlyWorkflowOwnerOrRegistry(uint256 id) {
         if (isMainChain) {
-            Workflow storage workflow = workflows[id];
+            Workflow memory workflow = workflowStorage.getWorkflow(id);
             require(workflow.owner == msg.sender, "Registry: operation is not permitted");
             _;
         } else {
@@ -160,34 +143,18 @@ contract Registry is Initializable, SignerOwnable {
         }
     }
 
-    function initialize(address _signerGetterAddress, bool _isMainChain) external initializer {
-        _setSignerGetter(_signerGetterAddress);
+    function initialize(
+        bool _isMainChain,
+        address _workflowStorage,
+        address _gatewayStorage,
+        address _signerGetterAddress,
+        Config calldata _config
+    ) external initializer {
         isMainChain = _isMainChain;
-
-        // Define internal workflows
-        // TODO: Implement more elegant way
-
-        // Activate workflow on the mainchain side
-        Workflow memory workflowCreationWorkflow = Workflow(
-            40505927788353901442144037336646356013,
-            address(0),
-            "",
-            WorkflowStatus.ACTIVE,
-            true,
-            0
-        );
-        workflows[workflowCreationWorkflow.id] = workflowCreationWorkflow;
-
-        // Cancel workflow on the sidechain side
-        Workflow memory workflowCancellationWorkflow = Workflow(
-            219775546284901721155783592958414245131,
-            address(0),
-            "",
-            WorkflowStatus.ACTIVE,
-            true,
-            0
-        );
-        workflows[workflowCancellationWorkflow.id] = workflowCancellationWorkflow;
+        workflowStorage = WorkflowStorage(_workflowStorage);
+        gatewayStorage = GatewayStorage(_gatewayStorage);
+        _setSignerGetter(_signerGetterAddress);
+        config = _config;
     }
 
     // setConfig sets the given configuration
@@ -242,12 +209,7 @@ contract Registry is Initializable, SignerOwnable {
 
     // setGateway sets gateway for the given owner address.
     function setGateway(address owner, address gateway) external onlyMsgSender(owner) {
-        (IGateway existingGateway, uint256 index) = getGateway(owner);
-        if (address(existingGateway) != address(0x0)) {
-            gateways[index] = Gateway(IGateway(gateway), owner);
-        } else {
-            gateways.push(Gateway(IGateway(gateway), owner));
-        }
+        gatewayStorage.mustSet(owner, gateway);
 
         emit GatewaySet(owner, gateway);
     }
@@ -260,13 +222,14 @@ contract Registry is Initializable, SignerOwnable {
     //  - Only workflow owner can pause an existing active workflow.
     function pauseWorkflow(uint256 id) external onlyMainchain onlyExistingWorkflow(id) onlyWorkflowOwner(id) {
         // Find the workflow in the list
-        Workflow memory workflow = workflows[id];
+        Workflow memory workflow = workflowStorage.getWorkflow(id);
 
         // Check current workflow status
         require(workflow.status == WorkflowStatus.ACTIVE, "Registry: only active workflows could be paused");
 
         // Update status
-        workflows[id].status = WorkflowStatus.PAUSED;
+        workflow.status = WorkflowStatus.PAUSED;
+        workflowStorage.mustUpdate(workflow);
 
         emit WorkflowPaused(id);
     }
@@ -279,13 +242,14 @@ contract Registry is Initializable, SignerOwnable {
     //  - Only workflow owner can resume an existing active workflow.
     function resumeWorkflow(uint256 id) external onlyMainchain onlyExistingWorkflow(id) onlyWorkflowOwner(id) {
         // Find the workflow in the list
-        Workflow memory workflow = workflows[id];
+        Workflow memory workflow = workflowStorage.getWorkflow(id);
 
         // Check current workflow status
         require(workflow.status == WorkflowStatus.PAUSED, "Registry: only paused workflows could be resumed");
 
         // Update status
-        workflows[id].status = WorkflowStatus.ACTIVE;
+        workflow.status = WorkflowStatus.ACTIVE;
+        workflowStorage.mustUpdate(workflow);
 
         emit WorkflowResumed(id);
     }
@@ -308,7 +272,8 @@ contract Registry is Initializable, SignerOwnable {
         address target
     ) external onlySigner onlyExistingWorkflow(workflowId) {
         // Get a workflow by ID
-        Workflow memory workflow = workflows[workflowId];
+        Workflow memory workflow = workflowStorage.getWorkflow(workflowId);
+        require(workflow.id > 0, "Registry: workflow not found");
 
         // Make sure the workflow is not paused
         require(workflow.status == WorkflowStatus.ACTIVE, "Registry: workflow must be active");
@@ -330,7 +295,7 @@ contract Registry is Initializable, SignerOwnable {
             success = _callWithExactGas(gasAmount, target, data);
         } else {
             // Get workflow owner's gateway
-            (IGateway existingGateway, ) = getGateway(workflow.owner);
+            IGateway existingGateway = gatewayStorage.getGateway(workflow.owner);
 
             // Execute customer contract through its gateway
             success = _callWithExactGas(
@@ -369,7 +334,8 @@ contract Registry is Initializable, SignerOwnable {
         }
 
         // Update total spent amount of the current workflow
-        workflows[workflowId].totalSpent += amountToCharge;
+        workflow.totalSpent += amountToCharge;
+        workflowStorage.mustUpdate(workflow);
 
         // Emit performance event
         emit Performance(workflowId, amountToCharge, success);
@@ -379,7 +345,7 @@ contract Registry is Initializable, SignerOwnable {
     // Permissions:
     //  - Anyone can read a workflow
     function getWorkflow(uint256 id) external view returns (Workflow memory workflow) {
-        return workflows[id];
+        return workflowStorage.getWorkflow(id);
     }
 
     // getBalance returns the balance for the given address.
@@ -402,13 +368,13 @@ contract Registry is Initializable, SignerOwnable {
         bytes calldata hash
     ) public onlyMsgSenderOrRegistry(owner) {
         // Check if the given workflow owner has a gateway registered.
-        (IGateway existingGateway, ) = getGateway(owner);
+        IGateway existingGateway = gatewayStorage.getGateway(owner);
         require(address(existingGateway) != address(0x0), "Registry: gateway not found");
 
         // Check if the given sender has capacity to create one more workflow
         if (isMainChain && config.maxWorkflowsPerAccount > 0) {
             require(
-                workflowsPerAddress[msg.sender] < config.maxWorkflowsPerAccount,
+                workflowStorage.getWorkflowsPerAddress(msg.sender) < config.maxWorkflowsPerAccount,
                 "Registry: reached max workflows capacity"
             );
         }
@@ -422,8 +388,7 @@ contract Registry is Initializable, SignerOwnable {
         }
 
         // Store a new workflow
-        workflows[id] = Workflow(id, owner, hash, workflowStatus, false, 0);
-        workflowsPerAddress[msg.sender]++;
+        workflowStorage.mustAdd(Workflow(id, owner, hash, workflowStatus, false, 0));
 
         // Emmit the event
         emit WorkflowRegistered(msg.sender, id, hash);
@@ -438,13 +403,14 @@ contract Registry is Initializable, SignerOwnable {
     //  - Only network can execute it through the regular performance process.
     function activateWorkflow(uint256 id) public onlyMainchain onlyRegistry onlyExistingWorkflow(id) {
         // Find the workflow in the list
-        Workflow memory workflow = workflows[id];
+        Workflow memory workflow = workflowStorage.getWorkflow(id);
 
         // Must be PENDING
         require(workflow.status == WorkflowStatus.PENDING, "Registry: workflow must be pending");
 
         // Update status
-        workflows[id].status = WorkflowStatus.ACTIVE;
+        workflow.status = WorkflowStatus.ACTIVE;
+        workflowStorage.mustUpdate(workflow);
 
         emit WorkflowActivated(id);
     }
@@ -457,34 +423,22 @@ contract Registry is Initializable, SignerOwnable {
     //  - Only network can cancel a workflow on SIDECHAIN through the regular performance process.
     function cancelWorkflow(uint256 id) public onlyExistingWorkflow(id) onlyWorkflowOwnerOrRegistry(id) {
         // Find the workflow in the list
-        Workflow memory workflow = workflows[id];
+        Workflow memory workflow = workflowStorage.getWorkflow(id);
 
         // Check current workflow status
         require(workflow.status != WorkflowStatus.CANCELLED, "Registry: workflow is already cancelled");
 
         // Update status
-        workflows[id].status = WorkflowStatus.CANCELLED;
-        workflowsPerAddress[msg.sender]--;
+        workflow.status = WorkflowStatus.CANCELLED;
+        workflowStorage.mustUpdate(workflow);
 
         emit WorkflowCancelled(id);
-    }
-
-    // getGateway returns gateway address of the given owner.
-    function getGateway(address owner) public view returns (IGateway gateway, uint256 index) {
-        for (uint256 i = 0; i < gateways.length; i++) {
-            if (gateways[i].owner == owner) {
-                gateway = gateways[i].gateway;
-                index = i;
-                break;
-            }
-        }
-        return (gateway, index);
     }
 
     // getWorkflowOwnerBalance returns the current balance of the given workflow ID.
     function getWorkflowOwnerBalance(uint256 id) public view returns (uint256) {
         // Find the workflow in the list
-        Workflow memory workflow = workflows[id];
+        Workflow memory workflow = workflowStorage.getWorkflow(id);
 
         // Return just 1 for internal workflows so the workflow engine can identify that the workflow owner has funds.
         // TODO: Implement internal workflows logic in more accurate way

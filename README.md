@@ -44,6 +44,14 @@ The reward distribution pool contract implements the proper rewards distribution
 This contract provides several features to run the network such as billing mechanism, customer contract execution, workflows management, etc.
 Registry contract is an entrypoint of all transactions coming from Nerif Network.
 
+#### [**WorkflowStorage**](./contracts/operational/WorkflowStorage.sol)
+
+The contract that is used to store workflows. Just regular CRUD operations permitted to the registry.
+
+#### [**GatewayStorage**](./contracts/operational/GatewayStorage.sol)
+
+The contract that is used to store gateways info. Just regular CRUD operations permitted to the registry.
+
 ### [**Gateway**](./contracts/operational/Gateway.sol)
 
 The gateway contract is needed as a security entrypoint of all transactions coming from the registry to the customer contract.

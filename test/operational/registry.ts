@@ -26,6 +26,12 @@ describe('Registry', function () {
   async function deployRegistry(mainchain: boolean = true) {
     const [network] = await ethers.getSigners();
 
+    const GatewayStorageFactory = await ethers.getContractFactory('GatewayStorage');
+    const gatewayStorage = await GatewayStorageFactory.deploy();
+
+    const WorkflowStorageFactory = await ethers.getContractFactory('WorkflowStorage');
+    const workflowStorage = await WorkflowStorageFactory.deploy();
+
     const SignerStorageFactory = await ethers.getContractFactory('SignerStorage');
     const signerStorage = await SignerStorageFactory.deploy();
     await expect(await signerStorage.initialize(await network.getAddress()));
@@ -33,10 +39,10 @@ describe('Registry', function () {
     const Registry = await ethers.getContractFactory('Registry');
     const registry = await Registry.deploy();
 
-    await registry.initialize(signerStorage.address, mainchain);
-
+    await expect(await gatewayStorage.initialize(registry.address, []));
+    await expect(await workflowStorage.initialize(registry.address, []));
     await expect(
-      registry.setConfig({
+      await registry.initialize(mainchain, workflowStorage.address, gatewayStorage.address, signerStorage.address, {
         performanceOverhead: 0,
         performancePremiumThreshold: 0,
         registrationOverhead: 0,
@@ -50,9 +56,7 @@ describe('Registry', function () {
 
   async function deployTestCustomerContract() {
     const TestCustomerContract = await ethers.getContractFactory('TestCustomerContract');
-    const testCustomerContract = await TestCustomerContract.deploy();
-
-    return testCustomerContract;
+    return await TestCustomerContract.deploy();
   }
 
   async function fundBalance(registry: Registry, fundWallet: Wallet, amountRaw: string) {

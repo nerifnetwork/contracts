@@ -14,9 +14,11 @@ RUN abigen --abi artifacts/abi/common/AddressStorage.sol/AddressStorage.json --p
 RUN abigen --abi artifacts/abi/common/ContractRegistry.sol/ContractRegistry.json --pkg common --type ContractRegistry --out common/contractregistry.go
 
 # Operational contracts
-RUN abigen --abi artifacts/abi/operational/Registry.sol/Registry.json --pkg operational --type Registry --out operational/registry.go
 RUN abigen --abi artifacts/abi/operational/Gateway.sol/Gateway.json --pkg operational --type Gateway --out operational/gateway.go
+RUN abigen --abi artifacts/abi/operational/GatewayStorage.sol/GatewayStorage.json --pkg operational --type GatewayStorage --out operational/gatewaystorage.go
+RUN abigen --abi artifacts/abi/operational/Registry.sol/Registry.json --pkg operational --type Registry --out operational/registry.go
 RUN abigen --abi artifacts/abi/operational/SignerStorage.sol/SignerStorage.json --pkg operational --type SignerStorage --out operational/signerstorage.go
+RUN abigen --abi artifacts/abi/operational/WorkflowStorage.sol/WorkflowStorage.json --pkg operational --type WorkflowStorage --out operational/workflowstorage.go
 
 # System contracts
 RUN abigen --abi artifacts/abi/system/DKG.sol/DKG.json --pkg system --type DKG --out system/dkg.go
