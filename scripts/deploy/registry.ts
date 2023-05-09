@@ -26,6 +26,7 @@ const internalWorkflows = [
 ];
 
 const defaultRegistryDeploymentParameters: RegistryDeploymentParameters = {
+  signerStorage: '',
   isMainchain: false,
   displayLogs: false,
   verify: false,
@@ -34,10 +35,6 @@ const defaultRegistryDeploymentParameters: RegistryDeploymentParameters = {
 export async function deployRegistryContracts(options?: RegistryDeploymentOptions): Promise<RegistryDeploymentResult> {
   const params = resolveParameters(options);
   const deployer = new Deployer(params.displayLogs);
-
-  const [owner] = await ethers.getSigners();
-
-  const signerStorageAddress = params.signerStorage ? params.signerStorage : owner.address;
 
   deployer.log('Deploying contracts\n');
 
@@ -108,7 +105,7 @@ export async function deployRegistryContracts(options?: RegistryDeploymentOption
       params.isMainchain,
       res.workflowStorage.address,
       res.gatewayStorage.address,
-      signerStorageAddress,
+      params.signerStorage,
       registryConfig
     ),
     'Initializing Registry'
@@ -177,13 +174,13 @@ export interface RegistryDeploymentParameters {
   workflowStorageAddr?: string;
   registryAddr?: string;
   isMainchain: boolean;
-  signerStorage?: string;
+  signerStorage: string;
   displayLogs: boolean;
   verify: boolean;
 }
 
 export interface RegistryDeploymentOptions {
-  signerStorage?: string;
+  signerStorage: string;
   gatewayStorage?: string;
   workflowStorage?: string;
   registry?: string;

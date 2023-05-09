@@ -18,9 +18,14 @@ async function main() {
     const isMainchain = contractsConfig.networkName === undefined || homeContractsConfig.networkName === contractsConfig.networkName;
     const signerStorage = isMainchain ? homeContractsConfig.dkg : contractsConfig.signerStorage;
 
+    if (!signerStorage || signerStorage.length == 0) {
+        console.error("signer storage address must be provided")
+        return
+    }
+
     const res = await deployRegistryContracts({
-        gatewayStorage: contractsConfig.gatewayStorage,
-        workflowStorage: contractsConfig.workflowStorage,
+        gatewayStorage: isMainchain ? homeContractsConfig.gatewayStorage : contractsConfig.gatewayStorage,
+        workflowStorage: isMainchain ? homeContractsConfig.workflowStorage : contractsConfig.workflowStorage,
         signerStorage: signerStorage,
         isMainchain: isMainchain,
         displayLogs: true,
