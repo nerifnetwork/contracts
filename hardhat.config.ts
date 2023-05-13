@@ -41,6 +41,7 @@ const config: HardhatUserConfig = {
     'gnosis-chiado': {
       chainId: 10200,
       url: 'https://rpc.chiadochain.net',
+      gasPrice: 1000000000,
       accounts,
     },
     'linea-testnet': {
@@ -90,7 +91,7 @@ const config: HardhatUserConfig = {
         network: "gnosis-chiado",
         chainId: 10200,
         urls: {
-          apiURL: "",
+          apiURL: "https://blockscout.com/gnosis/chiado/api",
           browserURL: "https://blockscout.com/gnosis/chiado"
         }
       },
@@ -98,7 +99,7 @@ const config: HardhatUserConfig = {
         network: "linea-testnet",
         chainId: 59140,
         urls: {
-          apiURL: "",
+          apiURL: "https://explorer.goerli.linea.build/api",
           browserURL: "https://explorer.goerli.linea.build"
         }
       },
