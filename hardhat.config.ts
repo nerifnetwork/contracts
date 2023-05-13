@@ -58,6 +58,8 @@ const config: HardhatUserConfig = {
       mumbai: process.env.POLYGONSCAN_API_KEY || '',
       goerli: process.env.ETHERSCAN_API_KEY || '',
       "bsc-testnet": process.env.BSCTESTNETSCAN_API_KEY || '',
+      "gnosis-chiado": process.env.GNOSISCHIADOSCAN_API_KEY || '',
+      "linea-testnet": process.env.LINEATESTNETSCAN_API_KEY || '',
     },
     customChains: [
       {
