@@ -13,10 +13,10 @@ async function main() {
     const chainId = network.config.chainId ?? 1;
     const blockNumber = await ethers.provider.getBlockNumber();
 
-    const homeContractsConfig = await readContractsConfig();
+    const mainchainContractsConfig = await readContractsConfig();
     const contractsConfig = await readChainContractsConfig(chainId);
-    const isMainchain = contractsConfig.networkName === undefined || homeContractsConfig.networkName === contractsConfig.networkName;
-    const signerStorage = isMainchain ? homeContractsConfig.dkg : contractsConfig.signerStorage;
+    const isMainchain = contractsConfig.networkName === undefined || mainchainContractsConfig.networkName === contractsConfig.networkName;
+    const signerStorage = isMainchain ? mainchainContractsConfig.dkg : contractsConfig.signerStorage;
 
     if (!signerStorage || signerStorage.length == 0) {
         console.error("signer storage address must be provided")
@@ -24,8 +24,6 @@ async function main() {
     }
 
     const res = await deployRegistryContracts({
-        gatewayStorage: isMainchain ? homeContractsConfig.gatewayStorage : contractsConfig.gatewayStorage,
-        workflowStorage: isMainchain ? homeContractsConfig.workflowStorage : contractsConfig.workflowStorage,
         signerStorage: signerStorage,
         isMainchain: isMainchain,
         displayLogs: true,
@@ -33,8 +31,8 @@ async function main() {
     });
 
     if (isMainchain) {
-        updateContractsConfig(homeContractsConfig, res);
-        await writeContractsConfig(homeContractsConfig);
+        updateContractsConfig(mainchainContractsConfig, res);
+        await writeContractsConfig(mainchainContractsConfig);
     } else {
         contractsConfig.networkName = network.name;
         contractsConfig.startBlock = blockNumber.toString();

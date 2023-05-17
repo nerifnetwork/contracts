@@ -1,5 +1,5 @@
 import { ethers } from 'hardhat';
-import { GatewayStorage, Registry, WorkflowStorage } from '../../typechain';
+import { Registry } from '../../typechain';
 import { Deployer } from './deployer';
 import { BigNumber } from 'ethers';
 
@@ -39,46 +39,12 @@ export async function deployRegistryContracts(options?: RegistryDeploymentOption
   deployer.log('Deploying contracts\n');
 
   const res: RegistryDeployment = {
-    gatewayStorage: await deployer.deploy(
-      ethers.getContractFactory('GatewayStorage'),
-      'GatewayStorage',
-      params.gatewayStorageAddr
-    ),
-    workflowStorage: await deployer.deploy(
-      ethers.getContractFactory('WorkflowStorage'),
-      'WorkflowStorage',
-      params.workflowStorageAddr
-    ),
     registry: await deployer.deploy(ethers.getContractFactory('Registry'), 'Registry'),
   };
 
   deployer.log('Successfully deployed contracts\n');
 
   deployer.log('Initializing contracts\n');
-
-  if (!params.gatewayStorageAddr) {
-    await deployer.sendTransaction(
-      res.gatewayStorage.initialize(res.registry.address, []),
-      'Initializing GatewayStorage'
-    );
-  } else {
-    await deployer.sendTransaction(
-      res.gatewayStorage.setRegistry(res.registry.address),
-      'Updating registry in GatewayStorage'
-    );
-  }
-
-  if (!params.workflowStorageAddr) {
-    await deployer.sendTransaction(
-      res.workflowStorage.initialize(res.registry.address, internalWorkflows),
-      'Initializing WorkflowStorage'
-    );
-  } else {
-    await deployer.sendTransaction(
-      res.workflowStorage.setRegistry(res.registry.address),
-      'Updating registry in WorkflowStorage'
-    );
-  }
 
   // Get current config if exists
   let registryConfig = {
@@ -101,13 +67,7 @@ export async function deployRegistryContracts(options?: RegistryDeploymentOption
   }
 
   await deployer.sendTransaction(
-    res.registry.initialize(
-      params.isMainchain,
-      res.workflowStorage.address,
-      res.gatewayStorage.address,
-      params.signerStorage,
-      registryConfig
-    ),
+    res.registry.initialize(params.isMainchain, params.signerStorage, internalWorkflows, registryConfig),
     'Initializing Registry'
   );
 
@@ -128,14 +88,6 @@ function resolveParameters(options?: RegistryDeploymentOptions): RegistryDeploym
 
   if (options === undefined) {
     return parameters;
-  }
-
-  if (options.gatewayStorage !== undefined) {
-    parameters.gatewayStorageAddr = options.gatewayStorage;
-  }
-
-  if (options.workflowStorage !== undefined) {
-    parameters.workflowStorageAddr = options.workflowStorage;
   }
 
   if (options.registry !== undefined) {
@@ -164,14 +116,10 @@ function resolveParameters(options?: RegistryDeploymentOptions): RegistryDeploym
 export interface RegistryDeploymentResult extends RegistryDeployment, RegistryDeploymentParameters {}
 
 export interface RegistryDeployment {
-  gatewayStorage: GatewayStorage;
-  workflowStorage: WorkflowStorage;
   registry: Registry;
 }
 
 export interface RegistryDeploymentParameters {
-  gatewayStorageAddr?: string;
-  workflowStorageAddr?: string;
   registryAddr?: string;
   isMainchain: boolean;
   signerStorage: string;
@@ -181,8 +129,6 @@ export interface RegistryDeploymentParameters {
 
 export interface RegistryDeploymentOptions {
   signerStorage: string;
-  gatewayStorage?: string;
-  workflowStorage?: string;
   registry?: string;
   isMainchain?: boolean;
   displayLogs?: boolean;
