@@ -114,10 +114,10 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
     }
 
     // fundBalance funds the balance of the sender's address with the given amount.
-    function fundBalance(address addr) external payable {
+    function fundBalance() external payable {
         uint256 currentBalance = getBalance(msg.sender);
         _setBalance(msg.sender, currentBalance + msg.value);
-        emit BalanceFunded(addr, msg.value);
+        emit BalanceFunded(msg.sender, msg.value);
     }
 
     // withdrawBalance withdraws the remaining balance of the sender's public key.
@@ -158,9 +158,9 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
     }
 
     // setGateway sets gateway for the given owner address.
-    function setGateway(address owner, address gateway) external onlyMsgSender(owner) {
-        _setGateway(owner, IGateway(gateway));
-        emit GatewaySet(owner, gateway);
+    function setGateway(address gateway) external {
+        _setGateway(msg.sender, IGateway(gateway));
+        emit GatewaySet(msg.sender, gateway);
     }
 
     // pauseWorkflow pauses an existing active workflow.

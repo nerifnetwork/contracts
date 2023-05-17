@@ -76,7 +76,7 @@ describe('Registry', function () {
     const nodeAddress = await fundWallet.getAddress();
     const amount = ethers.utils.parseEther(amountRaw);
 
-    await expect(registry.connect(fundWallet.connect(ethers.provider)).fundBalance(nodeAddress, { value: amount }))
+    await expect(registry.connect(fundWallet.connect(ethers.provider)).fundBalance({ value: amount }))
       .to.emit(registry, 'BalanceFunded')
       .withArgs(nodeAddress, amount);
 
@@ -167,7 +167,7 @@ describe('Registry', function () {
       // Register gateway
       const Gateway = await ethers.getContractFactory('Gateway');
       const gateway = await Gateway.connect(newNodeProvider).deploy();
-      await expect(registry.connect(newNodeProvider).setGateway(nodeAddress, gateway.address))
+      await expect(registry.connect(newNodeProvider).setGateway(gateway.address))
         .to.emit(registry, 'GatewaySet')
         .withArgs(nodeAddress, gateway.address);
 
@@ -192,7 +192,7 @@ describe('Registry', function () {
       // Register gateway
       const Gateway = await ethers.getContractFactory('Gateway');
       const gateway = await Gateway.connect(newNodeProvider).deploy();
-      await expect(registry.connect(newNodeProvider).setGateway(nodeAddress, gateway.address))
+      await expect(registry.connect(newNodeProvider).setGateway(gateway.address))
         .to.emit(registry, 'GatewaySet')
         .withArgs(nodeAddress, gateway.address);
 
@@ -234,7 +234,7 @@ describe('Registry', function () {
       // Register gateway
       const Gateway = await ethers.getContractFactory('Gateway');
       const gateway = await Gateway.connect(newNodeProvider).deploy();
-      await expect(registry.connect(newNodeProvider).setGateway(nodeAddress, gateway.address))
+      await expect(registry.connect(newNodeProvider).setGateway(gateway.address))
         .to.emit(registry, 'GatewaySet')
         .withArgs(nodeAddress, gateway.address);
 
@@ -268,7 +268,7 @@ describe('Registry', function () {
       // Register gateway
       const Gateway = await ethers.getContractFactory('Gateway');
       const gateway = await Gateway.connect(newNodeProvider).deploy();
-      await expect(registry.connect(newNodeProvider).setGateway(nodeAddress, gateway.address))
+      await expect(registry.connect(newNodeProvider).setGateway(gateway.address))
         .to.emit(registry, 'GatewaySet')
         .withArgs(nodeAddress, gateway.address);
 
@@ -306,7 +306,7 @@ describe('Registry', function () {
       // Register gateway
       const Gateway = await ethers.getContractFactory('Gateway');
       const gateway = await Gateway.connect(newNodeProvider).deploy();
-      await expect(registry.connect(newNodeProvider).setGateway(nodeAddress, gateway.address))
+      await expect(registry.connect(newNodeProvider).setGateway(gateway.address))
         .to.emit(registry, 'GatewaySet')
         .withArgs(nodeAddress, gateway.address);
 
@@ -334,7 +334,7 @@ describe('Registry', function () {
       // Register gateway
       const Gateway = await ethers.getContractFactory('Gateway');
       const gateway = await Gateway.connect(newNodeProvider).deploy();
-      await expect(registry.connect(newNodeProvider).setGateway(nodeAddress, gateway.address))
+      await expect(registry.connect(newNodeProvider).setGateway(gateway.address))
         .to.emit(registry, 'GatewaySet')
         .withArgs(nodeAddress, gateway.address);
 
@@ -385,9 +385,7 @@ describe('Registry', function () {
       const workflowOwnerAddress = await workflowOwner.getAddress();
 
       // Fund balance
-      await expect(
-        registry.connect(workflowOwner).fundBalance(workflowOwnerAddress, { value: ethers.utils.parseEther('1') })
-      )
+      await expect(registry.connect(workflowOwner).fundBalance({ value: ethers.utils.parseEther('1') }))
         .to.emit(registry, 'BalanceFunded')
         .withArgs(workflowOwnerAddress, anyValue);
 
@@ -395,7 +393,7 @@ describe('Registry', function () {
       const Gateway = await ethers.getContractFactory('Gateway');
       const gateway = await Gateway.connect(workflowOwner).deploy();
       await gateway.initialize(registry.address);
-      await expect(registry.connect(workflowOwner).setGateway(workflowOwnerAddress, gateway.address))
+      await expect(registry.connect(workflowOwner).setGateway(gateway.address))
         .to.emit(registry, 'GatewaySet')
         .withArgs(workflowOwnerAddress, gateway.address);
 
