@@ -33,7 +33,7 @@ export async function deployGatewayContracts(options?: GatewayDeploymentOptions)
   const registryFactory = await ethers.getContractFactory('Registry', owner);
   const registry = registryFactory.attach(params.registry);
 
-  await deployer.sendTransaction(registry.setGateway(owner.address, res.gateway.address), 'Registering Gateway');
+  await deployer.sendTransaction(registry.setGateway(res.gateway.address), 'Registering Gateway');
 
   deployer.log('Successfully added gateway to registry\n');
 
