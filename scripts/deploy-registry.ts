@@ -24,8 +24,6 @@ async function main() {
     }
 
     const res = await deployRegistryContracts({
-        gatewayStorage: isMainchain ? homeContractsConfig.gatewayStorage : contractsConfig.gatewayStorage,
-        workflowStorage: isMainchain ? homeContractsConfig.workflowStorage : contractsConfig.workflowStorage,
         signerStorage: signerStorage,
         isMainchain: isMainchain,
         displayLogs: true,

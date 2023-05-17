@@ -7,6 +7,27 @@ import { Registry } from '../../typechain';
 const tccABI = require('../../artifacts/contracts/test/TestCustomerContract.sol/TestCustomerContract.json');
 const registryContractABI = require('../../artifacts/contracts/operational/Registry.sol/Registry.json');
 
+const internalWorkflows = [
+  // Workflow registration workflow
+  {
+    id: '40505927788353901442144037336646356013',
+    owner: '0x0000000000000000000000000000000000000000',
+    hash: '0x00',
+    status: 1,
+    isInternal: true,
+    totalSpent: 0,
+  },
+  // Workflow cancellation workflow
+  {
+    id: '219775546284901721155783592958414245131',
+    owner: '0x0000000000000000000000000000000000000000',
+    hash: '0x00',
+    status: 1,
+    isInternal: true,
+    totalSpent: 0,
+  },
+];
+
 describe('Registry', function () {
   async function createRandomWallet(fund: string = '10') {
     const [owner] = await ethers.getSigners();
@@ -26,12 +47,6 @@ describe('Registry', function () {
   async function deployRegistry(mainchain: boolean = true) {
     const [network] = await ethers.getSigners();
 
-    const GatewayStorageFactory = await ethers.getContractFactory('GatewayStorage');
-    const gatewayStorage = await GatewayStorageFactory.deploy();
-
-    const WorkflowStorageFactory = await ethers.getContractFactory('WorkflowStorage');
-    const workflowStorage = await WorkflowStorageFactory.deploy();
-
     const SignerStorageFactory = await ethers.getContractFactory('SignerStorage');
     const signerStorage = await SignerStorageFactory.deploy();
     await expect(await signerStorage.initialize(await network.getAddress()));
@@ -39,10 +54,8 @@ describe('Registry', function () {
     const Registry = await ethers.getContractFactory('Registry');
     const registry = await Registry.deploy();
 
-    await expect(await gatewayStorage.initialize(registry.address, []));
-    await expect(await workflowStorage.initialize(registry.address, []));
     await expect(
-      await registry.initialize(mainchain, workflowStorage.address, gatewayStorage.address, signerStorage.address, {
+      await registry.initialize(mainchain, signerStorage.address, internalWorkflows, {
         performanceOverhead: 0,
         performancePremiumThreshold: 0,
         registrationOverhead: 0,
@@ -125,7 +138,7 @@ describe('Registry', function () {
       const newNodeWalletAddr = await newNodeWallet.getAddress();
       await fundBalance(registry, newNodeWallet, '1');
 
-      await expect(registry.connect(newNodeWallet.connect(ethers.provider)).withdrawBalance(newNodeWalletAddr))
+      await expect(registry.connect(newNodeWallet.connect(ethers.provider)).withdrawBalance())
         .to.emit(registry, 'BalanceWithdrawn')
         .withArgs(newNodeWalletAddr, ethers.utils.parseEther('1'));
     });
@@ -137,7 +150,7 @@ describe('Registry', function () {
       const newNodeWalletAddr = await newNodeWallet.getAddress();
       await fundBalance(registry, newNodeWallet, '1');
 
-      await expect(registry.connect(newNodeWallet.connect(ethers.provider)).withdrawBalance(newNodeWalletAddr))
+      await expect(registry.connect(newNodeWallet.connect(ethers.provider)).withdrawBalance())
         .to.emit(registry, 'BalanceWithdrawn')
         .withArgs(newNodeWalletAddr, ethers.utils.parseEther('1'));
     });
@@ -237,8 +250,8 @@ describe('Registry', function () {
 
       // Pause workflow
       await expect(registry.connect(newNodeWallet.connect(ethers.provider)).pauseWorkflow(workflowID))
-        .to.emit(registry, 'WorkflowPaused')
-        .withArgs(workflowID);
+        .to.emit(registry, 'WorkflowStatusChanged')
+        .withArgs(workflowID, 2);
     });
   });
 
@@ -271,13 +284,13 @@ describe('Registry', function () {
 
       // Pause workflow
       await expect(registry.connect(newNodeWallet.connect(ethers.provider)).pauseWorkflow(workflowID))
-        .to.emit(registry, 'WorkflowPaused')
-        .withArgs(workflowID);
+        .to.emit(registry, 'WorkflowStatusChanged')
+        .withArgs(workflowID, 2);
 
       // Resume workflow
       await expect(registry.connect(newNodeWallet.connect(ethers.provider)).resumeWorkflow(workflowID))
-        .to.emit(registry, 'WorkflowResumed')
-        .withArgs(workflowID);
+        .to.emit(registry, 'WorkflowStatusChanged')
+        .withArgs(workflowID, 1);
     });
   });
 
@@ -306,8 +319,8 @@ describe('Registry', function () {
 
       // Cancel workflow
       await expect(registry.connect(newNodeWallet.connect(ethers.provider)).cancelWorkflow(workflowID))
-        .to.emit(registry, 'WorkflowCancelled')
-        .withArgs(workflowID);
+        .to.emit(registry, 'WorkflowStatusChanged')
+        .withArgs(workflowID, 3);
     });
 
     it('SIDECHAIN: network can cancel workflow', async function () {

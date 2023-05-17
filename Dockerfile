@@ -27,11 +27,6 @@ RUN abigen --abi artifacts/abi/operational/Gateway.sol/Gateway.json \
            --pkg operational \
            --type Gateway \
            --out operational/gateway.go
-RUN abigen --abi artifacts/abi/operational/GatewayStorage.sol/GatewayStorage.json \
-           --bin artifacts/bin/operational/GatewayStorage.sol/GatewayStorage.bin \
-           --pkg operational \
-           --type GatewayStorage \
-           --out operational/gatewaystorage.go
 RUN abigen --abi artifacts/abi/operational/Registry.sol/Registry.json \
            --bin artifacts/bin/operational/Registry.sol/Registry.bin \
            --pkg operational \
@@ -42,11 +37,6 @@ RUN abigen --abi artifacts/abi/operational/SignerStorage.sol/SignerStorage.json 
            --pkg operational \
            --type SignerStorage \
            --out operational/signerstorage.go
-RUN abigen --abi artifacts/abi/operational/WorkflowStorage.sol/WorkflowStorage.json \
-           --bin artifacts/bin/operational/WorkflowStorage.sol/WorkflowStorage.bin \
-           --pkg operational \
-           --type WorkflowStorage \
-           --out operational/workflowstorage.go
 
 # System contracts
 RUN abigen --abi artifacts/abi/system/DKG.sol/DKG.json \

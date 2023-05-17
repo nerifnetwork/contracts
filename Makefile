@@ -30,15 +30,21 @@ deploy-system:
 	npx hardhat --network mumbai run scripts/deploy-mainchain.ts
 	npx hardhat --network goerli run scripts/deploy-sidechain.ts
 	npx hardhat --network bsc-testnet run scripts/deploy-sidechain.ts
+	npx hardhat --network gnosis-chiado run scripts/deploy-sidechain.ts
+	npx hardhat --network linea-testnet run scripts/deploy-sidechain.ts
 
 .PHONY: deploy-registries
 deploy-registries:
 	npx hardhat --network mumbai run scripts/deploy-registry.ts
 	npx hardhat --network goerli run scripts/deploy-registry.ts
 	npx hardhat --network bsc-testnet run scripts/deploy-registry.ts
+	npx hardhat --network gnosis-chiado run scripts/deploy-registry.ts
+	npx hardhat --network linea-testnet run scripts/deploy-registry.ts
 
 .PHONY: deploy-gateways
 deploy-gateways:
 	npx hardhat --network mumbai run scripts/deploy-gateway.ts
 	npx hardhat --network goerli run scripts/deploy-gateway.ts
 	npx hardhat --network bsc-testnet run scripts/deploy-gateway.ts
+	npx hardhat --network gnosis-chiado run scripts/deploy-gateway.ts
+	npx hardhat --network linea-testnet run scripts/deploy-gateway.ts
