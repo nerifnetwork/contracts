@@ -31,6 +31,7 @@ deploy-system:
 	VERIFY=true npx hardhat --network goerli run scripts/deploy-sidechain.ts
 	VERIFY=true npx hardhat --network bsc-testnet run scripts/deploy-sidechain.ts
 	VERIFY=true npx hardhat --network gnosis-chiado run scripts/deploy-sidechain.ts
+	VERIFY=true npx hardhat --network linea-testnet run scripts/deploy-sidechain.ts
 
 .PHONY: deploy-registries
 deploy-registries:
@@ -38,6 +39,7 @@ deploy-registries:
 	VERIFY=true npx hardhat --network goerli run scripts/deploy-registry.ts
 	VERIFY=true npx hardhat --network bsc-testnet run scripts/deploy-registry.ts
 	VERIFY=true npx hardhat --network gnosis-chiado run scripts/deploy-registry.ts
+	VERIFY=true npx hardhat --network linea-testnet run scripts/deploy-registry.ts
 
 .PHONY: deploy-gateways
 deploy-gateways:
@@ -45,3 +47,4 @@ deploy-gateways:
 	VERIFY=true npx hardhat --network goerli run scripts/deploy-gateway.ts
 	VERIFY=true npx hardhat --network bsc-testnet run scripts/deploy-gateway.ts
 	VERIFY=true npx hardhat --network gnosis-chiado run scripts/deploy-gateway.ts
+	VERIFY=true npx hardhat --network linea-testnet run scripts/deploy-gateway.ts
