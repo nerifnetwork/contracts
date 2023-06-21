@@ -23,7 +23,7 @@ abigen: # Generate go files
 	docker rm -v $$CONTAINER
 
 .PHONY: deploy
-deploy: deploy-system deploy-registries deploy-gateways
+deploy: deploy-system deploy-registries
 
 .PHONY: deploy-system
 deploy-system:
@@ -41,10 +41,19 @@ deploy-registries:
 	VERIFY=true npx hardhat --network gnosis-chiado run scripts/deploy-registry.ts
 	VERIFY=true npx hardhat --network linea-testnet run scripts/deploy-registry.ts
 
-.PHONY: deploy-gateways
-deploy-gateways:
-	VERIFY=true npx hardhat --network mumbai run scripts/deploy-gateway.ts
-	VERIFY=true npx hardhat --network goerli run scripts/deploy-gateway.ts
-	VERIFY=true npx hardhat --network bsc-testnet run scripts/deploy-gateway.ts
-	VERIFY=true npx hardhat --network gnosis-chiado run scripts/deploy-gateway.ts
-	VERIFY=true npx hardhat --network linea-testnet run scripts/deploy-gateway.ts
+.PHONY: deploy-mainnet
+deploy-mainnet: deploy-mainnet-system deploy-mainnet-registries
+
+.PHONY: deploy-mainnet-system
+deploy-mainnet-system:
+	VERIFY=true npx hardhat --network polygon run scripts/deploy-mainchain.ts
+	VERIFY=true npx hardhat --network ethereum run scripts/deploy-sidechain.ts
+	VERIFY=true npx hardhat --network bsc run scripts/deploy-sidechain.ts
+	VERIFY=true npx hardhat --network gnosis run scripts/deploy-sidechain.ts
+
+.PHONY: deploy-mainnet-registries
+deploy-mainnet-registries:
+	VERIFY=true npx hardhat --network polygon run scripts/deploy-registry.ts
+	VERIFY=true npx hardhat --network ethereum run scripts/deploy-registry.ts
+	VERIFY=true npx hardhat --network bsc run scripts/deploy-registry.ts
+	VERIFY=true npx hardhat --network gnosis run scripts/deploy-registry.ts

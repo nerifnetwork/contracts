@@ -17,7 +17,7 @@ export async function deploySidechainContracts(
   const [owner] = await ethers.getSigners();
 
   let initialSignerAddress = owner.address;
-  const initialSignerBalance = ethers.utils.parseEther('0.05');
+  const initialSignerBalance = ethers.utils.parseEther('0.01');
 
   if (options?.homeNetwork !== undefined && options?.homeDKGAddress !== undefined) {
     deployer.log('Receiving DKG signer address\n');
