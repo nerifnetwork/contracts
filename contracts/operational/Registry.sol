@@ -220,6 +220,8 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         bytes calldata data,
         address target
     ) external onlySigner onlyExistingWorkflow(workflowId) {
+        uint256 gasUsed = gasleft();
+
         // Get a workflow by ID
         Workflow memory workflow = getWorkflow(workflowId);
         require(workflow.id > 0, "Registry: workflow not found");
@@ -241,7 +243,6 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         // TODO: Make sure the given transaction was not performed yet
 
         // Execute client's contract through gateway
-        uint256 gasUsed = gasleft();
         bool success = false;
         if (address(this) == target) {
             success = _callWithExactGas(gasAmount, target, data);
@@ -256,12 +257,11 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
                 abi.encodeWithSignature(GATEWAY_PERFORM_FUNC_SIGNATURE, workflowId, target, data)
             );
         }
+
         gasUsed -= gasleft();
 
         // Adding performance overhead if exists
-        if (config.performanceOverhead > 0) {
-            gasUsed += config.performanceOverhead;
-        }
+        gasUsed += config.performanceOverhead;
 
         // Adding performance premium
         if (config.performancePremiumThreshold > 0) {
