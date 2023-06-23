@@ -258,21 +258,18 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         }
         gasUsed -= gasleft();
 
-        // Calculate amount to charge
-        uint256 amountToCharge = gasUsed;
-
         // Adding performance overhead if exists
         if (config.performanceOverhead > 0) {
-            amountToCharge += config.performanceOverhead;
+            gasUsed += config.performanceOverhead;
         }
 
         // Adding performance premium
         if (config.performancePremiumThreshold > 0) {
-            amountToCharge += amountToCharge / uint256(config.performancePremiumThreshold);
+            gasUsed += gasUsed / uint256(config.performancePremiumThreshold);
         }
 
         // Calculate amount to charge
-        amountToCharge = amountToCharge * tx.gasprice;
+        uint256 amountToCharge = gasUsed * tx.gasprice;
 
         if (!workflow.isInternal) {
             // Make sure owner has enough funds
@@ -290,7 +287,7 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         require(_updateWorkflow(workflow), "Registry: failed to update workflow");
 
         // Emit performance event
-        emit Performance(workflowId, amountToCharge, success);
+        emit Performance(workflowId, gasUsed, success);
     }
 
     // registerWorkflow registers a new workflow metadata.
