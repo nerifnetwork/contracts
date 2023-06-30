@@ -1,16 +1,16 @@
 import { BaseContract } from 'ethers';
 import { promises as fs } from 'fs';
 
+const environment = process.env.ENVIRONMENT || 'local';
+
 export interface ContractsConfig {
   [key: string]: string | undefined;
 }
 
 export async function readContractsConfig(): Promise<ContractsConfig> {
   try {
-    const fileData = await fs.readFile('contracts.json');
-    const config = JSON.parse(fileData.toString());
-
-    return config;
+    const fileData = await fs.readFile(`deployed-contracts/${environment}/contracts.json`);
+    return JSON.parse(fileData.toString());
   } catch (error) {
     return {};
   }
@@ -18,7 +18,7 @@ export async function readContractsConfig(): Promise<ContractsConfig> {
 
 export async function writeContractsConfig(config: ContractsConfig): Promise<void> {
   try {
-    await fs.writeFile('contracts.json', JSON.stringify(config, null, 2));
+    await fs.writeFile(`deployed-contracts/${environment}/contracts.json`, JSON.stringify(config, null, 2));
   } catch (error) {
     console.error(error);
   }
@@ -34,10 +34,8 @@ export async function updateContractsConfig(config: ContractsConfig, data: Objec
 
 export async function readChainContractsConfig(chainId: number): Promise<ContractsConfig> {
   try {
-    const fileData = await fs.readFile(`contracts-${chainId}.json`);
-    const config = JSON.parse(fileData.toString());
-
-    return config;
+    const fileData = await fs.readFile(`deployed-contracts/${environment}/contracts-${chainId}.json`);
+    return JSON.parse(fileData.toString());
   } catch (error) {
     return {};
   }
@@ -45,7 +43,7 @@ export async function readChainContractsConfig(chainId: number): Promise<Contrac
 
 export async function writeChainContractsConfig(chainId: number, config: ContractsConfig): Promise<void> {
   try {
-    await fs.writeFile(`contracts-${chainId}.json`, JSON.stringify(config, null, 2));
+    await fs.writeFile(`deployed-contracts/${environment}/contracts-${chainId}.json`, JSON.stringify(config, null, 2));
   } catch (error) {
     console.error(error);
   }

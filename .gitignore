@@ -9,9 +9,7 @@ dist
 cache
 artifacts
 
-
 .openzeppelin/.session
 
-/contracts.json
-/contracts-*.json
 /sidechainconfig.yaml
+/deployed-contracts

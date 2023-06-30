@@ -92,7 +92,7 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
     ) external initializer {
         isMainChain = _isMainChain;
         _setSignerGetter(_signerGetterAddress);
-        setConfig(_config);
+        config = _config;
     }
 
     // fundBalance funds the balance of the sender's address with the given amount.
@@ -100,6 +100,11 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         uint256 currentBalance = getBalance(msg.sender);
         _setBalance(msg.sender, currentBalance + msg.value);
         emit BalanceFunded(msg.sender, msg.value);
+    }
+
+    // setConfig sets the given configuration
+    function setConfig(Config calldata _config) external onlySigner {
+        config = _config;
     }
 
     // withdrawBalance withdraws the remaining balance of the sender's public key.
@@ -348,11 +353,6 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         require(_updateWorkflow(workflow), "Registry: failed to update workflow");
 
         emit WorkflowStatusChanged(id, WorkflowStatus.CANCELLED);
-    }
-
-    // setConfig sets the given configuration
-    function setConfig(Config calldata _config) public onlySigner {
-        config = _config;
     }
 
     // getWorkflowOwnerBalance returns the current balance of the given workflow ID.
