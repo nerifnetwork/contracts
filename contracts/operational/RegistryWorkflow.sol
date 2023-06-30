@@ -29,11 +29,12 @@ abstract contract RegistryWorkflow {
 
     modifier onlyWorkflowOwner(uint256 id) {
         Workflow memory workflow = getWorkflow(id);
-        require(workflow.owner == msg.sender, "Registry: workflow does not exist");
+        require(workflow.owner == msg.sender, "Registry: operation not permitted");
         _;
     }
 
     function getWorkflow(uint256 id) public view returns (Workflow memory) {
+        require(_hasWorkflow(id), "Registry: workflow does not exist");
         return workflows[indexMap[id] - 1];
     }
 
