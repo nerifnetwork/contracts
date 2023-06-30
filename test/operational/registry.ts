@@ -1,7 +1,7 @@
 import { anyValue } from '@nomicfoundation/hardhat-chai-matchers/withArgs';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
-import { Signer, Wallet } from 'ethers';
+import { Wallet } from 'ethers';
 import { Registry } from '../../typechain';
 
 const tccABI = require('../../artifacts/contracts/test/TestCustomerContract.sol/TestCustomerContract.json');
