@@ -228,20 +228,15 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         // TODO: Make sure the given transaction was not performed yet
 
         // Execute client's contract through gateway
-        bool success = false;
-        if (address(this) == target) {
-            success = _callWithExactGas(gasAmount, target, data);
-        } else {
-            // Get workflow owner's gateway
-            IGateway existingGateway = getGateway(workflow.owner); // TODO: Make sure it is not zero address
+        // Get workflow owner's gateway
+        IGateway existingGateway = getGateway(workflow.owner); // TODO: Make sure it is not zero address
 
-            // Execute customer contract through its gateway
-            success = _callWithExactGas(
-                gasAmount,
-                address(existingGateway),
-                abi.encodeWithSignature(GATEWAY_PERFORM_FUNC_SIGNATURE, workflowId, target, data)
-            );
-        }
+        // Execute customer contract through its gateway
+        bool success = _callWithExactGas(
+            gasAmount,
+            address(existingGateway),
+            abi.encodeWithSignature(GATEWAY_PERFORM_FUNC_SIGNATURE, workflowId, target, data)
+        );
 
         gasUsed -= gasleft();
 
