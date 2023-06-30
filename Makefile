@@ -41,13 +41,13 @@ deploy-registries:
 	VERIFY=true npx hardhat --network gnosis-chiado run scripts/deploy-registry.ts
 	VERIFY=true npx hardhat --network linea-testnet run scripts/deploy-registry.ts
 
-.PHONY: deploy-prod
-deploy-prod: deploy-prod-system deploy-prod-registries
+.PHONY: deploy-mainnet
+deploy-prod: deploy-mainnet-system deploy-mainnet-registries
 
-.PHONY: deploy-prod-system
-deploy-prod-system: deploy-system
+.PHONY: deploy-mainnet-system
+deploy-mainnet-system:
 	VERIFY=true npx hardhat --network polygon run scripts/deploy-mainchain.ts
 
-.PHONY: deploy-prod-registries
-deploy-prod-registries: deploy-registries
+.PHONY: deploy-mainnet-registries
+deploy-mainnet-registries:
 	VERIFY=true npx hardhat --network polygon run scripts/deploy-registry.ts
