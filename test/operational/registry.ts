@@ -1,32 +1,10 @@
 import { anyValue } from '@nomicfoundation/hardhat-chai-matchers/withArgs';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
-import { Signer, Wallet } from 'ethers';
+import { Wallet } from 'ethers';
 import { Registry } from '../../typechain';
 
 const tccABI = require('../../artifacts/contracts/test/TestCustomerContract.sol/TestCustomerContract.json');
-const registryContractABI = require('../../artifacts/contracts/operational/Registry.sol/Registry.json');
-
-const internalWorkflows = [
-  // Workflow registration workflow
-  {
-    id: '40505927788353901442144037336646356013',
-    owner: '0x0000000000000000000000000000000000000000',
-    hash: '0x00',
-    status: 1,
-    isInternal: true,
-    totalSpent: 0,
-  },
-  // Workflow cancellation workflow
-  {
-    id: '219775546284901721155783592958414245131',
-    owner: '0x0000000000000000000000000000000000000000',
-    hash: '0x00',
-    status: 1,
-    isInternal: true,
-    totalSpent: 0,
-  },
-];
 
 describe('Registry', function () {
   async function createRandomWallet(fund: string = '10') {
@@ -55,7 +33,7 @@ describe('Registry', function () {
     const registry = await Registry.deploy();
 
     await expect(
-      await registry.initialize(mainchain, signerStorage.address, internalWorkflows, {
+      await registry.initialize(mainchain, signerStorage.address, {
         performanceOverhead: 0,
         performancePremiumThreshold: 0,
         registrationOverhead: 0,
@@ -81,25 +59,6 @@ describe('Registry', function () {
       .withArgs(nodeAddress, amount);
 
     await expect(await registry.getBalance(nodeAddress)).to.equal(amount);
-  }
-
-  async function activateWorkflow(registry: Registry, signer: Signer, workflowID: number) {
-    // Create a contract ABI instance
-    const cc = new ethers.Contract(registry.address, registryContractABI.abi, signer);
-
-    // Encode the function call with the selector
-    const functionCallData = cc.interface.encodeFunctionData(cc.interface.getSighash('activateWorkflow'), [
-      ethers.utils.solidityPack(['uint256'], [workflowID]),
-    ]);
-
-    // Activate the workflow
-    await expect(
-      registry
-        .connect(signer)
-        .perform('40505927788353901442144037336646356013', 300_000, functionCallData, registry.address)
-    )
-      .to.emit(registry, 'Performance')
-      .withArgs('40505927788353901442144037336646356013', anyValue, true);
   }
 
   describe('Deployment', function () {
@@ -196,24 +155,10 @@ describe('Registry', function () {
         .to.emit(registry, 'GatewaySet')
         .withArgs(nodeAddress, gateway.address);
 
-      // Create a contract ABI instance
-      const cc = new ethers.Contract(registry.address, registryContractABI.abi);
-
-      // Encode the function call with the selector
-      const functionSignature = cc.interface.getSighash('registerWorkflow');
-      const functionCallData = cc.interface.encodeFunctionData(functionSignature, [
-        ethers.utils.solidityPack(['uint256'], [123]),
-        ethers.utils.solidityPack(['address'], [nodeAddress]),
-        ethers.utils.solidityPack(['bytes'], ['0x00']),
-      ]);
-
-      await expect(
-        registry
-          .connect(network)
-          .perform('40505927788353901442144037336646356013', 300_000, functionCallData, registry.address)
-      )
-        .to.emit(registry, 'Performance')
-        .withArgs('40505927788353901442144037336646356013', anyValue, true);
+      // Register workflow
+      await expect(registry.connect(network).registerWorkflow(123, nodeAddress, []))
+        .to.emit(registry, 'WorkflowRegistered')
+        .withArgs(await network.getAddress(), '123', []);
 
       // Status must be ACTIVE on SIDECHAIN
       const workflow = await registry.getWorkflow(123);
@@ -245,8 +190,10 @@ describe('Registry', function () {
         .to.emit(registry, 'WorkflowRegistered')
         .withArgs(nodeAddress, workflowID, []);
 
-      // Activate workflow as a network
-      await activateWorkflow(registry, network, 123);
+      // Activate workflow
+      await expect(registry.connect(network).activateWorkflow(workflowID))
+        .to.emit(registry, 'WorkflowStatusChanged')
+        .withArgs(workflowID, 1);
 
       // Pause workflow
       await expect(registry.connect(newNodeWallet.connect(ethers.provider)).pauseWorkflow(workflowID))
@@ -280,7 +227,9 @@ describe('Registry', function () {
         .withArgs(nodeAddress, workflowID, []);
 
       // Activate workflow
-      await activateWorkflow(registry, network, workflowID);
+      await expect(registry.connect(network).activateWorkflow(workflowID))
+        .to.emit(registry, 'WorkflowStatusChanged')
+        .withArgs(workflowID, 1);
 
       // Pause workflow
       await expect(registry.connect(newNodeWallet.connect(ethers.provider)).pauseWorkflow(workflowID))
@@ -325,6 +274,7 @@ describe('Registry', function () {
 
     it('SIDECHAIN: network can cancel workflow', async function () {
       const registry = await deployRegistry(false);
+      const workflowID = 123;
       const [network] = await ethers.getSigners();
 
       const newNodeWallet = await createRandomWallet();
@@ -338,38 +288,15 @@ describe('Registry', function () {
         .to.emit(registry, 'GatewaySet')
         .withArgs(nodeAddress, gateway.address);
 
-      // Create a contract ABI instance
-      const cc = new ethers.Contract(registry.address, registryContractABI.abi);
-
-      // Encode the function call with the selector
-      let functionCallData = cc.interface.encodeFunctionData(cc.interface.getSighash('registerWorkflow'), [
-        ethers.utils.solidityPack(['uint256'], [123]),
-        ethers.utils.solidityPack(['address'], [nodeAddress]),
-        ethers.utils.solidityPack(['bytes'], ['0x00']),
-      ]);
-
       // Register workflow
-      await expect(
-        registry
-          .connect(network)
-          .perform('40505927788353901442144037336646356013', 300_000, functionCallData, registry.address)
-      )
-        .to.emit(registry, 'Performance')
-        .withArgs('40505927788353901442144037336646356013', anyValue, true);
+      await expect(registry.connect(network).registerWorkflow(workflowID, nodeAddress, []))
+        .to.emit(registry, 'WorkflowRegistered')
+        .withArgs(await network.getAddress(), workflowID, []);
 
-      // Encode the function call with the selector
-      functionCallData = cc.interface.encodeFunctionData(cc.interface.getSighash('cancelWorkflow'), [
-        ethers.utils.solidityPack(['uint256'], [123]),
-      ]);
-
-      // Cancel the workflow
-      await expect(
-        registry
-          .connect(network)
-          .perform('219775546284901721155783592958414245131', 300_000, functionCallData, registry.address)
-      )
-        .to.emit(registry, 'Performance')
-        .withArgs('219775546284901721155783592958414245131', anyValue, true);
+      // Cancel workflow
+      await expect(registry.connect(network).cancelWorkflow(workflowID))
+        .to.emit(registry, 'WorkflowStatusChanged')
+        .withArgs(workflowID, 3);
     });
   });
 
@@ -404,7 +331,9 @@ describe('Registry', function () {
 
       // Activate workflow
       const [network] = await ethers.getSigners();
-      await activateWorkflow(registry, network, workflowID);
+      await expect(registry.connect(network).activateWorkflow(workflowID))
+        .to.emit(registry, 'WorkflowStatusChanged')
+        .withArgs(workflowID, 1);
 
       // Create a contract ABI instance
       const cc = new ethers.Contract(testCustomerContract.address, tccABI.abi);
