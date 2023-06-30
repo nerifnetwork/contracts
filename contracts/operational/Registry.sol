@@ -51,33 +51,26 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         _;
     }
 
-    // onlyRegistry permits transaction coming from the contract itself.
-    // This is needed for those transaction that must pass the performance process.
-    modifier onlyRegistry() {
-        require(address(this) == msg.sender, "Registry: operation is not permitted");
-        _;
-    }
-
     // onlyMsgSender checks that the given address is the transaction sender one.
     modifier onlyMsgSender(address addr) {
         require(addr == msg.sender, "Registry: operation is not permitted");
         _;
     }
 
-    // onlyMsgSender modifier for mainchain OR onlyRegistry for sidechain
-    modifier onlyMsgSenderOrRegistry(address addr) {
+    // onlyMsgSenderOrSigner modifier for message sender or collective address only
+    modifier onlyMsgSenderOrSigner(address addr) {
         if (isMainChain) {
             require(addr == msg.sender, "Registry: operation is not permitted");
             _;
         } else {
-            require(address(this) == msg.sender, "Registry: operation is not permitted");
+            require(signerGetter.getSignerAddress() == msg.sender, "Registry: operation is not permitted");
             _;
         }
     }
 
-    // onlyWorkflowOwnerOrRegistry permits operation for the workflow owner if it is mainnet
-    // or for the network on sidechains.
-    modifier onlyWorkflowOwnerOrRegistry(uint256 id) {
+    // onlyWorkflowOwnerOrSigner permits operation for the workflow owner if it is mainnet
+    // or for the network collective address.
+    modifier onlyWorkflowOwnerOrSigner(uint256 id) {
         if (isMainChain) {
             Workflow memory workflow = getWorkflow(id);
             require(workflow.owner == msg.sender, "Registry: operation is not permitted");
@@ -87,7 +80,7 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
             // The transaction must come from the network after reaching consensus.
             // Basically, the transaction must come from the registry contract itself,
             // namely from the perform function after passing all checks.
-            require(address(this) == msg.sender, "Registry: operation is not permitted");
+            require(signerGetter.getSignerAddress() == msg.sender, "Registry: operation is not permitted");
             _;
         }
     }
@@ -95,22 +88,11 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
     function initialize(
         bool _isMainChain,
         address _signerGetterAddress,
-        Workflow[] calldata _internalWorkflows,
         Config calldata _config
     ) external initializer {
         isMainChain = _isMainChain;
         _setSignerGetter(_signerGetterAddress);
-
-        for (uint256 i = 0; i < _internalWorkflows.length; i++) {
-            _addWorkflow(_internalWorkflows[i]);
-        }
-
-        config = _config;
-    }
-
-    // setConfig sets the given configuration
-    function setConfig(Config calldata _config) external onlySigner {
-        config = _config;
+        setConfig(_config);
     }
 
     // fundBalance funds the balance of the sender's address with the given amount.
@@ -232,13 +214,11 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         // Get current balance of workflow owner
         uint256 currentBalance = getBalance(workflow.owner);
 
-        if (!workflow.isInternal) {
-            // Make sure workflow owner has enough funds
-            require(currentBalance > 0, "Registry: not enough funds on balance");
+        // Make sure workflow owner has enough funds
+        require(currentBalance > 0, "Registry: not enough funds on balance");
 
-            // Cannot self-execute if not internal
-            require(address(this) != target, "Registry: operation is not permitted");
-        }
+        // Cannot self-execute if not internal
+        require(address(this) != target, "Registry: operation is not permitted");
 
         // TODO: Make sure the given transaction was not performed yet
 
@@ -271,16 +251,14 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         // Calculate amount to charge
         uint256 amountToCharge = gasUsed * tx.gasprice;
 
-        if (!workflow.isInternal) {
-            // Make sure owner has enough funds
-            require(currentBalance >= amountToCharge, "Registry: not enough funds on balance");
+        // Make sure owner has enough funds
+        require(currentBalance >= amountToCharge, "Registry: not enough funds on balance");
 
-            // Charge workflow owner balance
-            _setBalance(workflow.owner, currentBalance - amountToCharge);
+        // Charge workflow owner balance
+        _setBalance(workflow.owner, currentBalance - amountToCharge);
 
-            // Move amount to the network rewards balance
-            networkRewards += amountToCharge;
-        }
+        // Move amount to the network rewards balance
+        networkRewards += amountToCharge;
 
         // Update total spent amount of the current workflow
         workflow.totalSpent += amountToCharge;
@@ -303,7 +281,7 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         uint256 id,
         address owner,
         bytes calldata hash
-    ) public onlyMsgSenderOrRegistry(owner) {
+    ) external onlyMsgSenderOrSigner(owner) {
         // Check if the given workflow owner has a gateway registered.
         IGateway existingGateway = getGateway(owner);
         require(address(existingGateway) != address(0x0), "Registry: gateway not found");
@@ -325,7 +303,7 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         }
 
         // Store a new workflow
-        require(_addWorkflow(Workflow(id, owner, hash, workflowStatus, false, 0)), "Registry: failed to add workflow");
+        require(_addWorkflow(Workflow(id, owner, hash, workflowStatus, 0)), "Registry: failed to add workflow");
 
         // Emmit the event
         emit WorkflowRegistered(msg.sender, id, hash);
@@ -338,7 +316,7 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
     // Permissions:
     //  - Permitted on MAINCHAIN only.
     //  - Only network can execute it through the regular performance process.
-    function activateWorkflow(uint256 id) public onlyMainchain onlyRegistry onlyExistingWorkflow(id) {
+    function activateWorkflow(uint256 id) external onlyMainchain onlySigner onlyExistingWorkflow(id) {
         // Find the workflow in the list
         Workflow memory workflow = getWorkflow(id);
 
@@ -358,7 +336,7 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
     // Permissions:
     //  - Only workflow owner can cancel an existing active workflow on MAINCHAIN.
     //  - Only network can cancel a workflow on SIDECHAIN through the regular performance process.
-    function cancelWorkflow(uint256 id) public onlyExistingWorkflow(id) onlyWorkflowOwnerOrRegistry(id) {
+    function cancelWorkflow(uint256 id) external onlyExistingWorkflow(id) onlyWorkflowOwnerOrSigner(id) {
         // Find the workflow in the list
         Workflow memory workflow = getWorkflow(id);
 
@@ -372,17 +350,15 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         emit WorkflowStatusChanged(id, WorkflowStatus.CANCELLED);
     }
 
+    // setConfig sets the given configuration
+    function setConfig(Config calldata _config) public onlySigner {
+        config = _config;
+    }
+
     // getWorkflowOwnerBalance returns the current balance of the given workflow ID.
     function getWorkflowOwnerBalance(uint256 id) public view returns (uint256) {
         // Find the workflow in the list
         Workflow memory workflow = getWorkflow(id);
-
-        // Return just 1 for internal workflows so the workflow engine can identify that the workflow owner has funds.
-        // TODO: Implement internal workflows logic in more accurate way
-        if (workflow.isInternal) {
-            return 1;
-        }
-
         require(workflow.owner != address(0x0), "Registry: workflow does not exist");
 
         // Return owner's balance

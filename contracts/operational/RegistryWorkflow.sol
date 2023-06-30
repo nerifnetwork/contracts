@@ -13,7 +13,6 @@ struct Workflow {
     address owner;
     bytes hash;
     WorkflowStatus status;
-    bool isInternal;
     uint256 totalSpent;
 }
 

@@ -3,28 +3,6 @@ import { Registry } from '../../typechain';
 import { Deployer } from './deployer';
 import { BigNumber } from 'ethers';
 
-// TODO: Define more elegant way
-const internalWorkflows = [
-  // Workflow registration workflow
-  {
-    id: '40505927788353901442144037336646356013',
-    owner: '0x0000000000000000000000000000000000000000',
-    hash: '0x00',
-    status: 1,
-    isInternal: true,
-    totalSpent: 0,
-  },
-  // Workflow cancellation workflow
-  {
-    id: '219775546284901721155783592958414245131',
-    owner: '0x0000000000000000000000000000000000000000',
-    hash: '0x00',
-    status: 1,
-    isInternal: true,
-    totalSpent: 0,
-  },
-];
-
 const defaultRegistryDeploymentParameters: RegistryDeploymentParameters = {
   signerStorage: '',
   isMainchain: false,
@@ -67,7 +45,7 @@ export async function deployRegistryContracts(options?: RegistryDeploymentOption
   }
 
   await deployer.sendTransaction(
-    res.registry.initialize(params.isMainchain, params.signerStorage, internalWorkflows, registryConfig),
+    res.registry.initialize(params.isMainchain, params.signerStorage, registryConfig),
     'Initializing Registry'
   );
 
