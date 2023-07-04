@@ -116,7 +116,7 @@ describe('Registry', function () {
   });
 
   describe('Register workflow', function () {
-    it('MAINCHAIN: workflow owner can register workflow', async function () {
+    it('MAINCHAIN: workflow owner can register workflow with gateway', async function () {
       const registry = await deployRegistry(true);
 
       const newNodeWallet = await createRandomWallet();
@@ -131,7 +131,27 @@ describe('Registry', function () {
         .withArgs(nodeAddress, gateway.address);
 
       // Register workflow
-      await expect(registry.connect(newNodeWallet.connect(ethers.provider)).registerWorkflow(123, nodeAddress, []))
+      await expect(
+        registry.connect(newNodeWallet.connect(ethers.provider)).registerWorkflow(123, nodeAddress, [], true)
+      )
+        .to.emit(registry, 'WorkflowRegistered')
+        .withArgs(nodeAddress, '123', []);
+
+      // Status must be PENDING on MAINCHAIN
+      const workflow = await registry.getWorkflow(123);
+      expect(workflow.status).to.equal(0);
+    });
+
+    it('MAINCHAIN: workflow owner can register workflow without gateway', async function () {
+      const registry = await deployRegistry(true);
+
+      const newNodeWallet = await createRandomWallet();
+      const nodeAddress = await newNodeWallet.getAddress();
+
+      // Register workflow
+      await expect(
+        registry.connect(newNodeWallet.connect(ethers.provider)).registerWorkflow(123, nodeAddress, [], false)
+      )
         .to.emit(registry, 'WorkflowRegistered')
         .withArgs(nodeAddress, '123', []);
 
@@ -156,7 +176,7 @@ describe('Registry', function () {
         .withArgs(nodeAddress, gateway.address);
 
       // Register workflow
-      await expect(registry.connect(network).registerWorkflow(123, nodeAddress, []))
+      await expect(registry.connect(network).registerWorkflow(123, nodeAddress, [], true))
         .to.emit(registry, 'WorkflowRegistered')
         .withArgs(await network.getAddress(), '123', []);
 
@@ -185,7 +205,7 @@ describe('Registry', function () {
 
       // Register workflow
       await expect(
-        registry.connect(newNodeWallet.connect(ethers.provider)).registerWorkflow(workflowID, nodeAddress, [])
+        registry.connect(newNodeWallet.connect(ethers.provider)).registerWorkflow(workflowID, nodeAddress, [], true)
       )
         .to.emit(registry, 'WorkflowRegistered')
         .withArgs(nodeAddress, workflowID, []);
@@ -221,7 +241,7 @@ describe('Registry', function () {
 
       // Register workflow
       await expect(
-        registry.connect(newNodeWallet.connect(ethers.provider)).registerWorkflow(workflowID, nodeAddress, [])
+        registry.connect(newNodeWallet.connect(ethers.provider)).registerWorkflow(workflowID, nodeAddress, [], true)
       )
         .to.emit(registry, 'WorkflowRegistered')
         .withArgs(nodeAddress, workflowID, []);
@@ -261,7 +281,7 @@ describe('Registry', function () {
 
       // Register workflow
       await expect(
-        registry.connect(newNodeWallet.connect(ethers.provider)).registerWorkflow(workflowID, nodeAddress, [])
+        registry.connect(newNodeWallet.connect(ethers.provider)).registerWorkflow(workflowID, nodeAddress, [], true)
       )
         .to.emit(registry, 'WorkflowRegistered')
         .withArgs(nodeAddress, workflowID, []);
@@ -289,7 +309,7 @@ describe('Registry', function () {
         .withArgs(nodeAddress, gateway.address);
 
       // Register workflow
-      await expect(registry.connect(network).registerWorkflow(workflowID, nodeAddress, []))
+      await expect(registry.connect(network).registerWorkflow(workflowID, nodeAddress, [], true))
         .to.emit(registry, 'WorkflowRegistered')
         .withArgs(await network.getAddress(), workflowID, []);
 
@@ -325,7 +345,7 @@ describe('Registry', function () {
         .withArgs(workflowOwnerAddress, gateway.address);
 
       // Register workflow
-      await expect(registry.connect(workflowOwner).registerWorkflow(workflowID, workflowOwnerAddress, []))
+      await expect(registry.connect(workflowOwner).registerWorkflow(workflowID, workflowOwnerAddress, [], true))
         .to.emit(registry, 'WorkflowRegistered')
         .withArgs(workflowOwnerAddress, workflowID, []);
 

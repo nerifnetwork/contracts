@@ -280,11 +280,14 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
     function registerWorkflow(
         uint256 id,
         address owner,
-        bytes calldata hash
+        bytes calldata hash,
+        bool requireGateway
     ) external onlyMsgSenderOrSigner(owner) {
         // Check if the given workflow owner has a gateway registered.
-        IGateway existingGateway = getGateway(owner);
-        require(address(existingGateway) != address(0x0), "Registry: gateway not found");
+        if (requireGateway) {
+            IGateway existingGateway = getGateway(owner);
+            require(address(existingGateway) != address(0x0), "Registry: gateway not found");
+        }
 
         // Check if the given sender has capacity to create one more workflow
         if (isMainChain && config.maxWorkflowsPerAccount > 0) {
