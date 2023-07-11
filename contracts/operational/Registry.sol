@@ -276,7 +276,7 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
     // The given signature must correspond to the given hash and created by the transaction sender.
     // Permissions:
     //  - Only workflow owner can register a workflow on MAINCHAIN.
-    //  - Only network can register a workflow on SIDECHAIN throught the regular performance process.
+    //  - Only network can register a workflow on SIDECHAIN through the regular performance process.
     function registerWorkflow(
         uint256 id,
         address owner,
