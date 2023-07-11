@@ -23,30 +23,35 @@ const accounts = process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KE
 const mainnets = {
   ethereum: {
     chainId: 1,
-    url: 'https://ethereum-mainnet.core.chainstack.com/fb4dbc0292ed03c29997c2013ce7e37f',
+    url: `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
     accounts,
   },
   polygon: {
     chainId: 137,
-    url: 'https://nd-599-387-994.p2pify.com/023ce1a632fbefebcbe0547357917c1c',
+    url: `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
     accounts
   },
   bsc: {
     chainId: 56,
-    url: 'https://nd-570-006-784.p2pify.com/07b6b4ba1e2bc91374788a14fb46cdfa',
+    url: 'https://rpc.ankr.com/bsc',
     accounts
   },
   gnosis: {
     chainId: 100,
-    url: 'https://nd-044-823-524.p2pify.com/3d355b18c32dfadcb5670b019615379e',
+    url: 'https://rpc.gnosischain.com',
     accounts
-  }
+  },
+  linea: {
+    chainId: 59144,
+    url: `https://linea-mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
+    accounts,
+  },
 }
 
 const testnets = {
   mumbai: {
     chainId: 80001,
-    url: 'https://rpc-mumbai.maticvigil.com',
+    url: `https://polygon-mumbai.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
     accounts,
   },
   goerli: {
@@ -96,6 +101,7 @@ const config: HardhatUserConfig = {
       ethereum: process.env.ETHERSCAN_API_KEY || '',
       bsc: process.env.BSCSCAN_API_KEY || '',
       gnosis: process.env.GNOSISSCAN_API_KEY || '',
+      linea: process.env.LINEASCAN_API_KEY || '',
     },
     customChains: [
       // Testnets
@@ -171,6 +177,14 @@ const config: HardhatUserConfig = {
         urls: {
           apiURL: "https://api.gnosisscan.io/api",
           browserURL: "https://gnosisscan.io"
+        }
+      },
+      {
+        network: "linea",
+        chainId: 59144,
+        urls: {
+          apiURL: "https://explorer.linea.build/api",
+          browserURL: "https://explorer.linea.build"
         }
       }
     ]

@@ -47,7 +47,9 @@ deploy-prod: deploy-mainnet-system deploy-mainnet-registries
 .PHONY: deploy-mainnet-system
 deploy-mainnet-system:
 	VERIFY=true npx hardhat --network polygon run scripts/deploy-mainchain.ts
+	VERIFY=true npx hardhat --network linea run scripts/deploy-sidechain.ts
 
 .PHONY: deploy-mainnet-registries
 deploy-mainnet-registries:
 	VERIFY=true npx hardhat --network polygon run scripts/deploy-registry.ts
+	VERIFY=true npx hardhat --network linea run scripts/deploy-registry.ts
