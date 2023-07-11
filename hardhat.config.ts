@@ -67,7 +67,7 @@ const testnets = {
   },
   'linea-testnet': {
     chainId: 59140,
-    url: 'https://rpc.goerli.linea.build',
+    url: `https://linea-goerli.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
     accounts,
   },
 }
