@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/IGateway.sol";
 import "./Registry.sol";
 
-contract Gateway is Initializable, Ownable, IGateway {
+contract Gateway is Ownable, IGateway {
     struct Config {
         uint256[] knownWorkflows;
         address[] knownWorkflowOwners;
@@ -65,7 +64,7 @@ contract Gateway is Initializable, Ownable, IGateway {
         _;
     }
 
-    function initialize(address _registry) external initializer {
+    constructor(address _registry) {
         setRegistry(_registry);
     }
 
