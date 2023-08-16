@@ -34,7 +34,7 @@ export async function deploySidechainContracts(
     const dkgSignerAddress = await dkg.getSignerAddress();
 
     if (dkgSignerAddress === '0x0000000000000000000000000000000000000000') {
-      throw new Error('DKG signer address it not awailable');
+      throw new Error('DKG signer address it not available');
     } else {
       initialSignerAddress = dkgSignerAddress;
     }

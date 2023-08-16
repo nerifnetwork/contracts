@@ -31,6 +31,11 @@ const mainnets = {
     url: `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
     accounts
   },
+  zkevm: {
+    chainId: 1101,
+    url: `https://zkevm-rpc.com`,
+    accounts
+  },
   bsc: {
     chainId: 56,
     url: 'https://rpc.ankr.com/bsc',
@@ -52,6 +57,11 @@ const testnets = {
   mumbai: {
     chainId: 80001,
     url: `https://polygon-mumbai.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
+    accounts,
+  },
+  'zkevm-testnet': {
+    chainId: 1442,
+    url: `https://rpc.public.zkevm-test.net`,
     accounts,
   },
   goerli: {
@@ -91,6 +101,7 @@ const config: HardhatUserConfig = {
     apiKey: {
       // Testnets
       mumbai: process.env.POLYGONMUMBAISCAN_API_KEY || '',
+      "zkevm-testnet": process.env.ZKEVMTESTNETSCAN_API_KEY || '',
       goerli: process.env.ETHERGOERLISCAN_API_KEY || '',
       "bsc-testnet": process.env.BSCTESTNETSCAN_API_KEY || '',
       "gnosis-chiado": process.env.GNOSISCHIADOSCAN_API_KEY || '',
@@ -98,6 +109,7 @@ const config: HardhatUserConfig = {
 
       // Mainnets
       polygon: process.env.POLYGONSCAN_API_KEY || '',
+      zkevm: process.env.ZKEVMSCAN_API_KEY || '',
       ethereum: process.env.ETHERSCAN_API_KEY || '',
       bsc: process.env.BSCSCAN_API_KEY || '',
       gnosis: process.env.GNOSISSCAN_API_KEY || '',
@@ -111,6 +123,14 @@ const config: HardhatUserConfig = {
         urls: {
           apiURL: "https://api-testnet.polygonscan.com/api",
           browserURL: "https://mumbai.polygonscan.com"
+        }
+      },
+      {
+        network: "zkevm-testnet",
+        chainId: 1442,
+        urls: {
+          apiURL: "https://api-testnet-zkevm.polygonscan.com/api",
+          browserURL: "https://testnet-zkevm.polygonscan.com"
         }
       },
       {
@@ -153,6 +173,14 @@ const config: HardhatUserConfig = {
         urls: {
           apiURL: "https://api.polygonscan.com/api",
           browserURL: "https://polygonscan.com"
+        }
+      },
+      {
+        network: "zkevm",
+        chainId: 1101,
+        urls: {
+          apiURL: "https://api-zkevm.polygonscan.com/api",
+          browserURL: "https://zkevm.polygonscan.com"
         }
       },
       {
