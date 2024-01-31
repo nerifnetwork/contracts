@@ -16,10 +16,6 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         uint256 performanceOverhead;
         // performancePremiumThreshold is the network premium threshold in percents.
         uint8 performancePremiumThreshold;
-        // registrationOverhead is the cost of the workflow registration.
-        uint256 registrationOverhead;
-        // cancellationOverhead is the cost of the workflow cancellation.
-        uint256 cancellationOverhead;
         // maxWorkflowsPerAccount is the maximum number of workflows per user.
         // 0 value means there is no limit.
         uint16 maxWorkflowsPerAccount;
