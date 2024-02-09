@@ -39,27 +39,32 @@ contract Gateway is IGateway, OwnableUpgradeable {
         uint256 _id,
         address _target,
         bytes calldata _payload
-    ) external onlyRegistry onlyAllowedWorkflow(_id, _target) {
+    ) external override onlyRegistry onlyAllowedWorkflow(_id, _target) {
         (bool success, ) = _target.call(_payload);
         require(success, "Gateway: failed to execute customer contract");
     }
 
-    function setRegistry(address _registry) external onlyOwner {
+    function setRegistry(address _registry) external override onlyOwner {
         registry = Registry(_registry);
     }
 
-    function updateConfigData(UpdateConfigData memory _updateConfigData) external onlyOwner {
+    function updateConfigData(UpdateConfigData memory _updateConfigData) external override onlyOwner {
         _updateKnownWorkflows(_updateConfigData.updateKnownWorkflowsEntries);
         _updateKnownAddresses(_knownWorkflowOwners, _updateConfigData.updateKnownWorkflowOwnersEntries);
         _updateKnownAddresses(_knownCustomerContracts, _updateConfigData.updateKnownCustomerContractsEntries);
     }
 
-    function updateKnownWorkflows(UpdateKnownWorkflowsEntry[] memory _updateKnownWorkflowsEntries) external onlyOwner {
+    function updateKnownWorkflows(UpdateKnownWorkflowsEntry[] memory _updateKnownWorkflowsEntries)
+        external
+        override
+        onlyOwner
+    {
         _updateKnownWorkflows(_updateKnownWorkflowsEntries);
     }
 
     function updateKnownWorkflowOwners(UpdateKnownAddressesEntry[] memory _updateKnownWorkflowOwnersEntries)
         external
+        override
         onlyOwner
     {
         _updateKnownAddresses(_knownWorkflowOwners, _updateKnownWorkflowOwnersEntries);
@@ -67,12 +72,13 @@ contract Gateway is IGateway, OwnableUpgradeable {
 
     function updateKnownCustomerContracts(UpdateKnownAddressesEntry[] memory _updateKnownCustomerContractsEntries)
         external
+        override
         onlyOwner
     {
         _updateKnownAddresses(_knownCustomerContracts, _updateKnownCustomerContractsEntries);
     }
 
-    function getConfigInfo() external view returns (ConfigInfo memory) {
+    function getConfigInfo() external view override returns (ConfigInfo memory) {
         return ConfigInfo(_knownWorkflows.values(), _knownWorkflowOwners.values(), _knownCustomerContracts.values());
     }
 
