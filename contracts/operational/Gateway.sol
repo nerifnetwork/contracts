@@ -28,7 +28,7 @@ contract Gateway is IGateway, OwnableUpgradeable {
         _;
     }
 
-    function initalize(address _registryAddr, address _gatewayOwnerAddr) external initializer {
+    function initialize(address _registryAddr, address _gatewayOwnerAddr) external initializer {
         __Ownable_init();
 
         registry = Registry(_registryAddr);
@@ -120,6 +120,6 @@ contract Gateway is IGateway, OwnableUpgradeable {
             allowed = true;
         }
 
-        require(allowed, "Gateway: operation is not permitted");
+        require(allowed, "Gateway: is not allowed workflow");
     }
 }

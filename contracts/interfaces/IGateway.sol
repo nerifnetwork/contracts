@@ -25,7 +25,7 @@ interface IGateway {
         bool isAdding;
     }
 
-    function initalize(address _registryAddr, address _gatewayOwnerAddr) external;
+    function initialize(address _registryAddr, address _gatewayOwnerAddr) external;
 
     // perform is the entrypoint function of all customer contracts.
     // This function accepts the workflow ID and the end customer contract

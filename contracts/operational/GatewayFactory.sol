@@ -35,7 +35,7 @@ contract GatewayFactory is IGatewayFactory, OwnableUpgradeable {
     function deployGateway(address _gatewayOwner) external override onlyRegistry returns (address) {
         address newGatewayProxyAddr = address(new PublicBeaconProxy(address(gatewayBeacon), ""));
 
-        IGateway(newGatewayProxyAddr).initalize(msg.sender, _gatewayOwner);
+        IGateway(newGatewayProxyAddr).initialize(msg.sender, _gatewayOwner);
 
         return newGatewayProxyAddr;
     }

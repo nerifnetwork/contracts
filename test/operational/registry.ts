@@ -33,11 +33,9 @@ describe('Registry', function () {
     const registry = await Registry.deploy();
 
     await expect(
-      await registry.initialize(mainchain, signerStorage.address, {
+      await registry.initialize(mainchain, signerStorage.address, ethers.constants.AddressZero, {
         performanceOverhead: 0,
         performancePremiumThreshold: 0,
-        registrationOverhead: 0,
-        cancellationOverhead: 0,
         maxWorkflowsPerAccount: 0,
       })
     );
@@ -339,7 +337,7 @@ describe('Registry', function () {
       // Register gateway
       const Gateway = await ethers.getContractFactory('Gateway');
       const gateway = await Gateway.connect(workflowOwner).deploy();
-      await gateway.initialize(registry.address);
+      await gateway.initialize(registry.address, workflowOwnerAddress);
       await expect(registry.connect(workflowOwner).setGateway(gateway.address))
         .to.emit(registry, 'GatewaySet')
         .withArgs(workflowOwnerAddress, gateway.address);

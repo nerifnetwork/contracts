@@ -19,6 +19,7 @@
     "compile": "hardhat compile",
     "test": "hardhat test",
     "node": "hardhat node",
+    "coverage": "npx hardhat coverage --solcoverjs ./.solcover.ts",
     "extract-abi": "hardhat run scripts/extract-abi.ts",
     "lint": "npm run prettier && npm run solhint && npm run eslint",
     "lint:fix": "npm run prettier:fix && npm run solhint:fix && npm run eslint:fix",
