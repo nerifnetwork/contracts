@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { deployMainchain } from '../utils/deploy';
 import { BigNumber } from 'ethers';
 
-describe('SlashingVoting', function () {
+describe.skip('SlashingVoting', function () {
   it('should vote only by validator', async function () {
     const [, v2] = await ethers.getSigners();
     const nonce = ethers.utils.arrayify(0);

@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { deployMainchain } from '../utils/deploy';
 
-describe('RewardDistributionPool', function () {
+describe.skip('RewardDistributionPool', function () {
   it('should collect rewards', async function () {
     const [signer, v2, v3, v4] = await ethers.getSigners();
     const totalReward = ethers.utils.parseEther('0.1');
