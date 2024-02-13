@@ -2,8 +2,11 @@
 pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
 import "../interfaces/SignerOwnable.sol";
 import "../interfaces/IGateway.sol";
+import "../interfaces/IGatewayFactory.sol";
+
 import "./RegistryGateway.sol";
 import "./RegistryWorkflow.sol";
 import "./RegistryBalance.sol";
@@ -23,6 +26,8 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
 
     uint256 internal constant PERFORM_GAS_CUSHION = 5_000;
     string internal constant GATEWAY_PERFORM_FUNC_SIGNATURE = "perform(uint256,address,bytes)";
+
+    IGatewayFactory public gatewayFactory;
 
     bool public isMainChain;
     Config public config;
@@ -52,11 +57,10 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
     modifier onlyMsgSenderOrSigner(address addr) {
         if (isMainChain) {
             require(addr == msg.sender, "Registry: operation is not permitted");
-            _;
         } else {
             require(signerGetter.getSignerAddress() == msg.sender, "Registry: operation is not permitted");
-            _;
         }
+        _;
     }
 
     // onlyWorkflowOwnerOrSigner permits operation for the workflow owner if it is mainnet
@@ -65,25 +69,27 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         if (isMainChain) {
             Workflow memory workflow = getWorkflow(id);
             require(workflow.owner == msg.sender, "Registry: operation is not permitted");
-            _;
         } else {
             // Only network can execute the function on the sidechain.
             // The transaction must come from the network after reaching consensus.
             // Basically, the transaction must come from the registry contract itself,
             // namely from the perform function after passing all checks.
             require(signerGetter.getSignerAddress() == msg.sender, "Registry: operation is not permitted");
-            _;
         }
+        _;
     }
 
     function initialize(
         bool _isMainChain,
         address _signerGetterAddress,
+        address _gatewayFactoryAddr,
         Config calldata _config
     ) external initializer {
         isMainChain = _isMainChain;
-        _setSignerGetter(_signerGetterAddress);
         config = _config;
+
+        gatewayFactory = IGatewayFactory(_gatewayFactoryAddr);
+        _setSignerGetter(_signerGetterAddress);
     }
 
     // fundBalance funds the balance of the sender's address with the given amount.
@@ -96,6 +102,10 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
     // setConfig sets the given configuration
     function setConfig(Config calldata _config) external onlySigner {
         config = _config;
+    }
+
+    function setGatewayFactory(address _newGatewayFactory) external onlySigner {
+        gatewayFactory = IGatewayFactory(_newGatewayFactory);
     }
 
     // withdrawBalance withdraws the remaining balance of the sender's public key.
@@ -139,6 +149,15 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
     function setGateway(address gateway) external {
         _setGateway(msg.sender, IGateway(gateway));
         emit GatewaySet(msg.sender, gateway);
+    }
+
+    function deployAndSetGateway() external returns (address) {
+        address newGatewayAddr = gatewayFactory.deployGateway(msg.sender);
+
+        _setGateway(msg.sender, IGateway(newGatewayAddr));
+        emit GatewaySet(msg.sender, newGatewayAddr);
+
+        return newGatewayAddr;
     }
 
     // pauseWorkflow pauses an existing active workflow.

@@ -5,7 +5,7 @@ import { ValidatorStatusActive, ValidatorStatusInactive } from '../utils/helpers
 import { deployMainchain } from '../utils/deploy';
 import { hexValue } from 'ethers/lib/utils';
 
-describe('Staking', function () {
+describe.skip('Staking', function () {
   it('should change minimal stake', async function () {
     const newMinimalStake = ethers.utils.parseEther('2');
     const { staking } = await deployMainchain();

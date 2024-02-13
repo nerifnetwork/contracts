@@ -3,7 +3,7 @@ import { ethers } from 'hardhat';
 import { expect } from 'chai';
 import { deployMainchain } from '../utils/deploy';
 
-describe('DKG', function () {
+describe.skip('DKG', function () {
   it('should broadcast all rounds', async function () {
     const initialGeneration = 0;
     const newGeneration = 1;

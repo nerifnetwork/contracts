@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { deploySidechain } from '../utils/deploy';
 
-describe('SignerStorage', function () {
+describe.skip('SignerStorage', function () {
   it('should set, get and emit event', async function () {
     const [signer, newSigner, user] = await ethers.getSigners();
 

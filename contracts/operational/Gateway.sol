@@ -1,21 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+
 import "../interfaces/IGateway.sol";
 import "./Registry.sol";
 
-contract Gateway is Ownable, IGateway {
-    struct Config {
-        uint256[] knownWorkflows;
-        address[] knownWorkflowOwners;
-        address[] knownCustomerContracts;
-    }
-
-    uint256 internal constant PERFORM_GAS_CUSHION = 5_000;
+contract Gateway is IGateway, OwnableUpgradeable {
+    using EnumerableSet for *;
 
     Registry public registry;
-    Config internal config;
+
+    EnumerableSet.UintSet internal _knownWorkflows;
+    EnumerableSet.AddressSet internal _knownWorkflowOwners;
+    EnumerableSet.AddressSet internal _knownCustomerContracts;
 
     // onlyRegistry permits transactions coming from the registry contract.
     modifier onlyRegistry() {
@@ -24,71 +23,103 @@ contract Gateway is Ownable, IGateway {
     }
 
     // onlyAllowedWorkflow allows transactions passed through checks based on config.
-    modifier onlyAllowedWorkflow(uint256 id, address target) {
-        Workflow memory workflow = registry.getWorkflow(id);
-
-        // Gateway owner's workflows can be executed anytime
-        bool allowed = super.owner() == workflow.owner;
-
-        // Check if the given workflow owner is known.
-        if (!allowed) {
-            for (uint256 i = 0; i < config.knownWorkflowOwners.length; i++) {
-                if (config.knownWorkflowOwners[i] == workflow.owner) {
-                    allowed = true;
-                    break;
-                }
-            }
-        }
-
-        // Check if the given workflow is known.
-        if (!allowed) {
-            for (uint256 i = 0; i < config.knownWorkflows.length; i++) {
-                if (config.knownWorkflows[i] == id) {
-                    allowed = true;
-                    break;
-                }
-            }
-        }
-
-        // Check if the given customer contract is allowed.
-        if (!allowed) {
-            for (uint256 i = 0; i < config.knownCustomerContracts.length; i++) {
-                if (config.knownCustomerContracts[i] == target) {
-                    allowed = true;
-                    break;
-                }
-            }
-        }
-
-        require(allowed, "Gateway: operation is not permitted");
+    modifier onlyAllowedWorkflow(uint256 _id, address _target) {
+        _onlyAllowedWorkflow(_id, _target);
         _;
     }
 
-    constructor(address _registry) {
-        setRegistry(_registry);
+    function initialize(address _registryAddr, address _gatewayOwnerAddr) external initializer {
+        __Ownable_init();
+
+        registry = Registry(_registryAddr);
+        transferOwnership(_gatewayOwnerAddr);
     }
 
     function perform(
-        uint256 id,
-        address target,
-        bytes calldata payload
-    ) external onlyRegistry onlyAllowedWorkflow(id, target) {
-        (bool success, ) = target.call(payload);
+        uint256 _id,
+        address _target,
+        bytes calldata _payload
+    ) external override onlyRegistry onlyAllowedWorkflow(_id, _target) {
+        (bool success, ) = _target.call(_payload);
         require(success, "Gateway: failed to execute customer contract");
     }
 
-    // setConfig sets the given configuration
-    function setConfig(Config calldata _config) external onlyOwner {
-        config = _config;
-    }
-
-    // getKnownWorkflows returns the list of known workflows
-    function getConfig() external view returns (Config memory) {
-        return config;
-    }
-
-    // setRegistry sets the given registry
-    function setRegistry(address _registry) public onlyOwner {
+    function setRegistry(address _registry) external override onlyOwner {
         registry = Registry(_registry);
+    }
+
+    function updateConfigData(UpdateConfigData memory _updateConfigData) external override onlyOwner {
+        _updateKnownWorkflows(_updateConfigData.updateKnownWorkflowsEntries);
+        _updateKnownAddresses(_knownWorkflowOwners, _updateConfigData.updateKnownWorkflowOwnersEntries);
+        _updateKnownAddresses(_knownCustomerContracts, _updateConfigData.updateKnownCustomerContractsEntries);
+    }
+
+    function updateKnownWorkflows(UpdateKnownWorkflowsEntry[] memory _updateKnownWorkflowsEntries)
+        external
+        override
+        onlyOwner
+    {
+        _updateKnownWorkflows(_updateKnownWorkflowsEntries);
+    }
+
+    function updateKnownWorkflowOwners(UpdateKnownAddressesEntry[] memory _updateKnownWorkflowOwnersEntries)
+        external
+        override
+        onlyOwner
+    {
+        _updateKnownAddresses(_knownWorkflowOwners, _updateKnownWorkflowOwnersEntries);
+    }
+
+    function updateKnownCustomerContracts(UpdateKnownAddressesEntry[] memory _updateKnownCustomerContractsEntries)
+        external
+        override
+        onlyOwner
+    {
+        _updateKnownAddresses(_knownCustomerContracts, _updateKnownCustomerContractsEntries);
+    }
+
+    function getConfigInfo() external view override returns (ConfigInfo memory) {
+        return ConfigInfo(_knownWorkflows.values(), _knownWorkflowOwners.values(), _knownCustomerContracts.values());
+    }
+
+    function _updateKnownWorkflows(UpdateKnownWorkflowsEntry[] memory _updateKnownWorkflowsEntries) internal {
+        for (uint256 i = 0; i < _updateKnownWorkflowsEntries.length; i++) {
+            if (_updateKnownWorkflowsEntries[i].isAdding) {
+                _knownWorkflows.add(_updateKnownWorkflowsEntries[i].knownWorkflowToUpdate);
+            } else {
+                _knownWorkflows.remove(_updateKnownWorkflowsEntries[i].knownWorkflowToUpdate);
+            }
+        }
+    }
+
+    function _updateKnownAddresses(
+        EnumerableSet.AddressSet storage _addressSet,
+        UpdateKnownAddressesEntry[] memory _knownAddressesEntries
+    ) internal {
+        for (uint256 i = 0; i < _knownAddressesEntries.length; i++) {
+            if (_knownAddressesEntries[i].isAdding) {
+                _addressSet.add(_knownAddressesEntries[i].addressToUpdate);
+            } else {
+                _addressSet.remove(_knownAddressesEntries[i].addressToUpdate);
+            }
+        }
+    }
+
+    function _onlyAllowedWorkflow(uint256 _id, address _target) internal view {
+        Workflow memory workflow = registry.getWorkflow(_id);
+
+        // Gateway owner's workflows can be executed anytime
+        bool allowed = owner() == workflow.owner;
+
+        if (
+            !allowed &&
+            (_knownWorkflowOwners.contains(workflow.owner) ||
+                _knownWorkflows.contains(_id) ||
+                _knownCustomerContracts.contains(_target))
+        ) {
+            allowed = true;
+        }
+
+        require(allowed, "Gateway: is not allowed workflow");
     }
 }
