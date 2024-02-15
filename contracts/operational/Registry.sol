@@ -6,19 +6,17 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "../interfaces/SignerOwnable.sol";
 import "../interfaces/IGateway.sol";
 import "../interfaces/IGatewayFactory.sol";
+import "../interfaces/IBillingManager.sol";
 
 import "./RegistryGateway.sol";
 import "./RegistryWorkflow.sol";
-import "./RegistryBalance.sol";
 
 // Registry is the internal smart contract needed to secure the network and support important features of Nerif.
-contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWorkflow, RegistryBalance {
+contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWorkflow {
     // Config contains the configuration options
     struct Config {
         // performanceOverhead is the cost of the performance transaction excluding the client contract call.
         uint256 performanceOverhead;
-        // performancePremiumThreshold is the network premium threshold in percents.
-        uint8 performancePremiumThreshold;
         // maxWorkflowsPerAccount is the maximum number of workflows per user.
         // 0 value means there is no limit.
         uint16 maxWorkflowsPerAccount;
@@ -28,18 +26,15 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
     string internal constant GATEWAY_PERFORM_FUNC_SIGNATURE = "perform(uint256,address,bytes)";
 
     IGatewayFactory public gatewayFactory;
+    IBillingManager public billingManager;
 
     bool public isMainChain;
     Config public config;
-    uint256 public networkRewards;
 
-    event BalanceFunded(address addr, uint256 amount);
-    event BalanceWithdrawn(address addr, uint256 amount);
-    event RewardsWithdrawn(address addr, uint256 amount);
     event GatewaySet(address owner, address gateway);
     event WorkflowRegistered(address owner, uint256 id, bytes hash);
     event WorkflowStatusChanged(uint256 id, WorkflowStatus status);
-    event Performance(uint256 id, uint256 gasUsed, bool success);
+    event Performance(uint256 workflowId, uint256 workflowExecutionId, bool success);
 
     // onlyMainchain permits transactions on the mainchain only
     modifier onlyMainchain() {
@@ -79,24 +74,25 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         _;
     }
 
+    modifier onlyBillingManager() {
+        require(msg.sender == address(billingManager), "Registry: sender is not a billing manager");
+        _;
+    }
+
     function initialize(
         bool _isMainChain,
         address _signerGetterAddress,
         address _gatewayFactoryAddr,
+        address _billingManagerAddr,
         Config calldata _config
     ) external initializer {
         isMainChain = _isMainChain;
         config = _config;
 
         gatewayFactory = IGatewayFactory(_gatewayFactoryAddr);
-        _setSignerGetter(_signerGetterAddress);
-    }
+        billingManager = IBillingManager(_billingManagerAddr);
 
-    // fundBalance funds the balance of the sender's address with the given amount.
-    function fundBalance() external payable {
-        uint256 currentBalance = getBalance(msg.sender);
-        _setBalance(msg.sender, currentBalance + msg.value);
-        emit BalanceFunded(msg.sender, msg.value);
+        _setSignerGetter(_signerGetterAddress);
     }
 
     // setConfig sets the given configuration
@@ -106,43 +102,6 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
 
     function setGatewayFactory(address _newGatewayFactory) external onlySigner {
         gatewayFactory = IGatewayFactory(_newGatewayFactory);
-    }
-
-    // withdrawBalance withdraws the remaining balance of the sender's public key.
-    // Permissions:
-    //  - Only balance owner can withdraw its balance.
-    // TODO: Handle cases when the withdrawal happens during the workflow execution. Introduce withdrawal request.
-    function withdrawBalance() external {
-        address payable sender = payable(msg.sender);
-        uint256 balance = getBalance(sender);
-
-        // Ensure the sender has a positive balance
-        require(balance > 0, "Registry: no balance to withdraw");
-
-        // Update the sender's balance
-        _setBalance(sender, 0);
-
-        // Transfer the balance to the sender
-        sender.transfer(balance);
-
-        // Emit an event to log the withdrawal transaction
-        emit BalanceWithdrawn(sender, balance);
-    }
-
-    // withdrawRewards sends network rewards to the rewards withdrawal address
-    function withdrawRewards() external {
-        require(networkRewards > 0, "Registry: nothing to withdraw");
-        require(address(signerGetter) != address(0x0), "Registry: signer storage address is not specified");
-
-        address payable addr = payable(signerGetter.getSignerAddress());
-        require(addr != address(0x0), "Registry: withdrawal address is not specified");
-
-        // Transfer rewards
-        addr.transfer(networkRewards);
-        networkRewards = 0;
-
-        // Emit an event to log the withdrawal transaction
-        emit RewardsWithdrawn(addr, networkRewards);
     }
 
     // setGateway sets gateway for the given owner address.
@@ -158,6 +117,16 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         emit GatewaySet(msg.sender, newGatewayAddr);
 
         return newGatewayAddr;
+    }
+
+    function updateWorkflowTotalSpent(uint256 _workflowId, uint256 _workflowExecutionAmount)
+        external
+        onlyBillingManager
+    {
+        Workflow memory workflow = getWorkflow(_workflowId);
+
+        workflow.totalSpent += _workflowExecutionAmount;
+        require(_updateWorkflow(workflow), "Registry: failed to update workflow");
     }
 
     // pauseWorkflow pauses an existing active workflow.
@@ -213,33 +182,31 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
     //  - Only network can execute this function.
     function perform(
         uint256 workflowId,
+        uint256 workflowExecutionId,
         uint256 gasAmount,
         bytes calldata data,
         address target
-    ) external onlySigner onlyExistingWorkflow(workflowId) {
-        uint256 gasUsed = gasleft();
-
+    ) external onlySigner {
         // Get a workflow by ID
         Workflow memory workflow = getWorkflow(workflowId);
-        require(workflow.id > 0, "Registry: workflow not found");
 
         // Make sure the workflow is not paused
         require(workflow.status == WorkflowStatus.ACTIVE, "Registry: workflow must be active");
 
-        // Get current balance of workflow owner
-        uint256 currentBalance = getBalance(workflow.owner);
-
-        // Make sure workflow owner has enough funds
-        require(currentBalance > 0, "Registry: not enough funds on balance");
+        require(
+            billingManager.getWorkflowExecutionStatus(workflowExecutionId) ==
+                IBillingManager.WorkflowExecutionStatus.PENDING,
+            "Registry: not a pending workflow execution id"
+        );
 
         // Cannot self-execute if not internal
         require(address(this) != target, "Registry: operation is not permitted");
 
-        // TODO: Make sure the given transaction was not performed yet
-
         // Execute client's contract through gateway
         // Get workflow owner's gateway
-        IGateway existingGateway = getGateway(workflow.owner); // TODO: Make sure it is not zero address
+        IGateway existingGateway = getGateway(workflow.owner);
+
+        require(address(existingGateway) != address(0), "Registry: zero gateway address");
 
         // Execute customer contract through its gateway
         bool success = _callWithExactGas(
@@ -248,34 +215,8 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
             abi.encodeWithSignature(GATEWAY_PERFORM_FUNC_SIGNATURE, workflowId, target, data)
         );
 
-        gasUsed -= gasleft();
-
-        // Adding performance overhead if exists
-        gasUsed += config.performanceOverhead;
-
-        // Adding performance premium
-        if (config.performancePremiumThreshold > 0) {
-            gasUsed += gasUsed / uint256(config.performancePremiumThreshold);
-        }
-
-        // Calculate amount to charge
-        uint256 amountToCharge = gasUsed * tx.gasprice;
-
-        // Make sure owner has enough funds
-        require(currentBalance >= amountToCharge, "Registry: not enough funds on balance");
-
-        // Charge workflow owner balance
-        _setBalance(workflow.owner, currentBalance - amountToCharge);
-
-        // Move amount to the network rewards balance
-        networkRewards += amountToCharge;
-
-        // Update total spent amount of the current workflow
-        workflow.totalSpent += amountToCharge;
-        require(_updateWorkflow(workflow), "Registry: failed to update workflow");
-
         // Emit performance event
-        emit Performance(workflowId, gasUsed, success);
+        emit Performance(workflowId, workflowExecutionId, success);
     }
 
     // registerWorkflow registers a new workflow metadata.
@@ -361,16 +302,6 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         require(_updateWorkflow(workflow), "Registry: failed to update workflow");
 
         emit WorkflowStatusChanged(id, WorkflowStatus.CANCELLED);
-    }
-
-    // getWorkflowOwnerBalance returns the current balance of the given workflow ID.
-    function getWorkflowOwnerBalance(uint256 id) public view returns (uint256) {
-        // Find the workflow in the list
-        Workflow memory workflow = getWorkflow(id);
-        require(workflow.owner != address(0x0), "Registry: workflow does not exist");
-
-        // Return owner's balance
-        return getBalance(workflow.owner);
     }
 
     // _callWithExactGas calls target address with exactly gasAmount gas and data as calldata

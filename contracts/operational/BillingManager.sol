@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 import "../interfaces/IBillingManager.sol";
+import "../interfaces/SignerOwnable.sol";
 
 import "./Registry.sol";
 
-contract BillingManager is IBillingManager, OwnableUpgradeable {
+contract BillingManager is IBillingManager, Initializable, SignerOwnable {
     using EnumerableSet for EnumerableSet.UintSet;
 
     Registry public registry;
@@ -21,13 +23,13 @@ contract BillingManager is IBillingManager, OwnableUpgradeable {
     mapping(address => UserFundsData) internal _usersFundsData;
     mapping(uint256 => WorkflowExecutionInfo) internal _workflowsExecutionInfo;
 
-    function initialize(address _registryAddr) external initializer {
-        __Ownable_init();
-
+    function initialize(address _registryAddr, address _signerGetterAddress) external initializer {
         registry = Registry(_registryAddr);
+
+        _setSignerGetter(_signerGetterAddress);
     }
 
-    function lockExecutionFunds(uint256 _workflowId, uint256 _executionLockedAmount) external override onlyOwner {
+    function lockExecutionFunds(uint256 _workflowId, uint256 _executionLockedAmount) external override onlySigner {
         address workflowOwner = registry.getWorkflowOwner(_workflowId);
 
         UserFundsData storage userFundsData = _usersFundsData[workflowOwner];
@@ -53,30 +55,35 @@ contract BillingManager is IBillingManager, OwnableUpgradeable {
         emit ExecutionFundsLocked(_workflowId, workflowOwner, currentWorkflowExecutionId, _executionLockedAmount);
     }
 
-    function completeExecution(uint256 _workflowExecutionId, uint256 _executionAmount) external override onlyOwner {
+    function completeExecution(uint256 _workflowExecutionId, uint256 _executionAmount) external override onlySigner {
         WorkflowExecutionInfo storage workflowExecutionInfo = _workflowsExecutionInfo[_workflowExecutionId];
 
         require(
             workflowExecutionInfo.status == WorkflowExecutionStatus.PENDING,
             "BillingManager: Not a pending workflow execution"
         );
-        require(
-            workflowExecutionInfo.executionLockedAmount >= _executionAmount,
-            "BillingManager: Execution amount > locked amount"
-        );
 
-        // TODO: What should be done if _executionAmount > _executionLockedAmount?
+        uint256 executionLockedAmount = workflowExecutionInfo.executionLockedAmount;
+        require(executionLockedAmount >= _executionAmount, "BillingManager: Execution amount > locked amount");
+
+        UserFundsData storage userFundsData = _usersFundsData[workflowExecutionInfo.workflowOwner];
+
+        if (executionLockedAmount < _executionAmount) {
+            _executionAmount = Math.min(_executionAmount, userFundsData.userFundBalance);
+
+            emit UnexpectedExecutionAmountFound(_workflowExecutionId, executionLockedAmount, _executionAmount);
+        }
 
         workflowExecutionInfo.status = WorkflowExecutionStatus.COMPLETED;
         workflowExecutionInfo.executionAmount = _executionAmount;
 
-        UserFundsData storage userFundsData = _usersFundsData[workflowExecutionInfo.workflowOwner];
-
         userFundsData.userFundBalance -= _executionAmount;
-        userFundsData.userLockedBalance -= workflowExecutionInfo.executionLockedAmount;
+        userFundsData.userLockedBalance -= executionLockedAmount;
         userFundsData.pendingWorkflowExecutionIds.remove(_workflowExecutionId);
 
         networkRewards += _executionAmount;
+
+        registry.updateWorkflowTotalSpent(workflowExecutionInfo.workflowId, _executionAmount);
 
         emit ExecutionCompleted(_workflowExecutionId, _executionAmount);
     }
@@ -102,16 +109,24 @@ contract BillingManager is IBillingManager, OwnableUpgradeable {
         emit UserFundsWithdrawn(msg.sender, _amountToWithdraw);
     }
 
-    function withdrawNetworkRewards() external override onlyOwner {
+    function withdrawNetworkRewards() external override {
         uint256 amountToWithdraw = networkRewards;
 
         require(amountToWithdraw > 0, "BillingManager: No network rewards to withdraw");
 
         delete networkRewards;
 
-        Address.sendValue(payable(msg.sender), amountToWithdraw);
+        address signerAddr = signerGetter.getSignerAddress();
 
-        emit RewardsWithdrawn(msg.sender, amountToWithdraw);
+        require(signerAddr != address(0), "BillingManager: Zero signer address");
+
+        Address.sendValue(payable(signerAddr), amountToWithdraw);
+
+        emit RewardsWithdrawn(signerAddr, amountToWithdraw);
+    }
+
+    function getWorkflowExecutionStatus(uint256 _workflowExecutionId) external view returns (WorkflowExecutionStatus) {
+        return _workflowsExecutionInfo[_workflowExecutionId].status;
     }
 
     function getUserAvailableFunds(address _userAddr) public view override returns (uint256) {

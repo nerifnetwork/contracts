@@ -34,6 +34,11 @@ interface IBillingManager {
         uint256 executionLockedAmount
     );
     event ExecutionCompleted(uint256 workflowExecutionId, uint256 executionAmount);
+    event UnexpectedExecutionAmountFound(
+        uint256 workflowExecutionId,
+        uint256 executionLockedAmount,
+        uint256 executionAmount
+    );
 
     function lockExecutionFunds(uint256 _workflowId, uint256 _executionLockedAmount) external;
 
@@ -48,4 +53,6 @@ interface IBillingManager {
     function withdrawNetworkRewards() external;
 
     function getUserAvailableFunds(address _userAddr) external view returns (uint256);
+
+    function getWorkflowExecutionStatus(uint256 _workflowExecutionId) external view returns (WorkflowExecutionStatus);
 }
