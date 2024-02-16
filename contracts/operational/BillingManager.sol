@@ -23,6 +23,10 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable {
     mapping(address => UserFundsData) internal _usersFundsData;
     mapping(uint256 => WorkflowExecutionInfo) internal _workflowsExecutionInfo;
 
+    receive() external payable {
+        _fundBalance(msg.sender);
+    }
+
     function initialize(address _registryAddr, address _signerGetterAddress) external initializer {
         registry = Registry(_registryAddr);
 
@@ -63,13 +67,14 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable {
             "BillingManager: Not a pending workflow execution"
         );
 
-        uint256 executionLockedAmount = workflowExecutionInfo.executionLockedAmount;
-        require(executionLockedAmount >= _executionAmount, "BillingManager: Execution amount > locked amount");
-
         UserFundsData storage userFundsData = _usersFundsData[workflowExecutionInfo.workflowOwner];
+        uint256 executionLockedAmount = workflowExecutionInfo.executionLockedAmount;
 
         if (executionLockedAmount < _executionAmount) {
-            _executionAmount = Math.min(_executionAmount, userFundsData.userFundBalance);
+            _executionAmount = Math.min(
+                _executionAmount,
+                userFundsData.userFundBalance - userFundsData.userLockedBalance + executionLockedAmount
+            );
 
             emit UnexpectedExecutionAmountFound(_workflowExecutionId, executionLockedAmount, _executionAmount);
         }
@@ -125,8 +130,33 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable {
         emit RewardsWithdrawn(signerAddr, amountToWithdraw);
     }
 
-    function getWorkflowExecutionStatus(uint256 _workflowExecutionId) external view returns (WorkflowExecutionStatus) {
+    function getWorkflowExecutionStatus(uint256 _workflowExecutionId)
+        external
+        view
+        override
+        returns (WorkflowExecutionStatus)
+    {
         return _workflowsExecutionInfo[_workflowExecutionId].status;
+    }
+
+    function getUserFundsInfo(address _userAddr) external view override returns (UserFundsInfo memory) {
+        UserFundsData storage userFundsData = _usersFundsData[_userAddr];
+
+        return
+            UserFundsInfo(
+                userFundsData.userFundBalance,
+                userFundsData.userLockedBalance,
+                userFundsData.pendingWorkflowExecutionIds.values()
+            );
+    }
+
+    function getWorkflowExecutionInfo(uint256 _workflowExecutionId)
+        external
+        view
+        override
+        returns (WorkflowExecutionInfo memory)
+    {
+        return _workflowsExecutionInfo[_workflowExecutionId];
     }
 
     function getUserAvailableFunds(address _userAddr) public view override returns (uint256) {

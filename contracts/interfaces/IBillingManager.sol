@@ -16,6 +16,12 @@ interface IBillingManager {
         EnumerableSet.UintSet pendingWorkflowExecutionIds;
     }
 
+    struct UserFundsInfo {
+        uint256 userFundBalance;
+        uint256 userLockedBalance;
+        uint256[] pendingWorkflowExecutionIds;
+    }
+
     struct WorkflowExecutionInfo {
         uint256 workflowId;
         uint256 executionLockedAmount;
@@ -52,7 +58,14 @@ interface IBillingManager {
 
     function withdrawNetworkRewards() external;
 
-    function getUserAvailableFunds(address _userAddr) external view returns (uint256);
-
     function getWorkflowExecutionStatus(uint256 _workflowExecutionId) external view returns (WorkflowExecutionStatus);
+
+    function getUserFundsInfo(address _userAddr) external view returns (UserFundsInfo memory);
+
+    function getWorkflowExecutionInfo(uint256 _workflowExecutionId)
+        external
+        view
+        returns (WorkflowExecutionInfo memory);
+
+    function getUserAvailableFunds(address _userAddr) external view returns (uint256);
 }

@@ -83,7 +83,7 @@ describe('GatewayFactory', () => {
 
       const tx = await gatewayFactory.connect(REGISTRY).deployGateway(FIRST.address);
 
-      expect(tx).to.be.emit(gatewayFactory, 'GatewayDeployed').withArgs(expectedGatewayAddr, FIRST.address);
+      await expect(tx).to.be.emit(gatewayFactory, 'GatewayDeployed').withArgs(expectedGatewayAddr, FIRST.address);
 
       const GatewayImplFactory = await ethers.getContractFactory('Gateway');
 
