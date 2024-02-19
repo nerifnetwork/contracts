@@ -139,6 +139,10 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable {
         return _workflowsExecutionInfo[_workflowExecutionId].status;
     }
 
+    function getWorkflowExecutionOwner(uint256 _workflowExecutionId) external view override returns (address) {
+        return _workflowsExecutionInfo[_workflowExecutionId].workflowOwner;
+    }
+
     function getUserFundsInfo(address _userAddr) external view override returns (UserFundsInfo memory) {
         UserFundsData storage userFundsData = _usersFundsData[_userAddr];
 

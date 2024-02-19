@@ -60,6 +60,8 @@ interface IBillingManager {
 
     function getWorkflowExecutionStatus(uint256 _workflowExecutionId) external view returns (WorkflowExecutionStatus);
 
+    function getWorkflowExecutionOwner(uint256 _workflowExecutionId) external view returns (address);
+
     function getUserFundsInfo(address _userAddr) external view returns (UserFundsInfo memory);
 
     function getWorkflowExecutionInfo(uint256 _workflowExecutionId)

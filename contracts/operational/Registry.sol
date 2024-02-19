@@ -42,12 +42,6 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         _;
     }
 
-    // onlyMsgSender checks that the given address is the transaction sender one.
-    modifier onlyMsgSender(address addr) {
-        require(addr == msg.sender, "Registry: operation is not permitted");
-        _;
-    }
-
     // onlyMsgSenderOrSigner modifier for message sender or collective address only
     modifier onlyMsgSenderOrSigner(address addr) {
         if (isMainChain) {
@@ -126,7 +120,7 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         Workflow memory workflow = getWorkflow(_workflowId);
 
         workflow.totalSpent += _workflowExecutionAmount;
-        require(_updateWorkflow(workflow), "Registry: failed to update workflow");
+        _updateWorkflow(workflow);
     }
 
     // pauseWorkflow pauses an existing active workflow.
@@ -144,7 +138,7 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
 
         // Update status
         workflow.status = WorkflowStatus.PAUSED;
-        require(_updateWorkflow(workflow), "Registry: failed to update workflow");
+        _updateWorkflow(workflow);
 
         emit WorkflowStatusChanged(id, WorkflowStatus.PAUSED);
     }
@@ -164,7 +158,7 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
 
         // Update status
         workflow.status = WorkflowStatus.ACTIVE;
-        require(_updateWorkflow(workflow), "Registry: failed to update workflow");
+        _updateWorkflow(workflow);
 
         emit WorkflowStatusChanged(id, WorkflowStatus.ACTIVE);
     }
@@ -194,9 +188,10 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         require(workflow.status == WorkflowStatus.ACTIVE, "Registry: workflow must be active");
 
         require(
-            billingManager.getWorkflowExecutionStatus(workflowExecutionId) ==
+            billingManager.getWorkflowExecutionOwner(workflowExecutionId) == workflow.owner &&
+                billingManager.getWorkflowExecutionStatus(workflowExecutionId) ==
                 IBillingManager.WorkflowExecutionStatus.PENDING,
-            "Registry: not a pending workflow execution id"
+            "Registry: invalid workflow execution ID"
         );
 
         // Cannot self-execute if not internal
@@ -260,7 +255,7 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         require(_addWorkflow(Workflow(id, owner, hash, workflowStatus, 0)), "Registry: failed to add workflow");
 
         // Emmit the event
-        emit WorkflowRegistered(msg.sender, id, hash);
+        emit WorkflowRegistered(owner, id, hash);
     }
 
     // activateWorkflow updates the workflow state from PENDING to ACTIVE.
@@ -279,7 +274,7 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
 
         // Update status
         workflow.status = WorkflowStatus.ACTIVE;
-        require(_updateWorkflow(workflow), "Registry: failed to update workflow");
+        _updateWorkflow(workflow);
 
         emit WorkflowStatusChanged(id, WorkflowStatus.ACTIVE);
     }
@@ -299,7 +294,7 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
 
         // Update status
         workflow.status = WorkflowStatus.CANCELLED;
-        require(_updateWorkflow(workflow), "Registry: failed to update workflow");
+        _updateWorkflow(workflow);
 
         emit WorkflowStatusChanged(id, WorkflowStatus.CANCELLED);
     }
