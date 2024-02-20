@@ -51,10 +51,7 @@ describe('Registry', () => {
     testTarget = await TestTargetFactory.deploy();
 
     await signerStorage.initialize(SIGNER.address);
-    await registry.initialize(true, signerStorage.address, gatewayFactory.address, billingManager.address, {
-      performanceOverhead: 0,
-      maxWorkflowsPerAccount: 0,
-    });
+    await registry.initialize(true, signerStorage.address, gatewayFactory.address, billingManager.address, 0);
     await billingManager.initialize(registry.address, signerStorage.address);
     await gatewayFactory.initialize(registry.address, gatewayImpl.address);
 
@@ -63,10 +60,7 @@ describe('Registry', () => {
       signerStorage.address,
       sideChainGatewayFactory.address,
       sideChainBillingManager.address,
-      {
-        performanceOverhead: 0,
-        maxWorkflowsPerAccount: 0,
-      }
+      0
     );
     await sideChainBillingManager.initialize(sideChainRegistry.address, signerStorage.address);
     await sideChainGatewayFactory.initialize(sideChainRegistry.address, gatewayImpl.address);
@@ -80,10 +74,7 @@ describe('Registry', () => {
     it('should set correct data after initialize', async () => {
       expect(await registry.isMainChain()).to.be.eq(true);
 
-      const config = await registry.config();
-
-      expect(config.performanceOverhead).to.be.eq(0);
-      expect(config.maxWorkflowsPerAccount).to.be.eq(0);
+      expect(await registry.maxWorkflowsPerAccount()).to.be.eq(0);
 
       expect(await registry.gatewayFactory()).to.be.eq(gatewayFactory.address);
       expect(await registry.billingManager()).to.be.eq(billingManager.address);
@@ -94,38 +85,24 @@ describe('Registry', () => {
       const reason = 'Initializable: contract is already initialized';
 
       await expect(
-        registry.initialize(true, signerStorage.address, gatewayFactory.address, billingManager.address, {
-          performanceOverhead: 0,
-          maxWorkflowsPerAccount: 0,
-        })
+        registry.initialize(true, signerStorage.address, gatewayFactory.address, billingManager.address, 0)
       ).to.be.revertedWith(reason);
     });
   });
 
-  describe('setConfig', () => {
-    it('should correctly update config', async () => {
-      const newConfig = {
-        performanceOverhead: 5,
-        maxWorkflowsPerAccount: 5,
-      };
+  describe('setMaxWorkflowsPerAccount', () => {
+    it('should correctly set max workflows per account', async () => {
+      const newMaxWorkflowsPerAccount = 5;
 
-      await registry.connect(SIGNER).setConfig(newConfig);
+      await registry.connect(SIGNER).setMaxWorkflowsPerAccount(newMaxWorkflowsPerAccount);
 
-      const config = await registry.config();
-
-      expect(config.performanceOverhead).to.be.eq(newConfig.performanceOverhead);
-      expect(config.maxWorkflowsPerAccount).to.be.eq(newConfig.maxWorkflowsPerAccount);
+      expect(await registry.maxWorkflowsPerAccount()).to.be.eq(newMaxWorkflowsPerAccount);
     });
 
     it('should get exception if not a signer try to call this function', async () => {
       const reason = 'SignerOwnable: only signer';
 
-      await expect(
-        registry.setConfig({
-          performanceOverhead: 10,
-          maxWorkflowsPerAccount: 1,
-        })
-      ).to.be.revertedWith(reason);
+      await expect(registry.setMaxWorkflowsPerAccount(1)).to.be.revertedWith(reason);
     });
   });
 
@@ -181,10 +158,7 @@ describe('Registry', () => {
       newRegistry = await RegistryFactory.deploy();
       const newGatewayFactory = await GatewayFactoryFactory.deploy();
 
-      await newRegistry.initialize(true, signerStorage.address, newGatewayFactory.address, BILLING_MANAGER.address, {
-        performanceOverhead: 0,
-        maxWorkflowsPerAccount: 0,
-      });
+      await newRegistry.initialize(true, signerStorage.address, newGatewayFactory.address, BILLING_MANAGER.address, 0);
       await newGatewayFactory.initialize(newRegistry.address, gatewayImpl.address);
 
       await newRegistry.deployAndSetGateway();
@@ -444,10 +418,7 @@ describe('Registry', () => {
     it('should get exception if the max workflows number per address reached', async () => {
       const reason = 'Registry: reached max workflows capacity';
 
-      await registry.connect(SIGNER).setConfig({
-        performanceOverhead: 0,
-        maxWorkflowsPerAccount: 1,
-      });
+      await registry.connect(SIGNER).setMaxWorkflowsPerAccount(1);
 
       await registry.deployAndSetGateway();
       await registry.registerWorkflow(workflowId, OWNER.address, '0x', true);

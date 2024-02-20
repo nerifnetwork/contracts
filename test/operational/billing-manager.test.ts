@@ -37,10 +37,7 @@ describe('BillingManager', () => {
     gatewayImpl = await GatewayImplFactory.deploy();
 
     await signerStorage.initialize(SIGNER.address);
-    await registry.initialize(true, signerStorage.address, gatewayFactory.address, billingManager.address, {
-      performanceOverhead: 0,
-      maxWorkflowsPerAccount: 0,
-    });
+    await registry.initialize(true, signerStorage.address, gatewayFactory.address, billingManager.address, 0);
     await billingManager.initialize(registry.address, signerStorage.address);
     await gatewayFactory.initialize(registry.address, gatewayImpl.address);
 

@@ -12,7 +12,6 @@ import "../interfaces/IRegistry.sol";
 import "./RegistryGateway.sol";
 import "./RegistryWorkflow.sol";
 
-// Registry is the internal smart contract needed to secure the network and support important features of Nerif.
 contract Registry is IRegistry, Initializable, SignerOwnable, RegistryGateway, RegistryWorkflow {
     uint256 internal constant PERFORM_GAS_CUSHION = 5_000;
     string internal constant GATEWAY_PERFORM_FUNC_SIGNATURE = "perform(uint256,address,bytes)";
@@ -21,7 +20,7 @@ contract Registry is IRegistry, Initializable, SignerOwnable, RegistryGateway, R
     IBillingManager public billingManager;
 
     bool public isMainChain;
-    Config public config;
+    uint16 public maxWorkflowsPerAccount;
 
     // onlyMainchain permits transactions on the mainchain only
     modifier onlyMainchain() {
@@ -65,20 +64,20 @@ contract Registry is IRegistry, Initializable, SignerOwnable, RegistryGateway, R
         address _signerGetterAddress,
         address _gatewayFactoryAddr,
         address _billingManagerAddr,
-        Config calldata _config
+        uint16 _maxWorkflowsPerAccount
     ) external initializer {
         isMainChain = _isMainChain;
-        config = _config;
 
         gatewayFactory = IGatewayFactory(_gatewayFactoryAddr);
         billingManager = IBillingManager(_billingManagerAddr);
 
         _setSignerGetter(_signerGetterAddress);
+
+        maxWorkflowsPerAccount = _maxWorkflowsPerAccount;
     }
 
-    // setConfig sets the given configuration
-    function setConfig(Config calldata _config) external override onlySigner {
-        config = _config;
+    function setMaxWorkflowsPerAccount(uint16 _newMaxWorkflowsPerAccount) external override onlySigner {
+        maxWorkflowsPerAccount = _newMaxWorkflowsPerAccount;
     }
 
     function setGatewayFactory(address _newGatewayFactory) external override onlySigner {
@@ -224,9 +223,9 @@ contract Registry is IRegistry, Initializable, SignerOwnable, RegistryGateway, R
         }
 
         // Check if the given sender has capacity to create one more workflow
-        if (isMainChain && config.maxWorkflowsPerAccount > 0) {
+        if (isMainChain && maxWorkflowsPerAccount > 0) {
             require(
-                _workflowsPerAddress(msg.sender) < config.maxWorkflowsPerAccount,
+                _workflowsPerAddress(msg.sender) < maxWorkflowsPerAccount,
                 "Registry: reached max workflows capacity"
             );
         }

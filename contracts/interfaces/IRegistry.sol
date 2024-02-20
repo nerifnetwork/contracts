@@ -9,14 +9,6 @@ import "../operational/RegistryWorkflow.sol";
  */
 interface IRegistry {
     /**
-     * @notice Struct containing configuration parameters for the Registry contract
-     */
-    struct Config {
-        uint256 performanceOverhead; // Performance overhead value for the Registry contract
-        uint16 maxWorkflowsPerAccount; // Maximum number of workflows allowed per account
-    }
-
-    /**
      * @notice Event emitted when a new gateway is set
      * @param owner The address of the owner setting the gateway
      * @param gateway The address of the newly set gateway
@@ -46,11 +38,7 @@ interface IRegistry {
      */
     event Performance(uint256 workflowId, uint256 workflowExecutionId, bool success);
 
-    /**
-     * @notice Sets the configuration parameters for the Registry contract
-     * @param _config The configuration struct containing the parameters to be set
-     */
-    function setConfig(Config calldata _config) external;
+    function setMaxWorkflowsPerAccount(uint16 _newMaxWorkflowsPerAccount) external;
 
     /**
      * @notice Sets the address of the GatewayFactory contract
