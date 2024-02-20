@@ -1,7 +1,10 @@
 {
   "compilerOptions": {
-    "target": "es2018",
+    "target": "es2022",
     "module": "commonjs",
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
     "strict": true,
     "esModuleInterop": true,
     "outDir": "dist",

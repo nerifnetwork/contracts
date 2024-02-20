@@ -22,19 +22,20 @@ abstract contract RegistryWorkflow {
     mapping(address => uint64) private perAddress;
 
     modifier onlyExistingWorkflow(uint256 id) {
-        Workflow memory workflow = getWorkflow(id);
-        require(workflow.id > 0, "Registry: workflow does not exist");
+        _onlyExistingWorkflow(id);
         _;
     }
 
     modifier onlyWorkflowOwner(uint256 id) {
-        Workflow memory workflow = getWorkflow(id);
-        require(workflow.owner == msg.sender, "Registry: operation not permitted");
+        require(getWorkflowOwner(id) == msg.sender, "Registry: operation not permitted");
         _;
     }
 
-    function getWorkflow(uint256 id) public view returns (Workflow memory) {
-        require(_hasWorkflow(id), "Registry: workflow does not exist");
+    function getWorkflowOwner(uint256 id) public view onlyExistingWorkflow(id) returns (address) {
+        return workflows[indexMap[id] - 1].owner;
+    }
+
+    function getWorkflow(uint256 id) public view onlyExistingWorkflow(id) returns (Workflow memory) {
         return workflows[indexMap[id] - 1];
     }
 
@@ -70,6 +71,10 @@ abstract contract RegistryWorkflow {
 
     function _workflowsPerAddress(address owner) internal view returns (uint256) {
         return perAddress[owner];
+    }
+
+    function _onlyExistingWorkflow(uint256 id) internal view {
+        require(_hasWorkflow(id), "Registry: workflow does not exist");
     }
 
     function _checkWorkflowEntry(uint256 id) private view {
