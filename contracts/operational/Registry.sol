@@ -7,21 +7,13 @@ import "../interfaces/SignerOwnable.sol";
 import "../interfaces/IGateway.sol";
 import "../interfaces/IGatewayFactory.sol";
 import "../interfaces/IBillingManager.sol";
+import "../interfaces/IRegistry.sol";
 
 import "./RegistryGateway.sol";
 import "./RegistryWorkflow.sol";
 
 // Registry is the internal smart contract needed to secure the network and support important features of Nerif.
-contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWorkflow {
-    // Config contains the configuration options
-    struct Config {
-        // performanceOverhead is the cost of the performance transaction excluding the client contract call.
-        uint256 performanceOverhead;
-        // maxWorkflowsPerAccount is the maximum number of workflows per user.
-        // 0 value means there is no limit.
-        uint16 maxWorkflowsPerAccount;
-    }
-
+contract Registry is IRegistry, Initializable, SignerOwnable, RegistryGateway, RegistryWorkflow {
     uint256 internal constant PERFORM_GAS_CUSHION = 5_000;
     string internal constant GATEWAY_PERFORM_FUNC_SIGNATURE = "perform(uint256,address,bytes)";
 
@@ -30,11 +22,6 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
 
     bool public isMainChain;
     Config public config;
-
-    event GatewaySet(address owner, address gateway);
-    event WorkflowRegistered(address owner, uint256 id, bytes hash);
-    event WorkflowStatusChanged(uint256 id, WorkflowStatus status);
-    event Performance(uint256 workflowId, uint256 workflowExecutionId, bool success);
 
     // onlyMainchain permits transactions on the mainchain only
     modifier onlyMainchain() {
@@ -90,21 +77,21 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
     }
 
     // setConfig sets the given configuration
-    function setConfig(Config calldata _config) external onlySigner {
+    function setConfig(Config calldata _config) external override onlySigner {
         config = _config;
     }
 
-    function setGatewayFactory(address _newGatewayFactory) external onlySigner {
+    function setGatewayFactory(address _newGatewayFactory) external override onlySigner {
         gatewayFactory = IGatewayFactory(_newGatewayFactory);
     }
 
     // setGateway sets gateway for the given owner address.
-    function setGateway(address gateway) external {
+    function setGateway(address gateway) external override {
         _setGateway(msg.sender, IGateway(gateway));
         emit GatewaySet(msg.sender, gateway);
     }
 
-    function deployAndSetGateway() external returns (address) {
+    function deployAndSetGateway() external override returns (address) {
         address newGatewayAddr = gatewayFactory.deployGateway(msg.sender);
 
         _setGateway(msg.sender, IGateway(newGatewayAddr));
@@ -115,6 +102,7 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
 
     function updateWorkflowTotalSpent(uint256 _workflowId, uint256 _workflowExecutionAmount)
         external
+        override
         onlyBillingManager
     {
         Workflow memory workflow = getWorkflow(_workflowId);
@@ -129,7 +117,7 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
     // Permissions:
     //  - Permitted on MAINCHAIN only.
     //  - Only workflow owner can pause an existing active workflow.
-    function pauseWorkflow(uint256 id) external onlyMainchain onlyExistingWorkflow(id) onlyWorkflowOwner(id) {
+    function pauseWorkflow(uint256 id) external override onlyMainchain onlyExistingWorkflow(id) onlyWorkflowOwner(id) {
         // Find the workflow in the list
         Workflow memory workflow = getWorkflow(id);
 
@@ -149,7 +137,7 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
     // Permissions:
     //  - Permitted on MAINCHAIN only.
     //  - Only workflow owner can resume an existing active workflow.
-    function resumeWorkflow(uint256 id) external onlyMainchain onlyExistingWorkflow(id) onlyWorkflowOwner(id) {
+    function resumeWorkflow(uint256 id) external override onlyMainchain onlyExistingWorkflow(id) onlyWorkflowOwner(id) {
         // Find the workflow in the list
         Workflow memory workflow = getWorkflow(id);
 
@@ -180,7 +168,7 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         uint256 gasAmount,
         bytes calldata data,
         address target
-    ) external onlySigner {
+    ) external override onlySigner {
         // Get a workflow by ID
         Workflow memory workflow = getWorkflow(workflowId);
 
@@ -228,7 +216,7 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
         address owner,
         bytes calldata hash,
         bool requireGateway
-    ) external onlyMsgSenderOrSigner(owner) {
+    ) external override onlyMsgSenderOrSigner(owner) {
         // Check if the given workflow owner has a gateway registered.
         if (requireGateway) {
             IGateway existingGateway = getGateway(owner);
@@ -265,7 +253,7 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
     // Permissions:
     //  - Permitted on MAINCHAIN only.
     //  - Only network can execute it through the regular performance process.
-    function activateWorkflow(uint256 id) external onlyMainchain onlySigner onlyExistingWorkflow(id) {
+    function activateWorkflow(uint256 id) external override onlyMainchain onlySigner onlyExistingWorkflow(id) {
         // Find the workflow in the list
         Workflow memory workflow = getWorkflow(id);
 
@@ -285,7 +273,7 @@ contract Registry is Initializable, SignerOwnable, RegistryGateway, RegistryWork
     // Permissions:
     //  - Only workflow owner can cancel an existing active workflow on MAINCHAIN.
     //  - Only network can cancel a workflow on SIDECHAIN through the regular performance process.
-    function cancelWorkflow(uint256 id) external onlyExistingWorkflow(id) onlyWorkflowOwnerOrSigner(id) {
+    function cancelWorkflow(uint256 id) external override onlyExistingWorkflow(id) onlyWorkflowOwnerOrSigner(id) {
         // Find the workflow in the list
         Workflow memory workflow = getWorkflow(id);
 
