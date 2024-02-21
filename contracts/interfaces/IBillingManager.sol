@@ -166,6 +166,8 @@ interface IBillingManager {
      */
     function getWorkflowExecutionOwner(uint256 _workflowExecutionId) external view returns (address);
 
+    function getExecutionWorkflowId(uint256 _workflowExecutionId) external view returns (uint256);
+
     /**
      * @notice Retrieves the funds information of a user
      * @param _userAddr The address of the user

@@ -1,13 +1,27 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import "../operational/RegistryWorkflow.sol";
-
 /**
  * @title IRegistry
  * @notice Interface for the Registry contract, responsible for managing workflows, gateways, and configurations
  */
 interface IRegistry {
+    enum WorkflowStatus {
+        NONE,
+        PENDING,
+        ACTIVE,
+        PAUSED,
+        CANCELLED
+    }
+
+    struct Workflow {
+        uint256 id;
+        address owner;
+        bytes hash;
+        WorkflowStatus status;
+        uint256 totalSpent;
+    }
+
     /**
      * @notice Event emitted when a new gateway is set
      * @param owner The address of the owner setting the gateway

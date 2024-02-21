@@ -2,9 +2,10 @@
 pragma solidity ^0.8.17;
 
 import "../interfaces/IGateway.sol";
-import "../operational/RegistryWorkflow.sol";
 
-contract TestRegistry is RegistryWorkflow {
+import "../operational/Registry.sol";
+
+contract TestRegistry is Registry {
     function callPerform(
         address _gatewayAddr,
         uint256 _id,
@@ -12,13 +13,5 @@ contract TestRegistry is RegistryWorkflow {
         bytes calldata _payload
     ) external {
         IGateway(_gatewayAddr).perform(_id, _target, _payload);
-    }
-
-    function addWorkflow(Workflow memory _workflow) external returns (bool) {
-        return _addWorkflow(_workflow);
-    }
-
-    function updateWorkflow(Workflow memory _workflow) external returns (bool) {
-        return _updateWorkflow(_workflow);
     }
 }

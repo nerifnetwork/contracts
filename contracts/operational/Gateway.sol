@@ -5,6 +5,8 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "../interfaces/IGateway.sol";
+import "../interfaces/IRegistry.sol";
+
 import "./Registry.sol";
 
 contract Gateway is IGateway, OwnableUpgradeable {
@@ -106,14 +108,14 @@ contract Gateway is IGateway, OwnableUpgradeable {
     }
 
     function _onlyAllowedWorkflow(uint256 _id, address _target) internal view {
-        Workflow memory workflow = registry.getWorkflow(_id);
+        address workflowOwner = registry.getWorkflowOwner(_id);
 
         // Gateway owner's workflows can be executed anytime
-        bool allowed = owner() == workflow.owner;
+        bool allowed = owner() == workflowOwner;
 
         if (
             !allowed &&
-            (_knownWorkflowOwners.contains(workflow.owner) ||
+            (_knownWorkflowOwners.contains(workflowOwner) ||
                 _knownWorkflows.contains(_id) ||
                 _knownCustomerContracts.contains(_target))
         ) {

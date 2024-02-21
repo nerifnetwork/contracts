@@ -145,6 +145,8 @@ describe('BillingManager', () => {
       expect(workflowExecutionInfo.status).to.be.eq(1);
 
       expect(await billingManager.getWorkflowExecutionStatus(workflowExecutionId)).to.be.eq(1);
+      expect(await billingManager.getExecutionWorkflowId(workflowExecutionId)).to.be.eq(defaultWorkflowId);
+      expect(await billingManager.getWorkflowExecutionOwner(workflowExecutionId)).to.be.eq(OWNER.address);
     });
 
     it('should correctly lock user funds several times', async () => {
@@ -182,7 +184,7 @@ describe('BillingManager', () => {
     });
 
     it('should get exception if workflow id does not exist', async () => {
-      const reason = 'Registry: workflow does not exist';
+      const reason = 'BillingManager: Workflow does not exist';
 
       await expect(billingManager.connect(SIGNER).lockExecutionFunds(10, lockAmount)).to.be.revertedWith(reason);
     });
