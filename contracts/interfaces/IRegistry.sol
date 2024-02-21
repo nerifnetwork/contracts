@@ -22,6 +22,13 @@ interface IRegistry {
         uint256 totalSpent;
     }
 
+    struct RegisterWorkflowInfo {
+        uint256 id;
+        address workflowOwner;
+        bytes hash;
+        bool requireGateway;
+    }
+
     /**
      * @notice Event emitted when a new gateway is set
      * @param owner The address of the owner setting the gateway
@@ -62,9 +69,9 @@ interface IRegistry {
 
     /**
      * @notice Sets the address of the gateway contract for the msg.sender address
-     * @param gateway The address of the gateway contract to be set
+     * @param _gateway The address of the gateway contract to be set
      */
-    function setGateway(address gateway) external;
+    function setGateway(address _gateway) external;
 
     /**
      * @notice Deploys a new gateway contract and sets it as the current gateway for the msg.sender address
@@ -81,55 +88,42 @@ interface IRegistry {
 
     /**
      * @notice Pauses a workflow with the given ID
-     * @param id The ID of the workflow to be paused
      */
-    function pauseWorkflow(uint256 id) external;
+    function pauseWorkflows(uint256[] calldata _workflowIds) external;
 
     /**
      * @notice Resumes a paused workflow with the given ID
-     * @param id The ID of the workflow to be resumed
      */
-    function resumeWorkflow(uint256 id) external;
+    function resumeWorkflows(uint256[] calldata _workflowIds) external;
 
     /**
      * @notice Performs an action on a workflow execution
-     * @param workflowId The ID of the workflow
-     * @param workflowExecutionId The ID of the specific execution within the workflow
-     * @param gasAmount The gas amount for the transaction
-     * @param data The transaction data
-     * @param target The address of the target contract
+     * @param _workflowId The ID of the workflow
+     * @param _workflowExecutionId The ID of the specific execution within the workflow
+     * @param _gasAmount The gas amount for the transaction
+     * @param _data The transaction data
+     * @param _target The address of the target contract
      */
     function perform(
-        uint256 workflowId,
-        uint256 workflowExecutionId,
-        uint256 gasAmount,
-        bytes calldata data,
-        address target
+        uint256 _workflowId,
+        uint256 _workflowExecutionId,
+        uint256 _gasAmount,
+        bytes calldata _data,
+        address _target
     ) external;
 
     /**
      * @notice Registers a new workflow
-     * @param id The ID of the workflow
-     * @param owner The address of the owner registering the workflow
-     * @param hash The hash of the workflow
-     * @param requireGateway The boolean indicating whether a gateway is required for the workflow
      */
-    function registerWorkflow(
-        uint256 id,
-        address owner,
-        bytes calldata hash,
-        bool requireGateway
-    ) external;
+    function registerWorkflows(RegisterWorkflowInfo[] calldata _registerWorkflowInfoArr) external;
 
     /**
      * @notice Activates a registered workflow
-     * @param id The ID of the workflow to be activated
      */
-    function activateWorkflow(uint256 id) external;
+    function activateWorkflows(uint256[] calldata _workflowIds) external;
 
     /**
      * @notice Cancels a registered workflow
-     * @param id The ID of the workflow to be canceled
      */
-    function cancelWorkflow(uint256 id) external;
+    function cancelWorkflows(uint256[] calldata _workflowIds) external;
 }

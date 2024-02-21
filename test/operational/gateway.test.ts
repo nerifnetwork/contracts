@@ -48,7 +48,14 @@ describe('Gateway', () => {
     );
 
     await testRegistry.setGateway(gateway.address);
-    await testRegistry.registerWorkflow(defWorkflowId, OWNER.address, '0x', true);
+    await testRegistry.registerWorkflows([
+      {
+        id: defWorkflowId,
+        workflowOwner: OWNER.address,
+        hash: '0x',
+        requireGateway: true,
+      },
+    ]);
 
     await reverter.snapshot();
   });
@@ -73,7 +80,14 @@ describe('Gateway', () => {
     const workflowID = 20;
 
     beforeEach('setup', async () => {
-      await testRegistry.connect(FIRST).registerWorkflow(workflowID, FIRST.address, '0x', false);
+      await testRegistry.connect(FIRST).registerWorkflows([
+        {
+          id: workflowID,
+          workflowOwner: FIRST.address,
+          hash: '0x',
+          requireGateway: false,
+        },
+      ]);
     });
 
     describe('allowed cases', () => {

@@ -42,7 +42,14 @@ describe('BillingManager', () => {
     await gatewayFactory.initialize(registry.address, gatewayImpl.address);
 
     await registry.deployAndSetGateway();
-    await registry.registerWorkflow(defaultWorkflowId, OWNER.address, '0x', true);
+    await registry.registerWorkflows([
+      {
+        id: defaultWorkflowId,
+        workflowOwner: OWNER.address,
+        hash: '0x',
+        requireGateway: true,
+      },
+    ]);
 
     await reverter.snapshot();
   });

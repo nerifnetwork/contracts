@@ -34,11 +34,6 @@ contract Registry is IRegistry, Initializable, SignerOwnable {
         _;
     }
 
-    modifier onlyWorkflowOwner(uint256 _id) {
-        _onlyWorkflowOwner(_id);
-        _;
-    }
-
     function initialize(
         bool _isMainChain,
         address _signerGetterAddress,
@@ -90,77 +85,90 @@ contract Registry is IRegistry, Initializable, SignerOwnable {
         _workflowsInfo[_workflowId].totalSpent += _workflowExecutionAmount;
     }
 
-    function pauseWorkflow(uint256 _id)
-        external
-        override
-        onlyMainchain
-        onlyExistingWorkflow(_id)
-        onlyWorkflowOwner(_id)
-    {
-        _onlyRequiredStatus(_id, WorkflowStatus.ACTIVE, true);
-        _updateWorkflowStatus(_id, WorkflowStatus.PAUSED);
-    }
-
-    function resumeWorkflow(uint256 _id)
-        external
-        override
-        onlyMainchain
-        onlyExistingWorkflow(_id)
-        onlyWorkflowOwner(_id)
-    {
-        _onlyRequiredStatus(_id, WorkflowStatus.PAUSED, true);
-        _updateWorkflowStatus(_id, WorkflowStatus.ACTIVE);
-    }
-
-    function registerWorkflow(
-        uint256 _id,
-        address _workflowOwner,
-        bytes calldata _hash,
-        bool _requireGateway
-    ) external override {
-        require(
-            isMainChain ? _workflowOwner == msg.sender : signerGetter.getSignerAddress() == msg.sender,
-            "Registry: not a sender or signer"
-        );
-
-        if (_requireGateway) {
-            require(_gateways[_workflowOwner] != address(0), "Registry: gateway not found");
+    function pauseWorkflows(uint256[] calldata _workflowIds) external override onlyMainchain {
+        for (uint256 i = 0; i < _workflowIds.length; i++) {
+            _onlyWorkflowOwner(_workflowIds[i]);
+            _onlyRequiredStatus(_workflowIds[i], WorkflowStatus.ACTIVE, true);
+            _updateWorkflowStatus(_workflowIds[i], WorkflowStatus.PAUSED);
         }
+    }
 
-        require(_workflowsInfo[_id].status == WorkflowStatus.NONE, "Registry: workflow id is already exists");
+    function resumeWorkflows(uint256[] calldata _workflowIds) external override onlyMainchain {
+        for (uint256 i = 0; i < _workflowIds.length; i++) {
+            _onlyWorkflowOwner(_workflowIds[i]);
+            _onlyRequiredStatus(_workflowIds[i], WorkflowStatus.PAUSED, true);
+            _updateWorkflowStatus(_workflowIds[i], WorkflowStatus.ACTIVE);
+        }
+    }
 
-        if (isMainChain && maxWorkflowsPerAccount > 0) {
+    function registerWorkflows(RegisterWorkflowInfo[] calldata _registerWorkflowInfoArr) external override {
+        bool isMainChainLocal = isMainChain;
+
+        if (isMainChainLocal && maxWorkflowsPerAccount > 0) {
             require(
-                workflowsPerAddress[msg.sender] < maxWorkflowsPerAccount,
+                workflowsPerAddress[msg.sender] + _registerWorkflowInfoArr.length <= maxWorkflowsPerAccount,
                 "Registry: reached max workflows capacity"
             );
         }
 
-        _workflowsInfo[_id] = Workflow(
-            _id,
-            _workflowOwner,
-            _hash,
-            isMainChain ? WorkflowStatus.PENDING : WorkflowStatus.ACTIVE,
-            0
-        );
-        workflowsPerAddress[_workflowOwner]++;
+        for (uint256 i = 0; i < _registerWorkflowInfoArr.length; i++) {
+            RegisterWorkflowInfo calldata currentRegisterInfo = _registerWorkflowInfoArr[i];
 
-        emit WorkflowRegistered(_workflowOwner, _id, _hash);
+            require(
+                isMainChainLocal
+                    ? currentRegisterInfo.workflowOwner == msg.sender
+                    : signerGetter.getSignerAddress() == msg.sender,
+                "Registry: not a sender or signer"
+            );
+
+            if (currentRegisterInfo.requireGateway) {
+                require(_gateways[currentRegisterInfo.workflowOwner] != address(0), "Registry: gateway not found");
+            }
+
+            require(
+                _workflowsInfo[currentRegisterInfo.id].status == WorkflowStatus.NONE,
+                "Registry: workflow id is already exists"
+            );
+
+            _workflowsInfo[currentRegisterInfo.id] = Workflow(
+                currentRegisterInfo.id,
+                currentRegisterInfo.workflowOwner,
+                currentRegisterInfo.hash,
+                isMainChainLocal ? WorkflowStatus.PENDING : WorkflowStatus.ACTIVE,
+                0
+            );
+            workflowsPerAddress[currentRegisterInfo.workflowOwner]++;
+
+            emit WorkflowRegistered(
+                currentRegisterInfo.workflowOwner,
+                currentRegisterInfo.id,
+                currentRegisterInfo.hash
+            );
+        }
     }
 
-    function activateWorkflow(uint256 _id) external override onlyMainchain onlySigner onlyExistingWorkflow(_id) {
-        _onlyRequiredStatus(_id, WorkflowStatus.PENDING, true);
-        _updateWorkflowStatus(_id, WorkflowStatus.ACTIVE);
+    function activateWorkflows(uint256[] calldata _workflowIds) external override onlyMainchain onlySigner {
+        for (uint256 i = 0; i < _workflowIds.length; i++) {
+            _onlyRequiredStatus(_workflowIds[i], WorkflowStatus.PENDING, true);
+            _updateWorkflowStatus(_workflowIds[i], WorkflowStatus.ACTIVE);
+        }
     }
 
-    function cancelWorkflow(uint256 _id) external override onlyExistingWorkflow(_id) {
-        require(
-            isMainChain ? getWorkflowOwner(_id) == msg.sender : signerGetter.getSignerAddress() == msg.sender,
-            "Registry: not a workflow owner or signer"
-        );
+    function cancelWorkflows(uint256[] calldata _workflowIds) external override {
+        bool isMainChainLocal = isMainChain;
+        address signerAddr = signerGetter.getSignerAddress();
 
-        _onlyRequiredStatus(_id, WorkflowStatus.CANCELLED, false);
-        _updateWorkflowStatus(_id, WorkflowStatus.CANCELLED);
+        for (uint256 i = 0; i < _workflowIds.length; i++) {
+            _onlyExistingWorkflow(_workflowIds[i]);
+
+            require(
+                isMainChainLocal ? getWorkflowOwner(_workflowIds[i]) == msg.sender : signerAddr == msg.sender,
+                "Registry: not a workflow owner or signer"
+            );
+
+            _onlyRequiredStatus(_workflowIds[i], WorkflowStatus.CANCELLED, false);
+            _updateWorkflowStatus(_workflowIds[i], WorkflowStatus.CANCELLED);
+        }
     }
 
     function perform(
