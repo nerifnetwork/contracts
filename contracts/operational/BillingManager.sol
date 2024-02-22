@@ -34,6 +34,8 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable {
     }
 
     function lockExecutionFunds(uint256 _workflowId, uint256 _executionLockedAmount) external override onlySigner {
+        require(registry.isWorkflowExist(_workflowId), "BillingManager: Workflow does not exist");
+
         address workflowOwner = registry.getWorkflowOwner(_workflowId);
 
         UserFundsData storage userFundsData = _usersFundsData[workflowOwner];
@@ -141,6 +143,10 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable {
 
     function getWorkflowExecutionOwner(uint256 _workflowExecutionId) external view override returns (address) {
         return _workflowsExecutionInfo[_workflowExecutionId].workflowOwner;
+    }
+
+    function getExecutionWorkflowId(uint256 _workflowExecutionId) external view override returns (uint256) {
+        return _workflowsExecutionInfo[_workflowExecutionId].workflowId;
     }
 
     function getUserFundsInfo(address _userAddr) external view override returns (UserFundsInfo memory) {

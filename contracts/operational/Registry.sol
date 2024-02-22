@@ -2,6 +2,9 @@
 pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
+import "@solarity/solidity-lib/libs/arrays/Paginator.sol";
 
 import "../interfaces/SignerOwnable.sol";
 import "../interfaces/IGateway.sol";
@@ -9,11 +12,9 @@ import "../interfaces/IGatewayFactory.sol";
 import "../interfaces/IBillingManager.sol";
 import "../interfaces/IRegistry.sol";
 
-import "./RegistryGateway.sol";
-import "./RegistryWorkflow.sol";
+contract Registry is IRegistry, Initializable, SignerOwnable {
+    using EnumerableSet for EnumerableSet.AddressSet;
 
-// Registry is the internal smart contract needed to secure the network and support important features of Nerif.
-contract Registry is IRegistry, Initializable, SignerOwnable, RegistryGateway, RegistryWorkflow {
     uint256 internal constant PERFORM_GAS_CUSHION = 5_000;
     string internal constant GATEWAY_PERFORM_FUNC_SIGNATURE = "perform(uint256,address,bytes)";
 
@@ -21,42 +22,23 @@ contract Registry is IRegistry, Initializable, SignerOwnable, RegistryGateway, R
     IBillingManager public billingManager;
 
     bool public isMainChain;
-    Config public config;
+    uint16 public maxWorkflowsPerAccount;
 
-    // onlyMainchain permits transactions on the mainchain only
+    uint256[] internal _existingWorkflowIds;
+    EnumerableSet.AddressSet internal _existingGatewayOwners;
+
+    mapping(address => uint256) public workflowsPerAddress;
+
+    mapping(uint256 => Workflow) internal _workflowsInfo;
+    mapping(address => address) internal _gateways;
+
     modifier onlyMainchain() {
-        require(isMainChain, "Registry: operation is not permitted");
+        _onlyMainChain();
         _;
     }
 
-    // onlyMsgSenderOrSigner modifier for message sender or collective address only
-    modifier onlyMsgSenderOrSigner(address addr) {
-        if (isMainChain) {
-            require(addr == msg.sender, "Registry: operation is not permitted");
-        } else {
-            require(signerGetter.getSignerAddress() == msg.sender, "Registry: operation is not permitted");
-        }
-        _;
-    }
-
-    // onlyWorkflowOwnerOrSigner permits operation for the workflow owner if it is mainnet
-    // or for the network collective address.
-    modifier onlyWorkflowOwnerOrSigner(uint256 id) {
-        if (isMainChain) {
-            Workflow memory workflow = getWorkflow(id);
-            require(workflow.owner == msg.sender, "Registry: operation is not permitted");
-        } else {
-            // Only network can execute the function on the sidechain.
-            // The transaction must come from the network after reaching consensus.
-            // Basically, the transaction must come from the registry contract itself,
-            // namely from the perform function after passing all checks.
-            require(signerGetter.getSignerAddress() == msg.sender, "Registry: operation is not permitted");
-        }
-        _;
-    }
-
-    modifier onlyBillingManager() {
-        require(msg.sender == address(billingManager), "Registry: sender is not a billing manager");
+    modifier onlyExistingWorkflow(uint256 _id) {
+        _onlyExistingWorkflow(_id);
         _;
     }
 
@@ -65,235 +47,262 @@ contract Registry is IRegistry, Initializable, SignerOwnable, RegistryGateway, R
         address _signerGetterAddress,
         address _gatewayFactoryAddr,
         address _billingManagerAddr,
-        Config calldata _config
+        uint16 _maxWorkflowsPerAccount
     ) external initializer {
         isMainChain = _isMainChain;
-        config = _config;
 
         gatewayFactory = IGatewayFactory(_gatewayFactoryAddr);
         billingManager = IBillingManager(_billingManagerAddr);
 
         _setSignerGetter(_signerGetterAddress);
+
+        maxWorkflowsPerAccount = _maxWorkflowsPerAccount;
     }
 
-    // setConfig sets the given configuration
-    function setConfig(Config calldata _config) external override onlySigner {
-        config = _config;
+    function setMaxWorkflowsPerAccount(uint16 _newMaxWorkflowsPerAccount) external override onlySigner {
+        maxWorkflowsPerAccount = _newMaxWorkflowsPerAccount;
     }
 
     function setGatewayFactory(address _newGatewayFactory) external override onlySigner {
         gatewayFactory = IGatewayFactory(_newGatewayFactory);
     }
 
-    // setGateway sets gateway for the given owner address.
-    function setGateway(address gateway) external override {
-        _setGateway(msg.sender, IGateway(gateway));
-        emit GatewaySet(msg.sender, gateway);
+    function setGateway(address _gateway) external override {
+        _setGateway(msg.sender, _gateway);
     }
 
     function deployAndSetGateway() external override returns (address) {
-        address newGatewayAddr = gatewayFactory.deployGateway(msg.sender);
-
-        _setGateway(msg.sender, IGateway(newGatewayAddr));
-        emit GatewaySet(msg.sender, newGatewayAddr);
-
-        return newGatewayAddr;
+        return _deployAndSetGateway(msg.sender);
     }
 
     function updateWorkflowTotalSpent(uint256 _workflowId, uint256 _workflowExecutionAmount)
         external
         override
-        onlyBillingManager
+        onlyExistingWorkflow(_workflowId)
     {
-        Workflow memory workflow = getWorkflow(_workflowId);
+        require(msg.sender == address(billingManager), "Registry: sender is not a billing manager");
 
-        workflow.totalSpent += _workflowExecutionAmount;
-        _updateWorkflow(workflow);
+        _workflowsInfo[_workflowId].totalSpent += _workflowExecutionAmount;
     }
 
-    // pauseWorkflow pauses an existing active workflow.
-    // Arguments:
-    //  - "id" is the workflow identifier.
-    // Permissions:
-    //  - Permitted on MAINCHAIN only.
-    //  - Only workflow owner can pause an existing active workflow.
-    function pauseWorkflow(uint256 id) external override onlyMainchain onlyExistingWorkflow(id) onlyWorkflowOwner(id) {
-        // Find the workflow in the list
-        Workflow memory workflow = getWorkflow(id);
-
-        // Check current workflow status
-        require(workflow.status == WorkflowStatus.ACTIVE, "Registry: only active workflows could be paused");
-
-        // Update status
-        workflow.status = WorkflowStatus.PAUSED;
-        _updateWorkflow(workflow);
-
-        emit WorkflowStatusChanged(id, WorkflowStatus.PAUSED);
-    }
-
-    // resumeWorkflow resumes an existing paused workflow.
-    // Arguments:
-    //  - "id" is the workflow identifier.
-    // Permissions:
-    //  - Permitted on MAINCHAIN only.
-    //  - Only workflow owner can resume an existing active workflow.
-    function resumeWorkflow(uint256 id) external override onlyMainchain onlyExistingWorkflow(id) onlyWorkflowOwner(id) {
-        // Find the workflow in the list
-        Workflow memory workflow = getWorkflow(id);
-
-        // Check current workflow status
-        require(workflow.status == WorkflowStatus.PAUSED, "Registry: only paused workflows could be resumed");
-
-        // Update status
-        workflow.status = WorkflowStatus.ACTIVE;
-        _updateWorkflow(workflow);
-
-        emit WorkflowStatusChanged(id, WorkflowStatus.ACTIVE);
-    }
-
-    // perform performs the contract execution defined in the registered workflow.
-    // The function checks that the given performance transaction was signed by the majority
-    // of the network so the workflow owner could be charged and the transaction
-    // with the given payload could be passed to the customer's contract.
-    // Arguments:
-    //  - "workflowId" is the workflow ID
-    //  - "gasAmount" is the maximum number of gas used to execute the transaction
-    //  - "data" is the contract call data
-    //  - "target" is the client contract address
-    // Permissions:
-    //  - Only network can execute this function.
-    function perform(
-        uint256 workflowId,
-        uint256 workflowExecutionId,
-        uint256 gasAmount,
-        bytes calldata data,
-        address target
-    ) external override onlySigner {
-        // Get a workflow by ID
-        Workflow memory workflow = getWorkflow(workflowId);
-
-        // Make sure the workflow is not paused
-        require(workflow.status == WorkflowStatus.ACTIVE, "Registry: workflow must be active");
-
-        require(
-            billingManager.getWorkflowExecutionOwner(workflowExecutionId) == workflow.owner &&
-                billingManager.getWorkflowExecutionStatus(workflowExecutionId) ==
-                IBillingManager.WorkflowExecutionStatus.PENDING,
-            "Registry: invalid workflow execution ID"
-        );
-
-        // Cannot self-execute if not internal
-        require(address(this) != target, "Registry: operation is not permitted");
-
-        // Execute client's contract through gateway
-        // Get workflow owner's gateway
-        IGateway existingGateway = getGateway(workflow.owner);
-
-        require(address(existingGateway) != address(0), "Registry: zero gateway address");
-
-        // Execute customer contract through its gateway
-        bool success = _callWithExactGas(
-            gasAmount,
-            address(existingGateway),
-            abi.encodeWithSignature(GATEWAY_PERFORM_FUNC_SIGNATURE, workflowId, target, data)
-        );
-
-        // Emit performance event
-        emit Performance(workflowId, workflowExecutionId, success);
-    }
-
-    // registerWorkflow registers a new workflow metadata.
-    // Arguments:
-    //  - "id" is the workflow identifier.
-    //  - "owner" is the workflow owner address.
-    //  - "hash" is the workflow hash.
-    // The given signature must correspond to the given hash and created by the transaction sender.
-    // Permissions:
-    //  - Only workflow owner can register a workflow on MAINCHAIN.
-    //  - Only network can register a workflow on SIDECHAIN through the regular performance process.
-    function registerWorkflow(
-        uint256 id,
-        address owner,
-        bytes calldata hash,
-        bool requireGateway
-    ) external override onlyMsgSenderOrSigner(owner) {
-        // Check if the given workflow owner has a gateway registered.
-        if (requireGateway) {
-            IGateway existingGateway = getGateway(owner);
-            require(address(existingGateway) != address(0x0), "Registry: gateway not found");
+    function pauseWorkflows(uint256[] calldata _workflowIds) external override onlyMainchain {
+        for (uint256 i = 0; i < _workflowIds.length; i++) {
+            _onlyWorkflowOwner(_workflowIds[i]);
+            _onlyRequiredStatus(_workflowIds[i], WorkflowStatus.ACTIVE, true);
+            _updateWorkflowStatus(_workflowIds[i], WorkflowStatus.PAUSED);
         }
+    }
 
-        // Check if the given sender has capacity to create one more workflow
-        if (isMainChain && config.maxWorkflowsPerAccount > 0) {
+    function resumeWorkflows(uint256[] calldata _workflowIds) external override onlyMainchain {
+        for (uint256 i = 0; i < _workflowIds.length; i++) {
+            _onlyWorkflowOwner(_workflowIds[i]);
+            _onlyRequiredStatus(_workflowIds[i], WorkflowStatus.PAUSED, true);
+            _updateWorkflowStatus(_workflowIds[i], WorkflowStatus.ACTIVE);
+        }
+    }
+
+    function registerWorkflows(RegisterWorkflowInfo[] calldata _registerWorkflowInfoArr) external override {
+        bool isMainChainLocal = isMainChain;
+
+        if (isMainChainLocal && maxWorkflowsPerAccount > 0) {
             require(
-                _workflowsPerAddress(msg.sender) < config.maxWorkflowsPerAccount,
+                workflowsPerAddress[msg.sender] + _registerWorkflowInfoArr.length <= maxWorkflowsPerAccount,
                 "Registry: reached max workflows capacity"
             );
         }
 
-        // Use ACTIVE workflow status by default for sidechains
-        WorkflowStatus workflowStatus = WorkflowStatus.ACTIVE;
+        for (uint256 i = 0; i < _registerWorkflowInfoArr.length; i++) {
+            RegisterWorkflowInfo calldata currentRegisterInfo = _registerWorkflowInfoArr[i];
 
-        // Or set the PENDING one for the mainchain
-        if (isMainChain) {
-            workflowStatus = WorkflowStatus.PENDING;
+            require(
+                isMainChainLocal
+                    ? currentRegisterInfo.workflowOwner == msg.sender
+                    : signerGetter.getSignerAddress() == msg.sender,
+                "Registry: not a sender or signer"
+            );
+
+            if (currentRegisterInfo.requireGateway) {
+                address currentGateway = _gateways[currentRegisterInfo.workflowOwner];
+
+                if (currentRegisterInfo.deployGateway && currentGateway == address(0)) {
+                    _deployAndSetGateway(currentRegisterInfo.workflowOwner);
+                } else {
+                    require(currentGateway != address(0), "Registry: gateway not found");
+                }
+            }
+
+            require(
+                _workflowsInfo[currentRegisterInfo.id].status == WorkflowStatus.NONE,
+                "Registry: workflow id is already exists"
+            );
+
+            _workflowsInfo[currentRegisterInfo.id] = Workflow(
+                currentRegisterInfo.id,
+                currentRegisterInfo.workflowOwner,
+                currentRegisterInfo.hash,
+                isMainChainLocal ? WorkflowStatus.PENDING : WorkflowStatus.ACTIVE,
+                0
+            );
+            workflowsPerAddress[currentRegisterInfo.workflowOwner]++;
+            _existingWorkflowIds.push(currentRegisterInfo.id);
+
+            emit WorkflowRegistered(
+                currentRegisterInfo.workflowOwner,
+                currentRegisterInfo.id,
+                currentRegisterInfo.hash
+            );
+        }
+    }
+
+    function activateWorkflows(uint256[] calldata _workflowIds) external override onlyMainchain onlySigner {
+        for (uint256 i = 0; i < _workflowIds.length; i++) {
+            _onlyRequiredStatus(_workflowIds[i], WorkflowStatus.PENDING, true);
+            _updateWorkflowStatus(_workflowIds[i], WorkflowStatus.ACTIVE);
+        }
+    }
+
+    function cancelWorkflows(uint256[] calldata _workflowIds) external override {
+        bool isMainChainLocal = isMainChain;
+        address signerAddr = signerGetter.getSignerAddress();
+
+        for (uint256 i = 0; i < _workflowIds.length; i++) {
+            _onlyExistingWorkflow(_workflowIds[i]);
+
+            address workflowOwner = getWorkflowOwner(_workflowIds[i]);
+
+            require(
+                isMainChainLocal ? workflowOwner == msg.sender : signerAddr == msg.sender,
+                "Registry: not a workflow owner or signer"
+            );
+
+            _onlyRequiredStatus(_workflowIds[i], WorkflowStatus.CANCELLED, false);
+            _updateWorkflowStatus(_workflowIds[i], WorkflowStatus.CANCELLED);
+
+            workflowsPerAddress[workflowOwner]--;
+        }
+    }
+
+    function perform(
+        uint256 _workflowId,
+        uint256 _workflowExecutionId,
+        uint256 _gasAmount,
+        bytes calldata _data,
+        address _target
+    ) external override onlySigner {
+        _onlyRequiredStatus(_workflowId, WorkflowStatus.ACTIVE, true);
+
+        require(
+            billingManager.getExecutionWorkflowId(_workflowExecutionId) == _workflowId &&
+                billingManager.getWorkflowExecutionStatus(_workflowExecutionId) ==
+                IBillingManager.WorkflowExecutionStatus.PENDING,
+            "Registry: invalid workflow execution ID"
+        );
+        require(address(this) != _target, "Registry: operation is not permitted");
+
+        address existingGateway = _gateways[getWorkflowOwner(_workflowId)];
+
+        require(existingGateway != address(0), "Registry: zero gateway address");
+
+        bool success = _callWithExactGas(
+            _gasAmount,
+            existingGateway,
+            abi.encodeWithSignature(GATEWAY_PERFORM_FUNC_SIGNATURE, _workflowId, _target, _data)
+        );
+
+        emit Performance(_workflowId, _workflowExecutionId, success);
+    }
+
+    function getTotalGatewaysCount() external view override returns (uint256) {
+        return _existingGatewayOwners.length();
+    }
+
+    function getGateway(address _userAddr) external view override returns (address) {
+        return _gateways[_userAddr];
+    }
+
+    function getGatewaysInfo(uint256 _offset, uint256 _limit)
+        external
+        view
+        override
+        returns (GatewayInfo[] memory _gatewaysInfoArr)
+    {
+        uint256 to = Paginator.getTo(_existingGatewayOwners.length(), _offset, _limit);
+
+        _gatewaysInfoArr = new GatewayInfo[](to - _offset);
+
+        for (uint256 i = _offset; i < to; i++) {
+            address gatewayOwner = _existingGatewayOwners.at(i);
+
+            _gatewaysInfoArr[i - _offset] = GatewayInfo(gatewayOwner, _gateways[gatewayOwner]);
+        }
+    }
+
+    function getTotalWorkflowsCount() external view override returns (uint256) {
+        return _existingWorkflowIds.length;
+    }
+
+    function getWorkflow(uint256 _id) external view override returns (Workflow memory) {
+        return _workflowsInfo[_id];
+    }
+
+    function getWorkflows(uint256 _offset, uint256 _limit)
+        external
+        view
+        override
+        returns (Workflow[] memory _workflowsArr)
+    {
+        uint256 to = Paginator.getTo(_existingWorkflowIds.length, _offset, _limit);
+
+        _workflowsArr = new Workflow[](to - _offset);
+
+        for (uint256 i = _offset; i < to; i++) {
+            _workflowsArr[i - _offset] = _workflowsInfo[_existingWorkflowIds[i]];
+        }
+    }
+
+    function getWorkflowOwner(uint256 _id) public view override returns (address) {
+        return _workflowsInfo[_id].owner;
+    }
+
+    function getWorkflowStatus(uint256 _id) public view override returns (WorkflowStatus) {
+        return _workflowsInfo[_id].status;
+    }
+
+    function isWorkflowExist(uint256 _id) public view override returns (bool) {
+        return _workflowsInfo[_id].status != WorkflowStatus.NONE;
+    }
+
+    function _updateWorkflowStatus(uint256 _id, WorkflowStatus _newStatus) internal {
+        _workflowsInfo[_id].status = _newStatus;
+
+        emit WorkflowStatusChanged(_id, _newStatus);
+    }
+
+    function _deployAndSetGateway(address _gatewayOwner) internal returns (address) {
+        address newGatewayAddr = gatewayFactory.deployGateway(_gatewayOwner);
+
+        _setGateway(_gatewayOwner, newGatewayAddr);
+
+        return newGatewayAddr;
+    }
+
+    function _setGateway(address _gatewayOwner, address _gateway) internal {
+        if (_gateway != address(0)) {
+            _existingGatewayOwners.add(_gatewayOwner);
+        } else {
+            _existingGatewayOwners.remove(_gatewayOwner);
         }
 
-        // Store a new workflow
-        require(_addWorkflow(Workflow(id, owner, hash, workflowStatus, 0)), "Registry: failed to add workflow");
+        _gateways[_gatewayOwner] = _gateway;
 
-        // Emmit the event
-        emit WorkflowRegistered(owner, id, hash);
+        emit GatewaySet(_gatewayOwner, _gateway);
     }
 
-    // activateWorkflow updates the workflow state from PENDING to ACTIVE.
-    // Arguments:
-    //  - "id" is the workflow identifier.
-    //  - "status" is the workflow status.
-    // Permissions:
-    //  - Permitted on MAINCHAIN only.
-    //  - Only network can execute it through the regular performance process.
-    function activateWorkflow(uint256 id) external override onlyMainchain onlySigner onlyExistingWorkflow(id) {
-        // Find the workflow in the list
-        Workflow memory workflow = getWorkflow(id);
-
-        // Must be PENDING
-        require(workflow.status == WorkflowStatus.PENDING, "Registry: workflow must be pending");
-
-        // Update status
-        workflow.status = WorkflowStatus.ACTIVE;
-        _updateWorkflow(workflow);
-
-        emit WorkflowStatusChanged(id, WorkflowStatus.ACTIVE);
-    }
-
-    // cancelWorkflow cancels an existing workflow.
-    // Arguments:
-    //  - "id" is the workflow identifier.
-    // Permissions:
-    //  - Only workflow owner can cancel an existing active workflow on MAINCHAIN.
-    //  - Only network can cancel a workflow on SIDECHAIN through the regular performance process.
-    function cancelWorkflow(uint256 id) external override onlyExistingWorkflow(id) onlyWorkflowOwnerOrSigner(id) {
-        // Find the workflow in the list
-        Workflow memory workflow = getWorkflow(id);
-
-        // Check current workflow status
-        require(workflow.status != WorkflowStatus.CANCELLED, "Registry: workflow is already cancelled");
-
-        // Update status
-        workflow.status = WorkflowStatus.CANCELLED;
-        _updateWorkflow(workflow);
-
-        emit WorkflowStatusChanged(id, WorkflowStatus.CANCELLED);
-    }
-
-    // _callWithExactGas calls target address with exactly gasAmount gas and data as calldata
-    // or reverts if at least gasAmount gas is not available
     function _callWithExactGas(
-        uint256 gasAmount,
-        address target,
-        bytes memory data
-    ) private returns (bool success) {
+        uint256 _gasAmount,
+        address _target,
+        bytes memory _data
+    ) internal returns (bool _success) {
         assembly {
             let g := gas()
 
@@ -306,18 +315,37 @@ contract Registry is IRegistry, Initializable, SignerOwnable, RegistryGateway, R
 
             // if g - g//64 <= gasAmount, revert
             // (we subtract g//64 because of EIP-150)
-            if iszero(gt(sub(g, div(g, 64)), gasAmount)) {
+            if iszero(gt(sub(g, div(g, 64)), _gasAmount)) {
                 revert(0, 0)
             }
 
             // solidity calls check that a contract actually exists at the destination, so we do the same
-            if iszero(extcodesize(target)) {
+            if iszero(extcodesize(_target)) {
                 revert(0, 0)
             }
 
             // call and return whether we succeeded. ignore return data
-            success := call(gasAmount, target, 0, add(data, 0x20), mload(data), 0, 0)
+            _success := call(_gasAmount, _target, 0, add(_data, 0x20), mload(_data), 0, 0)
         }
-        return success;
+    }
+
+    function _onlyMainChain() internal view {
+        require(isMainChain, "Registry: not a main chain");
+    }
+
+    function _onlyRequiredStatus(
+        uint256 _id,
+        WorkflowStatus _statusToCheck,
+        bool _isEqual
+    ) internal view {
+        require((getWorkflowStatus(_id) == _statusToCheck) == _isEqual, "Registry: invalid workflow status");
+    }
+
+    function _onlyExistingWorkflow(uint256 _id) internal view {
+        require(isWorkflowExist(_id), "Registry: workflow does not exist");
+    }
+
+    function _onlyWorkflowOwner(uint256 _id) internal view {
+        require(getWorkflowOwner(_id) == msg.sender, "Registry: sender is not the workflow owner");
     }
 }
