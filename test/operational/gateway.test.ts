@@ -54,6 +54,7 @@ describe('Gateway', () => {
         workflowOwner: OWNER.address,
         hash: '0x',
         requireGateway: true,
+        deployGateway: false,
       },
     ]);
 
@@ -86,6 +87,7 @@ describe('Gateway', () => {
           workflowOwner: FIRST.address,
           hash: '0x',
           requireGateway: false,
+          deployGateway: false,
         },
       ]);
     });

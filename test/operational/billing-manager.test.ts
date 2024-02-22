@@ -41,13 +41,13 @@ describe('BillingManager', () => {
     await billingManager.initialize(registry.address, signerStorage.address);
     await gatewayFactory.initialize(registry.address, gatewayImpl.address);
 
-    await registry.deployAndSetGateway();
     await registry.registerWorkflows([
       {
         id: defaultWorkflowId,
         workflowOwner: OWNER.address,
         hash: '0x',
         requireGateway: true,
+        deployGateway: true,
       },
     ]);
 

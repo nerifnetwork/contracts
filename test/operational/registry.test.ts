@@ -127,6 +127,7 @@ describe('Registry', () => {
       await expect(tx).to.emit(registry, 'GatewaySet').withArgs(FIRST.address, OWNER.address);
 
       expect(await registry.getGateway(FIRST.address)).to.be.eq(OWNER.address);
+      expect(await registry.getTotalGatewaysCount()).to.be.eq(1);
     });
   });
 
@@ -139,6 +140,7 @@ describe('Registry', () => {
       await expect(tx).to.emit(registry, 'GatewaySet').withArgs(FIRST.address, expectedGatewayAddress);
 
       expect(await registry.getGateway(FIRST.address)).to.be.eq(expectedGatewayAddress);
+      expect(await registry.getTotalGatewaysCount()).to.be.eq(1);
     });
   });
 
@@ -161,13 +163,13 @@ describe('Registry', () => {
       await newRegistry.initialize(true, signerStorage.address, newGatewayFactory.address, BILLING_MANAGER.address, 0);
       await newGatewayFactory.initialize(newRegistry.address, gatewayImpl.address);
 
-      await newRegistry.deployAndSetGateway();
       await newRegistry.registerWorkflows([
         {
           id: workflowId,
           workflowOwner: OWNER.address,
           hash: '0x',
           requireGateway: true,
+          deployGateway: true,
         },
       ]);
     });
@@ -191,13 +193,13 @@ describe('Registry', () => {
     const workflowId = 10;
 
     beforeEach('setup', async () => {
-      await registry.deployAndSetGateway();
       await registry.registerWorkflows([
         {
           id: workflowId,
           workflowOwner: OWNER.address,
           hash: '0x',
           requireGateway: true,
+          deployGateway: true,
         },
       ]);
       await registry.connect(SIGNER).activateWorkflows([workflowId]);
@@ -235,13 +237,13 @@ describe('Registry', () => {
     const workflowId = 10;
 
     beforeEach('setup', async () => {
-      await registry.deployAndSetGateway();
       await registry.registerWorkflows([
         {
           id: workflowId,
           workflowOwner: OWNER.address,
           hash: '0x',
           requireGateway: true,
+          deployGateway: true,
         },
       ]);
       await registry.connect(SIGNER).activateWorkflows([workflowId]);
@@ -283,13 +285,13 @@ describe('Registry', () => {
     const gasAmount = 1000000;
 
     beforeEach('setup', async () => {
-      await registry.deployAndSetGateway();
       await registry.registerWorkflows([
         {
           id: workflowId,
           workflowOwner: OWNER.address,
           hash: '0x',
           requireGateway: true,
+          deployGateway: true,
         },
       ]);
       await registry.connect(SIGNER).activateWorkflows([workflowId]);
@@ -332,13 +334,13 @@ describe('Registry', () => {
       const newWorkflowId = 20;
       const newWorkflowExecutionId = 1;
 
-      await registry.connect(FIRST).deployAndSetGateway();
       await registry.connect(FIRST).registerWorkflows([
         {
           id: newWorkflowId,
           workflowOwner: FIRST.address,
           hash: '0x',
           requireGateway: true,
+          deployGateway: true,
         },
       ]);
       await registry.connect(SIGNER).activateWorkflows([newWorkflowId]);
@@ -393,8 +395,6 @@ describe('Registry', () => {
     const workflowId = 10;
 
     it('should correctly register new workflow on the main chain', async () => {
-      await registry.deployAndSetGateway();
-
       const someHash = ethers.utils.solidityKeccak256(['string'], ['some string']);
 
       const tx = await registry.registerWorkflows([
@@ -403,6 +403,7 @@ describe('Registry', () => {
           workflowOwner: OWNER.address,
           hash: someHash,
           requireGateway: true,
+          deployGateway: true,
         },
       ]);
 
@@ -425,6 +426,7 @@ describe('Registry', () => {
           workflowOwner: OWNER.address,
           hash: someHash,
           requireGateway: false,
+          deployGateway: false,
         },
       ]);
 
@@ -443,10 +445,44 @@ describe('Registry', () => {
           workflowOwner: OWNER.address,
           hash: someHash,
           requireGateway: false,
+          deployGateway: false,
         },
       ]);
 
       expect(await sideChainRegistry.workflowsPerAddress(OWNER.address)).to.be.eq(2);
+    });
+
+    it('should correctly register workflows and deploy new gateway contract', async () => {
+      const expectedGatewayAddress = await registry.callStatic.deployAndSetGateway();
+
+      expect(await registry.getGateway(OWNER.address)).to.be.eq(ethers.constants.AddressZero);
+
+      const someHash = ethers.utils.solidityKeccak256(['string'], ['some string']);
+
+      const tx = await registry.registerWorkflows([
+        {
+          id: workflowId,
+          workflowOwner: OWNER.address,
+          hash: someHash,
+          requireGateway: true,
+          deployGateway: true,
+        },
+        {
+          id: workflowId + 1,
+          workflowOwner: OWNER.address,
+          hash: someHash,
+          requireGateway: true,
+          deployGateway: true,
+        },
+      ]);
+
+      expect(await registry.getGateway(OWNER.address)).to.be.eq(expectedGatewayAddress);
+
+      await expect(tx).to.emit(gatewayFactory, 'GatewayDeployed').withArgs(expectedGatewayAddress, OWNER.address);
+      await expect(tx).to.emit(registry, 'WorkflowRegistered').withArgs(OWNER.address, workflowId, someHash);
+      await expect(tx)
+        .to.emit(registry, 'WorkflowRegistered')
+        .withArgs(OWNER.address, workflowId + 1, someHash);
     });
 
     it('should get exception if the sender is not the specified addr or signer', async () => {
@@ -459,6 +495,7 @@ describe('Registry', () => {
             workflowOwner: FIRST.address,
             hash: '0x',
             requireGateway: false,
+            deployGateway: false,
           },
         ])
       ).to.be.revertedWith(reason);
@@ -470,6 +507,7 @@ describe('Registry', () => {
             workflowOwner: OWNER.address,
             hash: '0x',
             requireGateway: false,
+            deployGateway: false,
           },
         ])
       ).to.be.revertedWith(reason);
@@ -485,6 +523,7 @@ describe('Registry', () => {
             workflowOwner: OWNER.address,
             hash: '0x',
             requireGateway: true,
+            deployGateway: false,
           },
         ])
       ).to.be.revertedWith(reason);
@@ -495,14 +534,13 @@ describe('Registry', () => {
 
       await registry.connect(SIGNER).setMaxWorkflowsPerAccount(1);
 
-      await registry.deployAndSetGateway();
-
       await registry.registerWorkflows([
         {
           id: workflowId,
           workflowOwner: OWNER.address,
           hash: '0x',
           requireGateway: true,
+          deployGateway: true,
         },
       ]);
 
@@ -513,6 +551,7 @@ describe('Registry', () => {
             workflowOwner: OWNER.address,
             hash: '0x',
             requireGateway: true,
+            deployGateway: true,
           },
         ])
       ).to.be.revertedWith(reason);
@@ -521,8 +560,6 @@ describe('Registry', () => {
     it('should get exception if pass workflow id that already exists', async () => {
       const reason = 'Registry: workflow id is already exists';
 
-      await registry.deployAndSetGateway();
-
       await expect(
         registry.registerWorkflows([
           {
@@ -530,12 +567,14 @@ describe('Registry', () => {
             workflowOwner: OWNER.address,
             hash: '0x',
             requireGateway: true,
+            deployGateway: true,
           },
           {
             id: workflowId,
             workflowOwner: OWNER.address,
             hash: '0x',
             requireGateway: true,
+            deployGateway: true,
           },
         ])
       ).to.be.revertedWith(reason);
@@ -546,23 +585,23 @@ describe('Registry', () => {
     const workflowId = 10;
 
     beforeEach('setup', async () => {
-      await registry.deployAndSetGateway();
       await registry.registerWorkflows([
         {
           id: workflowId,
           workflowOwner: OWNER.address,
           hash: '0x',
           requireGateway: true,
+          deployGateway: true,
         },
       ]);
 
-      await sideChainRegistry.connect(FIRST).deployAndSetGateway();
       await sideChainRegistry.connect(SIGNER).registerWorkflows([
         {
           id: workflowId + 1,
           workflowOwner: FIRST.address,
           hash: '0x',
           requireGateway: true,
+          deployGateway: true,
         },
       ]);
     });
@@ -607,28 +646,30 @@ describe('Registry', () => {
     const workflowId = 10;
 
     beforeEach('setup', async () => {
-      await registry.deployAndSetGateway();
       await registry.registerWorkflows([
         {
           id: workflowId,
           workflowOwner: OWNER.address,
           hash: '0x',
           requireGateway: true,
+          deployGateway: true,
         },
       ]);
 
-      await sideChainRegistry.connect(FIRST).deployAndSetGateway();
       await sideChainRegistry.connect(SIGNER).registerWorkflows([
         {
           id: workflowId + 1,
           workflowOwner: FIRST.address,
           hash: '0x',
           requireGateway: true,
+          deployGateway: true,
         },
       ]);
     });
 
     it('should correctly cancel workflow', async () => {
+      expect(await registry.workflowsPerAddress(OWNER.address)).to.be.eq(1);
+
       let tx = await registry.cancelWorkflows([workflowId]);
 
       await expect(tx).to.emit(registry, 'WorkflowStatusChanged').withArgs(workflowId, 4);
@@ -637,6 +678,8 @@ describe('Registry', () => {
 
       expect(workflow.status).to.be.eq(4);
       expect(workflow.id).to.be.eq(workflowId);
+
+      expect(await registry.workflowsPerAddress(OWNER.address)).to.be.eq(0);
 
       tx = await sideChainRegistry.connect(SIGNER).cancelWorkflows([workflowId + 1]);
 
@@ -648,6 +691,8 @@ describe('Registry', () => {
 
       expect(workflow.status).to.be.eq(4);
       expect(workflow.id).to.be.eq(workflowId + 1);
+
+      expect(await registry.workflowsPerAddress(OWNER.address)).to.be.eq(0);
     });
 
     it('should get exception if workflow id does not exist', async () => {
@@ -668,6 +713,122 @@ describe('Registry', () => {
       const reason = 'Registry: invalid workflow status';
 
       await expect(registry.cancelWorkflows([workflowId, workflowId])).to.be.revertedWith(reason);
+    });
+  });
+
+  describe('getters', () => {
+    const startWorkflowId = 10;
+
+    let ownerGateway: string;
+    let firstGateway: string;
+
+    let ownerHash: string;
+    let firstHash: string;
+
+    beforeEach('setup', async () => {
+      ownerGateway = await registry.callStatic.deployAndSetGateway();
+
+      ownerHash = ethers.utils.solidityKeccak256(['string'], ['some string1']);
+      firstHash = ethers.utils.solidityKeccak256(['string'], ['some string1']);
+
+      await registry.registerWorkflows([
+        {
+          id: startWorkflowId,
+          workflowOwner: OWNER.address,
+          hash: ownerHash,
+          requireGateway: true,
+          deployGateway: true,
+        },
+        {
+          id: startWorkflowId + 1,
+          workflowOwner: OWNER.address,
+          hash: ownerHash,
+          requireGateway: true,
+          deployGateway: true,
+        },
+      ]);
+
+      firstGateway = await registry.callStatic.deployAndSetGateway();
+
+      await registry.connect(FIRST).deployAndSetGateway();
+      await registry.connect(FIRST).registerWorkflows([
+        {
+          id: startWorkflowId + 2,
+          workflowOwner: FIRST.address,
+          hash: firstHash,
+          requireGateway: true,
+          deployGateway: true,
+        },
+      ]);
+    });
+
+    it('should return correct info about gateways', async () => {
+      await registry.connect(SIGNER).setGateway(SIGNER.address);
+
+      expect(await registry.getTotalGatewaysCount()).to.be.eq(3);
+
+      expect(await registry.getGateway(OWNER.address)).to.be.eq(ownerGateway);
+      expect(await registry.getGateway(FIRST.address)).to.be.eq(firstGateway);
+      expect(await registry.getGateway(SIGNER.address)).to.be.eq(SIGNER.address);
+
+      const gatewaysInfo = await registry.getGatewaysInfo(0, 10);
+
+      expect(gatewaysInfo.length).to.be.eq(3);
+
+      const expectedGatewaysInfo = [
+        {
+          gatewayOwner: OWNER.address,
+          gateway: ownerGateway,
+        },
+        {
+          gatewayOwner: FIRST.address,
+          gateway: firstGateway,
+        },
+        {
+          gatewayOwner: SIGNER.address,
+          gateway: SIGNER.address,
+        },
+      ];
+
+      gatewaysInfo.forEach((el, index) => {
+        expect(el.gatewayOwner).to.be.eq(expectedGatewaysInfo[index].gatewayOwner);
+        expect(el.gateway).to.be.eq(expectedGatewaysInfo[index].gateway);
+      });
+
+      await registry.connect(SIGNER).setGateway(ethers.constants.AddressZero);
+
+      expect(await registry.getTotalGatewaysCount()).to.be.eq(2);
+      expect(await registry.getGateway(SIGNER.address)).to.be.eq(ethers.constants.AddressZero);
+    });
+
+    it('should return correct workflows info', async () => {
+      const expectedWorkflowsInfo = [
+        {
+          workflowId: startWorkflowId,
+          workflowOwner: OWNER.address,
+          hash: ownerHash,
+        },
+        {
+          workflowId: startWorkflowId + 1,
+          workflowOwner: OWNER.address,
+          hash: ownerHash,
+        },
+        {
+          workflowId: startWorkflowId + 2,
+          workflowOwner: FIRST.address,
+          hash: firstHash,
+        },
+      ];
+
+      expect(await registry.getTotalWorkflowsCount()).to.be.eq(expectedWorkflowsInfo.length);
+
+      const workflowsInfo = await registry.getWorkflows(0, 10);
+
+      workflowsInfo.forEach((el, index) => {
+        expect(el.id).to.be.eq(expectedWorkflowsInfo[index].workflowId);
+        expect(el.owner).to.be.eq(expectedWorkflowsInfo[index].workflowOwner);
+        expect(el.hash).to.be.eq(expectedWorkflowsInfo[index].hash);
+      });
     });
   });
 });

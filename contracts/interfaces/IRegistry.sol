@@ -7,7 +7,7 @@ pragma solidity ^0.8.18;
  */
 interface IRegistry {
     /**
-     * @dev Enum representing the status of a workflow
+     * @notice Enum representing the status of a workflow
      * @param NONE The initial status
      * @param PENDING The workflow is pending activation
      * @param ACTIVE The workflow is active and operational
@@ -23,7 +23,7 @@ interface IRegistry {
     }
 
     /**
-     * @dev Struct representing a workflow
+     * @notice Struct representing a workflow
      * @param id The unique identifier of the workflow
      * @param owner The address of the owner of the workflow
      * @param hash The hash representing the content or configuration of the workflow
@@ -39,7 +39,17 @@ interface IRegistry {
     }
 
     /**
-     * @dev Struct containing information required to register a new workflow
+     * @notice Struct containing information about a gateway
+     * @param gatewayOwner The address of the owner of the gateway
+     * @param gateway The address of the gateway
+     */
+    struct GatewayInfo {
+        address gatewayOwner;
+        address gateway;
+    }
+
+    /**
+     * @notice Struct containing information required to register a new workflow
      * @param id The unique identifier of the workflow
      * @param workflowOwner The address of the owner of the workflow
      * @param hash The hash representing the content or configuration of the workflow
@@ -50,6 +60,7 @@ interface IRegistry {
         address workflowOwner;
         bytes hash;
         bool requireGateway;
+        bool deployGateway;
     }
 
     /**
@@ -126,22 +137,6 @@ interface IRegistry {
     function resumeWorkflows(uint256[] calldata _workflowIds) external;
 
     /**
-     * @notice Performs an action on a workflow execution
-     * @param _workflowId The ID of the workflow
-     * @param _workflowExecutionId The ID of the specific execution within the workflow
-     * @param _gasAmount The gas amount for the transaction
-     * @param _data The transaction data
-     * @param _target The address of the target contract
-     */
-    function perform(
-        uint256 _workflowId,
-        uint256 _workflowExecutionId,
-        uint256 _gasAmount,
-        bytes calldata _data,
-        address _target
-    ) external;
-
-    /**
      * @notice Registers new workflows with the provided information
      * @param _registerWorkflowInfoArr The array containing information to register new workflows
      */
@@ -158,4 +153,86 @@ interface IRegistry {
      * @param _workflowIds The array of workflow IDs to be canceled
      */
     function cancelWorkflows(uint256[] calldata _workflowIds) external;
+
+    /**
+     * @notice Performs an action on a workflow execution
+     * @param _workflowId The ID of the workflow
+     * @param _workflowExecutionId The ID of the specific execution within the workflow
+     * @param _gasAmount The gas amount for the transaction
+     * @param _data The transaction data
+     * @param _target The address of the target contract
+     */
+    function perform(
+        uint256 _workflowId,
+        uint256 _workflowExecutionId,
+        uint256 _gasAmount,
+        bytes calldata _data,
+        address _target
+    ) external;
+
+    /**
+     * @notice Retrieves the total count of gateways
+     * @return The total count of gateways
+     */
+    function getTotalGatewaysCount() external view returns (uint256);
+
+    /**
+     * @notice Retrieves the gateway associated with the given user address
+     * @param _userAddr The address of the user to retrieve the gateway for
+     * @return The gateway address associated with the given user address
+     */
+    function getGateway(address _userAddr) external view returns (address);
+
+    /**
+     * @notice Retrieves an array of gateway information within the specified range
+     * @param _offset The starting index of gateways to retrieve
+     * @param _limit The maximum number of gateways to retrieve
+     * @return _gatewaysInfoArr The array containing gateway information
+     */
+    function getGatewaysInfo(uint256 _offset, uint256 _limit)
+        external
+        view
+        returns (GatewayInfo[] memory _gatewaysInfoArr);
+
+    /**
+     * @notice Retrieves the total count of workflows
+     * @return The total count of workflows
+     */
+    function getTotalWorkflowsCount() external view returns (uint256);
+
+    /**
+     * @notice Retrieves the workflow information associated with the given ID
+     * @param _id The ID of the workflow to retrieve
+     * @return The workflow information associated with the given ID
+     */
+    function getWorkflow(uint256 _id) external view returns (Workflow memory);
+
+    /**
+     * @notice Retrieves an array of workflows within the specified range
+     * @param _offset The starting index of workflows to retrieve
+     * @param _limit The maximum number of workflows to retrieve
+     * @return _workflowsArr The array containing workflow information
+     */
+    function getWorkflows(uint256 _offset, uint256 _limit) external view returns (Workflow[] memory _workflowsArr);
+
+    /**
+     * @notice Retrieves the owner address of the workflow associated with the given ID
+     * @param _id The ID of the workflow to retrieve the owner address for
+     * @return The owner address of the workflow associated with the given ID
+     */
+    function getWorkflowOwner(uint256 _id) external view returns (address);
+
+    /**
+     * @notice Retrieves the status of the workflow associated with the given ID
+     * @param _id The ID of the workflow to retrieve the status for
+     * @return The status of the workflow associated with the given ID
+     */
+    function getWorkflowStatus(uint256 _id) external view returns (WorkflowStatus);
+
+    /**
+     * @notice Checks whether a workflow with the given ID exists
+     * @param _id The ID of the workflow to check for existence
+     * @return True if a workflow with the given ID exists, otherwise false
+     */
+    function isWorkflowExist(uint256 _id) external view returns (bool);
 }

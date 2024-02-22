@@ -2,6 +2,9 @@
 pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
+import "@solarity/solidity-lib/libs/arrays/Paginator.sol";
 
 import "../interfaces/SignerOwnable.sol";
 import "../interfaces/IGateway.sol";
@@ -10,6 +13,8 @@ import "../interfaces/IBillingManager.sol";
 import "../interfaces/IRegistry.sol";
 
 contract Registry is IRegistry, Initializable, SignerOwnable {
+    using EnumerableSet for EnumerableSet.AddressSet;
+
     uint256 internal constant PERFORM_GAS_CUSHION = 5_000;
     string internal constant GATEWAY_PERFORM_FUNC_SIGNATURE = "perform(uint256,address,bytes)";
 
@@ -18,6 +23,9 @@ contract Registry is IRegistry, Initializable, SignerOwnable {
 
     bool public isMainChain;
     uint16 public maxWorkflowsPerAccount;
+
+    uint256[] internal _existingWorkflowIds;
+    EnumerableSet.AddressSet internal _existingGatewayOwners;
 
     mapping(address => uint256) public workflowsPerAddress;
 
@@ -60,19 +68,11 @@ contract Registry is IRegistry, Initializable, SignerOwnable {
     }
 
     function setGateway(address _gateway) external override {
-        _gateways[msg.sender] = _gateway;
-
-        emit GatewaySet(msg.sender, _gateway);
+        _setGateway(msg.sender, _gateway);
     }
 
     function deployAndSetGateway() external override returns (address) {
-        address newGatewayAddr = gatewayFactory.deployGateway(msg.sender);
-
-        _gateways[msg.sender] = newGatewayAddr;
-
-        emit GatewaySet(msg.sender, newGatewayAddr);
-
-        return newGatewayAddr;
+        return _deployAndSetGateway(msg.sender);
     }
 
     function updateWorkflowTotalSpent(uint256 _workflowId, uint256 _workflowExecutionAmount)
@@ -122,7 +122,13 @@ contract Registry is IRegistry, Initializable, SignerOwnable {
             );
 
             if (currentRegisterInfo.requireGateway) {
-                require(_gateways[currentRegisterInfo.workflowOwner] != address(0), "Registry: gateway not found");
+                address currentGateway = _gateways[currentRegisterInfo.workflowOwner];
+
+                if (currentRegisterInfo.deployGateway && currentGateway == address(0)) {
+                    _deployAndSetGateway(currentRegisterInfo.workflowOwner);
+                } else {
+                    require(currentGateway != address(0), "Registry: gateway not found");
+                }
             }
 
             require(
@@ -138,6 +144,7 @@ contract Registry is IRegistry, Initializable, SignerOwnable {
                 0
             );
             workflowsPerAddress[currentRegisterInfo.workflowOwner]++;
+            _existingWorkflowIds.push(currentRegisterInfo.id);
 
             emit WorkflowRegistered(
                 currentRegisterInfo.workflowOwner,
@@ -161,13 +168,17 @@ contract Registry is IRegistry, Initializable, SignerOwnable {
         for (uint256 i = 0; i < _workflowIds.length; i++) {
             _onlyExistingWorkflow(_workflowIds[i]);
 
+            address workflowOwner = getWorkflowOwner(_workflowIds[i]);
+
             require(
-                isMainChainLocal ? getWorkflowOwner(_workflowIds[i]) == msg.sender : signerAddr == msg.sender,
+                isMainChainLocal ? workflowOwner == msg.sender : signerAddr == msg.sender,
                 "Registry: not a workflow owner or signer"
             );
 
             _onlyRequiredStatus(_workflowIds[i], WorkflowStatus.CANCELLED, false);
             _updateWorkflowStatus(_workflowIds[i], WorkflowStatus.CANCELLED);
+
+            workflowsPerAddress[workflowOwner]--;
         }
     }
 
@@ -201,23 +212,63 @@ contract Registry is IRegistry, Initializable, SignerOwnable {
         emit Performance(_workflowId, _workflowExecutionId, success);
     }
 
-    function getGateway(address _userAddr) external view returns (address) {
+    function getTotalGatewaysCount() external view override returns (uint256) {
+        return _existingGatewayOwners.length();
+    }
+
+    function getGateway(address _userAddr) external view override returns (address) {
         return _gateways[_userAddr];
     }
 
-    function getWorkflow(uint256 _id) external view returns (Workflow memory) {
+    function getGatewaysInfo(uint256 _offset, uint256 _limit)
+        external
+        view
+        override
+        returns (GatewayInfo[] memory _gatewaysInfoArr)
+    {
+        uint256 to = Paginator.getTo(_existingGatewayOwners.length(), _offset, _limit);
+
+        _gatewaysInfoArr = new GatewayInfo[](to - _offset);
+
+        for (uint256 i = _offset; i < to; i++) {
+            address gatewayOwner = _existingGatewayOwners.at(i);
+
+            _gatewaysInfoArr[i - _offset] = GatewayInfo(gatewayOwner, _gateways[gatewayOwner]);
+        }
+    }
+
+    function getTotalWorkflowsCount() external view override returns (uint256) {
+        return _existingWorkflowIds.length;
+    }
+
+    function getWorkflow(uint256 _id) external view override returns (Workflow memory) {
         return _workflowsInfo[_id];
     }
 
-    function getWorkflowOwner(uint256 _id) public view returns (address) {
+    function getWorkflows(uint256 _offset, uint256 _limit)
+        external
+        view
+        override
+        returns (Workflow[] memory _workflowsArr)
+    {
+        uint256 to = Paginator.getTo(_existingWorkflowIds.length, _offset, _limit);
+
+        _workflowsArr = new Workflow[](to - _offset);
+
+        for (uint256 i = _offset; i < to; i++) {
+            _workflowsArr[i - _offset] = _workflowsInfo[_existingWorkflowIds[i]];
+        }
+    }
+
+    function getWorkflowOwner(uint256 _id) public view override returns (address) {
         return _workflowsInfo[_id].owner;
     }
 
-    function getWorkflowStatus(uint256 _id) public view returns (WorkflowStatus) {
+    function getWorkflowStatus(uint256 _id) public view override returns (WorkflowStatus) {
         return _workflowsInfo[_id].status;
     }
 
-    function isWorkflowExist(uint256 _id) public view returns (bool) {
+    function isWorkflowExist(uint256 _id) public view override returns (bool) {
         return _workflowsInfo[_id].status != WorkflowStatus.NONE;
     }
 
@@ -225,6 +276,26 @@ contract Registry is IRegistry, Initializable, SignerOwnable {
         _workflowsInfo[_id].status = _newStatus;
 
         emit WorkflowStatusChanged(_id, _newStatus);
+    }
+
+    function _deployAndSetGateway(address _gatewayOwner) internal returns (address) {
+        address newGatewayAddr = gatewayFactory.deployGateway(_gatewayOwner);
+
+        _setGateway(_gatewayOwner, newGatewayAddr);
+
+        return newGatewayAddr;
+    }
+
+    function _setGateway(address _gatewayOwner, address _gateway) internal {
+        if (_gateway != address(0)) {
+            _existingGatewayOwners.add(_gatewayOwner);
+        } else {
+            _existingGatewayOwners.remove(_gatewayOwner);
+        }
+
+        _gateways[_gatewayOwner] = _gateway;
+
+        emit GatewaySet(_gatewayOwner, _gateway);
     }
 
     function _callWithExactGas(
