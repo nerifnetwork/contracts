@@ -6,6 +6,14 @@ pragma solidity ^0.8.18;
  * @notice Interface for the Registry contract, responsible for managing workflows, gateways, and configurations
  */
 interface IRegistry {
+    /**
+     * @dev Enum representing the status of a workflow
+     * @param NONE The initial status
+     * @param PENDING The workflow is pending activation
+     * @param ACTIVE The workflow is active and operational
+     * @param PAUSED The workflow is temporarily paused
+     * @param CANCELLED The workflow is cancelled and no longer operational
+     */
     enum WorkflowStatus {
         NONE,
         PENDING,
@@ -14,6 +22,14 @@ interface IRegistry {
         CANCELLED
     }
 
+    /**
+     * @dev Struct representing a workflow
+     * @param id The unique identifier of the workflow
+     * @param owner The address of the owner of the workflow
+     * @param hash The hash representing the content or configuration of the workflow
+     * @param status The status of the workflow (see WorkflowStatus enum)
+     * @param totalSpent The total amount spent on the workflow
+     */
     struct Workflow {
         uint256 id;
         address owner;
@@ -22,6 +38,13 @@ interface IRegistry {
         uint256 totalSpent;
     }
 
+    /**
+     * @dev Struct containing information required to register a new workflow
+     * @param id The unique identifier of the workflow
+     * @param workflowOwner The address of the owner of the workflow
+     * @param hash The hash representing the content or configuration of the workflow
+     * @param requireGateway The flag indicating whether the workflow requires a gateway
+     */
     struct RegisterWorkflowInfo {
         uint256 id;
         address workflowOwner;
@@ -59,6 +82,10 @@ interface IRegistry {
      */
     event Performance(uint256 workflowId, uint256 workflowExecutionId, bool success);
 
+    /**
+     * @notice Sets the maximum number of workflows allowed per account
+     * @param _newMaxWorkflowsPerAccount The new maximum number of workflows per account to be set
+     */
     function setMaxWorkflowsPerAccount(uint16 _newMaxWorkflowsPerAccount) external;
 
     /**
@@ -87,12 +114,14 @@ interface IRegistry {
     function updateWorkflowTotalSpent(uint256 _workflowId, uint256 _workflowExecutionAmount) external;
 
     /**
-     * @notice Pauses a workflow with the given ID
+     * @notice Pauses workflows with the given IDs
+     * @param _workflowIds The array of workflow IDs to be paused
      */
     function pauseWorkflows(uint256[] calldata _workflowIds) external;
 
     /**
-     * @notice Resumes a paused workflow with the given ID
+     * @notice Resumes paused workflows with the given IDs
+     * @param _workflowIds The array of workflow IDs to be resumed
      */
     function resumeWorkflows(uint256[] calldata _workflowIds) external;
 
@@ -113,17 +142,20 @@ interface IRegistry {
     ) external;
 
     /**
-     * @notice Registers a new workflow
+     * @notice Registers new workflows with the provided information
+     * @param _registerWorkflowInfoArr The array containing information to register new workflows
      */
     function registerWorkflows(RegisterWorkflowInfo[] calldata _registerWorkflowInfoArr) external;
 
     /**
-     * @notice Activates a registered workflow
+     * @notice Activates registered workflows with the given IDs
+     * @param _workflowIds The array of workflow IDs to be activated
      */
     function activateWorkflows(uint256[] calldata _workflowIds) external;
 
     /**
-     * @notice Cancels a registered workflow
+     * @notice Cancels registered workflows with the given IDs
+     * @param _workflowIds The array of workflow IDs to be canceled
      */
     function cancelWorkflows(uint256[] calldata _workflowIds) external;
 }
