@@ -2,7 +2,7 @@ import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { Reverter } from '../helpers/reverter';
-import { Gateway, TestRegistry, TestTarget } from '../../typechain';
+import { Gateway, SignerStorage, TestRegistry, TestTarget } from '../../typechain';
 import { BigNumberish } from 'ethers';
 
 describe('Gateway', () => {
@@ -11,7 +11,9 @@ describe('Gateway', () => {
   let OWNER: SignerWithAddress;
   let FIRST: SignerWithAddress;
   let SECOND: SignerWithAddress;
+  let SIGNER: SignerWithAddress;
 
+  let signerStorage: SignerStorage;
   let gateway: Gateway;
   let testRegistry: TestRegistry;
   let testTarget: TestTarget;
@@ -23,25 +25,38 @@ describe('Gateway', () => {
   }
 
   before(async () => {
-    [OWNER, FIRST, SECOND] = await ethers.getSigners();
+    [OWNER, FIRST, SECOND, SIGNER] = await ethers.getSigners();
 
     const GatewayFactory = await ethers.getContractFactory('Gateway');
+    const SignerStorageFactory = await ethers.getContractFactory('SignerStorage');
     const TestRegistryFactory = await ethers.getContractFactory('TestRegistry');
     const TestTargetFactory = await ethers.getContractFactory('TestTarget');
 
+    signerStorage = await SignerStorageFactory.deploy();
     gateway = await GatewayFactory.deploy();
     testRegistry = await TestRegistryFactory.deploy();
     testTarget = await TestTargetFactory.deploy();
 
+    await signerStorage.initialize(SIGNER.address);
     await gateway.initialize(testRegistry.address, OWNER.address);
+    await testRegistry.initialize(
+      true,
+      signerStorage.address,
+      ethers.constants.AddressZero,
+      ethers.constants.AddressZero,
+      0
+    );
 
-    await testRegistry.addWorkflow({
-      id: defWorkflowId,
-      owner: OWNER.address,
-      status: 1,
-      hash: [],
-      totalSpent: 0,
-    });
+    await testRegistry.setGateway(gateway.address);
+    await testRegistry.registerWorkflows([
+      {
+        id: defWorkflowId,
+        workflowOwner: OWNER.address,
+        hash: '0x',
+        requireGateway: true,
+        deployGateway: false,
+      },
+    ]);
 
     await reverter.snapshot();
   });
@@ -66,13 +81,15 @@ describe('Gateway', () => {
     const workflowID = 20;
 
     beforeEach('setup', async () => {
-      await testRegistry.addWorkflow({
-        id: workflowID,
-        owner: FIRST.address,
-        status: 1,
-        hash: [],
-        totalSpent: 0,
-      });
+      await testRegistry.connect(FIRST).registerWorkflows([
+        {
+          id: workflowID,
+          workflowOwner: FIRST.address,
+          hash: '0x',
+          requireGateway: false,
+          deployGateway: false,
+        },
+      ]);
     });
 
     describe('allowed cases', () => {

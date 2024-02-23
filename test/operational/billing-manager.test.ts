@@ -37,15 +37,19 @@ describe('BillingManager', () => {
     gatewayImpl = await GatewayImplFactory.deploy();
 
     await signerStorage.initialize(SIGNER.address);
-    await registry.initialize(true, signerStorage.address, gatewayFactory.address, billingManager.address, {
-      performanceOverhead: 0,
-      maxWorkflowsPerAccount: 0,
-    });
+    await registry.initialize(true, signerStorage.address, gatewayFactory.address, billingManager.address, 0);
     await billingManager.initialize(registry.address, signerStorage.address);
     await gatewayFactory.initialize(registry.address, gatewayImpl.address);
 
-    await registry.deployAndSetGateway();
-    await registry.registerWorkflow(defaultWorkflowId, OWNER.address, '0x', true);
+    await registry.registerWorkflows([
+      {
+        id: defaultWorkflowId,
+        workflowOwner: OWNER.address,
+        hash: '0x',
+        requireGateway: true,
+        deployGateway: true,
+      },
+    ]);
 
     await reverter.snapshot();
   });
@@ -148,6 +152,8 @@ describe('BillingManager', () => {
       expect(workflowExecutionInfo.status).to.be.eq(1);
 
       expect(await billingManager.getWorkflowExecutionStatus(workflowExecutionId)).to.be.eq(1);
+      expect(await billingManager.getExecutionWorkflowId(workflowExecutionId)).to.be.eq(defaultWorkflowId);
+      expect(await billingManager.getWorkflowExecutionOwner(workflowExecutionId)).to.be.eq(OWNER.address);
     });
 
     it('should correctly lock user funds several times', async () => {
@@ -185,7 +191,7 @@ describe('BillingManager', () => {
     });
 
     it('should get exception if workflow id does not exist', async () => {
-      const reason = 'Registry: workflow does not exist';
+      const reason = 'BillingManager: Workflow does not exist';
 
       await expect(billingManager.connect(SIGNER).lockExecutionFunds(10, lockAmount)).to.be.revertedWith(reason);
     });
