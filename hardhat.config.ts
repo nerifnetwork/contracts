@@ -6,6 +6,7 @@ import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-solhint";
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@typechain/hardhat";
+import "@solarity/hardhat-gobind";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
 
@@ -230,6 +231,14 @@ const config: HardhatUserConfig = {
         }
       }
     ]
+  },
+  gobind: {
+    outdir: "./pkg",
+    deployable: true,
+    runOnCompile: false,
+    verbose: false,
+    onlyFiles: ["./contracts"],
+    skipFiles: ["./contracts/test", "./contracts/interfaces"],
   },
 };
 

@@ -21,6 +21,7 @@
     "node": "hardhat node",
     "coverage": "npx hardhat coverage --solcoverjs ./.solcover.ts",
     "extract-abi": "hardhat run scripts/extract-abi.ts",
+    "generate-go-bindings": "npx hardhat gobind",
     "lint": "npm run prettier && npm run solhint && npm run eslint",
     "lint:fix": "npm run prettier:fix && npm run solhint:fix && npm run eslint:fix",
     "solhint": "solhint contracts/**/*.sol",
@@ -33,12 +34,13 @@
     "copy-types": "cpy 'typechain/**/*.d.ts' 'dist/typechain/'"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^1.0.4",
     "@nomiclabs/hardhat-ethers": "^2.0.5",
     "@nomiclabs/hardhat-etherscan": "^3.1.0",
     "@nomiclabs/hardhat-solhint": "^2.0.0",
     "@nomiclabs/hardhat-waffle": "^2.0.3",
-    "@nomicfoundation/hardhat-chai-matchers": "^1.0.4",
     "@openzeppelin/contracts-upgradeable": "^4.5.2",
+    "@solarity/hardhat-gobind": "^1.1.1",
     "@typechain/ethers-v5": "^7.2.0",
     "@typechain/hardhat": "^2.3.1",
     "@types/chai": "^4.3.0",
