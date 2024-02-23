@@ -8,20 +8,6 @@ init:
 	npm run compile
 	cp .env.example .env
 
-.PHONY: abigen
-abigen: # Generate go files
-	rm -rf artifacts/
-	npm run compile
-	npm run extract-abi
-	docker build -t extract-abi .
-	rm -rf pkg/*
-	CONTAINER=`docker create extract-abi --name extract-abi`; \
-	docker cp $$CONTAINER:/common pkg/common; \
-	docker cp $$CONTAINER:/operational pkg/operational; \
-	docker cp $$CONTAINER:/system pkg/system; \
-	docker cp $$CONTAINER:/interfaces pkg/interfaces; \
-	docker rm -v $$CONTAINER
-
 .PHONY: deploy
 deploy: deploy-system deploy-registries
 
