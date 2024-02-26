@@ -1,14 +1,15 @@
 import * as dotenv from "dotenv";
 
 import { HardhatUserConfig, task } from "hardhat/config";
-import "@nomiclabs/hardhat-etherscan";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-solhint";
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@typechain/hardhat";
 import "@solarity/hardhat-gobind";
+import "@solarity/hardhat-migrate";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
+import "tsconfig-paths/register";
 
 dotenv.config();
 
@@ -107,6 +108,10 @@ const config: HardhatUserConfig = {
   networks: {
     ...mainnets,
     ...testnets,
+    localhost: {
+      url: "http://127.0.0.1:8545",
+      gasMultiplier: 1.2,
+    },
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
@@ -239,6 +244,12 @@ const config: HardhatUserConfig = {
     verbose: false,
     onlyFiles: ["./contracts"],
     skipFiles: ["./contracts/test", "./contracts/interfaces"],
+  },
+  typechain: {
+    outDir: "generated-types/ethers",
+    target: "ethers-v5",
+    alwaysGenerateOverloads: true,
+    discriminateTypes: true,
   },
 };
 

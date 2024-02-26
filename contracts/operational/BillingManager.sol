@@ -132,12 +132,9 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable {
         emit RewardsWithdrawn(signerAddr, amountToWithdraw);
     }
 
-    function getWorkflowExecutionStatus(uint256 _workflowExecutionId)
-        external
-        view
-        override
-        returns (WorkflowExecutionStatus)
-    {
+    function getWorkflowExecutionStatus(
+        uint256 _workflowExecutionId
+    ) external view override returns (WorkflowExecutionStatus) {
         return _workflowsExecutionInfo[_workflowExecutionId].status;
     }
 
@@ -160,12 +157,9 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable {
             );
     }
 
-    function getWorkflowExecutionInfo(uint256 _workflowExecutionId)
-        external
-        view
-        override
-        returns (WorkflowExecutionInfo memory)
-    {
+    function getWorkflowExecutionInfo(
+        uint256 _workflowExecutionId
+    ) external view override returns (WorkflowExecutionInfo memory) {
         return _workflowsExecutionInfo[_workflowExecutionId];
     }
 

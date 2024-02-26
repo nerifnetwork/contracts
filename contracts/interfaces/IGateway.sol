@@ -65,11 +65,7 @@ interface IGateway {
      * @param _target The address of the end customer contract
      * @param _payload The payload to execute on the end customer contract
      */
-    function perform(
-        uint256 _id,
-        address _target,
-        bytes calldata _payload
-    ) external;
+    function perform(uint256 _id, address _target, bytes calldata _payload) external;
 
     /**
      * @notice Sets the registry address for the Gateway contract
@@ -99,8 +95,9 @@ interface IGateway {
      * @notice Updates known customer contracts based on the provided entries
      * @param _updateKnownCustomerContractsEntries The array of entries for updating known customer contracts
      */
-    function updateKnownCustomerContracts(UpdateKnownAddressesEntry[] memory _updateKnownCustomerContractsEntries)
-        external;
+    function updateKnownCustomerContracts(
+        UpdateKnownAddressesEntry[] memory _updateKnownCustomerContractsEntries
+    ) external;
 
     /**
      * @notice Retrieves configuration information for the Gateway contract

@@ -185,10 +185,9 @@ interface IBillingManager {
      * @param _workflowExecutionId The ID of the workflow execution
      * @return Information about the workflow execution
      */
-    function getWorkflowExecutionInfo(uint256 _workflowExecutionId)
-        external
-        view
-        returns (WorkflowExecutionInfo memory);
+    function getWorkflowExecutionInfo(
+        uint256 _workflowExecutionId
+    ) external view returns (WorkflowExecutionInfo memory);
 
     /**
      * @notice Retrieves the available funds of a user

@@ -1,5 +1,5 @@
 import { ethers } from 'hardhat';
-import { Gateway } from '../../typechain';
+import { Gateway } from '../../generated-types/ethers';
 import { Deployer } from './deployer';
 
 const defaultGatewayDeploymentParameters: GatewayDeploymentParameters = {

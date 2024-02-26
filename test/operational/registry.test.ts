@@ -3,7 +3,14 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { Reverter } from '../helpers/reverter';
 import { wei } from '../helpers/utils';
-import { Gateway, GatewayFactory, Registry, BillingManager, SignerStorage, TestTarget } from '../../typechain';
+import {
+  Gateway,
+  GatewayFactory,
+  Registry,
+  BillingManager,
+  SignerStorage,
+  TestTarget,
+} from '../../generated-types/ethers';
 import { BigNumberish } from 'ethers';
 
 describe('Registry', () => {

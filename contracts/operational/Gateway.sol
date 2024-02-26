@@ -56,27 +56,21 @@ contract Gateway is IGateway, OwnableUpgradeable {
         _updateKnownAddresses(_knownCustomerContracts, _updateConfigData.updateKnownCustomerContractsEntries);
     }
 
-    function updateKnownWorkflows(UpdateKnownWorkflowsEntry[] memory _updateKnownWorkflowsEntries)
-        external
-        override
-        onlyOwner
-    {
+    function updateKnownWorkflows(
+        UpdateKnownWorkflowsEntry[] memory _updateKnownWorkflowsEntries
+    ) external override onlyOwner {
         _updateKnownWorkflows(_updateKnownWorkflowsEntries);
     }
 
-    function updateKnownWorkflowOwners(UpdateKnownAddressesEntry[] memory _updateKnownWorkflowOwnersEntries)
-        external
-        override
-        onlyOwner
-    {
+    function updateKnownWorkflowOwners(
+        UpdateKnownAddressesEntry[] memory _updateKnownWorkflowOwnersEntries
+    ) external override onlyOwner {
         _updateKnownAddresses(_knownWorkflowOwners, _updateKnownWorkflowOwnersEntries);
     }
 
-    function updateKnownCustomerContracts(UpdateKnownAddressesEntry[] memory _updateKnownCustomerContractsEntries)
-        external
-        override
-        onlyOwner
-    {
+    function updateKnownCustomerContracts(
+        UpdateKnownAddressesEntry[] memory _updateKnownCustomerContractsEntries
+    ) external override onlyOwner {
         _updateKnownAddresses(_knownCustomerContracts, _updateKnownCustomerContractsEntries);
     }
 

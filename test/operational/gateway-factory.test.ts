@@ -2,7 +2,7 @@ import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { Reverter } from '../helpers/reverter';
-import { Gateway, GatewayFactory, TestGateway } from '../../typechain';
+import { Gateway, GatewayFactory, TestGateway } from '../../generated-types/ethers';
 
 describe('GatewayFactory', () => {
   const reverter = new Reverter();

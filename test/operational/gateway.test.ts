@@ -2,7 +2,7 @@ import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { Reverter } from '../helpers/reverter';
-import { Gateway, SignerStorage, TestRegistry, TestTarget } from '../../typechain';
+import { Gateway, SignerStorage, TestRegistry, TestTarget } from '../../generated-types/ethers';
 import { BigNumberish } from 'ethers';
 
 describe('Gateway', () => {

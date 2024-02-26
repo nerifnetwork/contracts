@@ -2,19 +2,23 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 // AddressStorage is the simple addresses storage contract.
 // Currently, this is used by staking contract in order to store validators.
-contract AddressStorage is Ownable, Initializable {
+contract AddressStorage is OwnableUpgradeable {
     mapping(address => uint256) internal indexMap;
     address[] internal addrList;
 
-    function initialize(address[] memory _addrList) external virtual initializer {
+    function initialize(address _owner, address[] memory _addrList) external virtual initializer {
+        __Ownable_init();
+
         for (uint256 i = 0; i < _addrList.length; i++) {
             addrList.push(_addrList[i]);
             indexMap[_addrList[i]] = addrList.length;
         }
+
+        transferOwnership(_owner);
     }
 
     function mustAdd(address _addr) external {
