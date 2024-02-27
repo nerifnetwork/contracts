@@ -1,20 +1,21 @@
-import { Deployer } from "@solarity/hardhat-migrate";
-import { ethers } from "hardhat";
-import { BigNumber } from "ethers";
+import { Deployer } from '@solarity/hardhat-migrate';
+import { ethers } from 'hardhat';
 
-import { Staking__factory } from "@/generated-types/ethers";
+import { Staking__factory } from '../generated-types/ethers';
+import { parseConfig } from './helpers/configParser';
 
 export = async (deployer: Deployer) => {
-  const staking = await deployer.deployed(Staking__factory);
+  const config = parseConfig();
 
-  const minimalStake = 1000;
-  const stakingKeys: string[] = [];
+  if (config.isMainChain && config.stakingKeys.length > 0) {
+    const staking = await deployer.deployed(Staking__factory);
+    const minimalStake = await staking.minimalStake();
 
-  if (stakingKeys.length > 0) {
-    for (const privateKey of stakingKeys) {
-      const signer = new ethers.Wallet(privateKey, ethers.provider);
-  
-      await staking.connect(signer).stake({ value: minimalStake});
+    for (let i = 0; i < config.stakingKeys.length; i++) {
+      const signer = new ethers.Wallet(config.stakingKeys[i], ethers.provider);
+
+      await staking.connect(signer).stake({ value: minimalStake });
+      console.log(`Staked ${minimalStake} from the ${signer.address} address`);
     }
-  };
+  }
 };

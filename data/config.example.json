@@ -1,0 +1,20 @@
+{
+  "isMainChain": true,
+  "systemContractsInitParams": {
+    "dkgDeadlinePeriod": "1000",
+    "stakingInitParams": {
+      "minimalStake": "1000000000000000000",
+      "withdrawalPeriod": "3600"
+    },
+    "slashingVotingInitParams": {
+      "epochPeriod": "1000",
+      "slashingThresold": "10",
+      "slashingEpochs": "3"
+    }
+  },
+  "operationalContractsInitParams": {
+    "maxWorkflowsPerAccount": "0",
+    "signer": "0x8e264821...a7FD9f8D8B320adA"
+  },
+  "stakingKeys": []
+}
