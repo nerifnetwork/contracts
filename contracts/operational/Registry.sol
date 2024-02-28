@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
 import "@solarity/solidity-lib/libs/arrays/Paginator.sol";
 
@@ -12,7 +13,7 @@ import "../interfaces/IGatewayFactory.sol";
 import "../interfaces/IBillingManager.sol";
 import "../interfaces/IRegistry.sol";
 
-contract Registry is IRegistry, Initializable, SignerOwnable {
+contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     uint256 internal constant PERFORM_GAS_CUSHION = 5_000;
@@ -266,6 +267,8 @@ contract Registry is IRegistry, Initializable, SignerOwnable {
     function isWorkflowExist(uint256 _id) public view override returns (bool) {
         return _workflowsInfo[_id].status != WorkflowStatus.NONE;
     }
+
+    function _authorizeUpgrade(address) internal virtual override onlySigner {}
 
     function _updateWorkflowStatus(uint256 _id, WorkflowStatus _newStatus) internal {
         _workflowsInfo[_id].status = _newStatus;

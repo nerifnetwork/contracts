@@ -3,22 +3,27 @@ pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
+import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+
+import "@solarity/solidity-lib/libs/arrays/Paginator.sol";
 
 import "../interfaces/IBillingManager.sol";
 import "../interfaces/SignerOwnable.sol";
 
 import "./Registry.sol";
 
-contract BillingManager is IBillingManager, Initializable, SignerOwnable {
-    using EnumerableSet for EnumerableSet.UintSet;
+contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUpgradeable {
+    using EnumerableSet for *;
 
     Registry public registry;
 
     uint256 public networkRewards;
     uint256 public nextWorkflowExecutionId;
+
+    EnumerableSet.AddressSet internal _existingUsers;
 
     mapping(address => UserFundsData) internal _usersFundsData;
     mapping(uint256 => WorkflowExecutionInfo) internal _workflowsExecutionInfo;
@@ -109,7 +114,13 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable {
             "BillingManager: Not enough available funds to withdraw"
         );
 
-        _usersFundsData[msg.sender].userFundBalance -= _amountToWithdraw;
+        uint256 newUserFundsAmount = _usersFundsData[msg.sender].userFundBalance - _amountToWithdraw;
+
+        _usersFundsData[msg.sender].userFundBalance = newUserFundsAmount;
+
+        if (newUserFundsAmount == 0) {
+            _existingUsers.remove(msg.sender);
+        }
 
         Address.sendValue(payable(msg.sender), _amountToWithdraw);
 
@@ -132,6 +143,10 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable {
         emit RewardsWithdrawn(signerAddr, amountToWithdraw);
     }
 
+    function getTotalUsersCount() external view override returns (uint256) {
+        return _existingUsers.length();
+    }
+
     function getWorkflowExecutionStatus(
         uint256 _workflowExecutionId
     ) external view override returns (WorkflowExecutionStatus) {
@@ -146,15 +161,21 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable {
         return _workflowsExecutionInfo[_workflowExecutionId].workflowId;
     }
 
-    function getUserFundsInfo(address _userAddr) external view override returns (UserFundsInfo memory) {
-        UserFundsData storage userFundsData = _usersFundsData[_userAddr];
+    function getExistingUsers(uint256 _offset, uint256 _limit) external view override returns (address[] memory) {
+        return Paginator.part(_existingUsers, _offset, _limit);
+    }
 
-        return
-            UserFundsInfo(
-                userFundsData.userFundBalance,
-                userFundsData.userLockedBalance,
-                userFundsData.pendingWorkflowExecutionIds.values()
-            );
+    function getUsersFundsInfo(
+        uint256 _offset,
+        uint256 _limit
+    ) external view override returns (UserFundsInfo[] memory _usersInfoArr) {
+        uint256 to = Paginator.getTo(_existingUsers.length(), _offset, _limit);
+
+        _usersInfoArr = new UserFundsInfo[](to - _offset);
+
+        for (uint256 i = _offset; i < to; i++) {
+            _usersInfoArr[i - _offset] = getUserFundsInfo(_existingUsers.at(i));
+        }
     }
 
     function getWorkflowExecutionInfo(
@@ -163,9 +184,23 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable {
         return _workflowsExecutionInfo[_workflowExecutionId];
     }
 
+    function getUserFundsInfo(address _userAddr) public view override returns (UserFundsInfo memory) {
+        UserFundsData storage userFundsData = _usersFundsData[_userAddr];
+
+        return
+            UserFundsInfo(
+                _userAddr,
+                userFundsData.userFundBalance,
+                userFundsData.userLockedBalance,
+                userFundsData.pendingWorkflowExecutionIds.values()
+            );
+    }
+
     function getUserAvailableFunds(address _userAddr) public view override returns (uint256) {
         return _usersFundsData[_userAddr].userFundBalance - _usersFundsData[_userAddr].userLockedBalance;
     }
+
+    function _authorizeUpgrade(address) internal virtual override onlySigner {}
 
     function _fundBalance(address _recipientAddr) internal {
         require(msg.value > 0, "BillingManager: Zero funds to add");
@@ -173,6 +208,7 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable {
         uint256 newUserBalance = _usersFundsData[_recipientAddr].userFundBalance + msg.value;
 
         _usersFundsData[_recipientAddr].userFundBalance = newUserBalance;
+        _existingUsers.add(_recipientAddr);
 
         emit BalanceFunded(_recipientAddr, newUserBalance, msg.value);
     }
