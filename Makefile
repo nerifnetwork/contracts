@@ -8,38 +8,17 @@ init:
 	npm run compile
 	cp .env.example .env
 
-.PHONY: deploy
-deploy: deploy-system deploy-registries
+.PHONY: deploy-testnets
+deploy-testnets:
+	DEPLOY_CONFIG_PATH='./data/testnet/config.mumbai.json' npm run deploy mumbai
+	DEPLOY_CONFIG_PATH='./data/testnet/config.polygonZkEVMTestnet.json' npm run deploy polygonZkEVMTestnet
+	DEPLOY_CONFIG_PATH='./data/testnet/config.goerli.json' npm run deploy goerli
+	DEPLOY_CONFIG_PATH='./data/testnet/config.bscTestnet.json' npm run deploy bscTestnet
+	DEPLOY_CONFIG_PATH='./data/testnet/config.chiado.json' npm run deploy chiado
+	DEPLOY_CONFIG_PATH='./data/testnet/config.lineaTestnet.json' npm run deploy lineaTestnet
 
-.PHONY: deploy-system
-deploy-system:
-	VERIFY=true npx hardhat --network mumbai run scripts/deploy-mainchain.ts
-	VERIFY=true npx hardhat --network zkevm-testnet run scripts/deploy-sidechain.ts
-	VERIFY=true npx hardhat --network goerli run scripts/deploy-sidechain.ts
-	VERIFY=true npx hardhat --network bsc-testnet run scripts/deploy-sidechain.ts
-	VERIFY=true npx hardhat --network gnosis-chiado run scripts/deploy-sidechain.ts
-	VERIFY=true npx hardhat --network linea-testnet run scripts/deploy-sidechain.ts
-
-.PHONY: deploy-registries
-deploy-registries:
-	VERIFY=true npx hardhat --network mumbai run scripts/deploy-registry.ts
-	VERIFY=true npx hardhat --network zkevm-testnet run scripts/deploy-registry.ts
-	VERIFY=true npx hardhat --network goerli run scripts/deploy-registry.ts
-	VERIFY=true npx hardhat --network bsc-testnet run scripts/deploy-registry.ts
-	VERIFY=true npx hardhat --network gnosis-chiado run scripts/deploy-registry.ts
-	VERIFY=true npx hardhat --network linea-testnet run scripts/deploy-registry.ts
-
-.PHONY: deploy-mainnet
-deploy-prod: deploy-mainnet-system deploy-mainnet-registries
-
-.PHONY: deploy-mainnet-system
-deploy-mainnet-system:
-	VERIFY=true npx hardhat --network polygon run scripts/deploy-mainchain.ts
-	VERIFY=true npx hardhat --network zkevm run scripts/deploy-sidechain.ts
-	VERIFY=true npx hardhat --network linea run scripts/deploy-sidechain.ts
-
-.PHONY: deploy-mainnet-registries
-deploy-mainnet-registries:
-	VERIFY=true npx hardhat --network polygon run scripts/deploy-registry.ts
-	VERIFY=true npx hardhat --network zkevm run scripts/deploy-registry.ts
-	VERIFY=true npx hardhat --network linea run scripts/deploy-registry.ts
+.PHONY: deploy-mainnets
+deploy-mainnets:
+	DEPLOY_CONFIG_PATH='./data/mainnet/config.polygon.json' npm run deploy polygon
+	DEPLOY_CONFIG_PATH='./data/mainnet/config.polygonZkEVM.json' npm run deploy polygonZkEVM
+	DEPLOY_CONFIG_PATH='./data/mainnet/config.linea.json' npm run deploy linea
