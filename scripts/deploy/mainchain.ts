@@ -9,7 +9,7 @@ import {
   SlashingVoting,
   ContractRegistry,
   RewardDistributionPool,
-} from '../../typechain';
+} from '../../generated-types/ethers';
 
 const defaultSystemDeploymentParameters: MainchainDeploymentParameters = {
   minimalStake: ethers.utils.parseEther('0.01'),
@@ -49,12 +49,7 @@ export async function deployMainchainContracts(
 
   deployer.log('Initializing contracts\n');
 
-  await deployer.sendTransaction(res.addressStorage.initialize([]), 'Initializing AddressStorage');
-
-  await deployer.sendTransaction(
-    res.addressStorage.transferOwnership(res.staking.address),
-    'Transferring ownership of AddressStorage'
-  );
+  await deployer.sendTransaction(res.addressStorage.initialize(res.staking.address, []), 'Initializing AddressStorage');
 
   await deployer.sendTransaction(
     res.dkg.initialize(res.contractRegistry.address, params.dkgDeadlinePeriod),

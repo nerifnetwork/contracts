@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
 import "@solarity/solidity-lib/libs/arrays/Paginator.sol";
 
@@ -12,7 +13,7 @@ import "../interfaces/IGatewayFactory.sol";
 import "../interfaces/IBillingManager.sol";
 import "../interfaces/IRegistry.sol";
 
-contract Registry is IRegistry, Initializable, SignerOwnable {
+contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     uint256 internal constant PERFORM_GAS_CUSHION = 5_000;
@@ -75,11 +76,10 @@ contract Registry is IRegistry, Initializable, SignerOwnable {
         return _deployAndSetGateway(msg.sender);
     }
 
-    function updateWorkflowTotalSpent(uint256 _workflowId, uint256 _workflowExecutionAmount)
-        external
-        override
-        onlyExistingWorkflow(_workflowId)
-    {
+    function updateWorkflowTotalSpent(
+        uint256 _workflowId,
+        uint256 _workflowExecutionAmount
+    ) external override onlyExistingWorkflow(_workflowId) {
         require(msg.sender == address(billingManager), "Registry: sender is not a billing manager");
 
         _workflowsInfo[_workflowId].totalSpent += _workflowExecutionAmount;
@@ -220,12 +220,10 @@ contract Registry is IRegistry, Initializable, SignerOwnable {
         return _gateways[_userAddr];
     }
 
-    function getGatewaysInfo(uint256 _offset, uint256 _limit)
-        external
-        view
-        override
-        returns (GatewayInfo[] memory _gatewaysInfoArr)
-    {
+    function getGatewaysInfo(
+        uint256 _offset,
+        uint256 _limit
+    ) external view override returns (GatewayInfo[] memory _gatewaysInfoArr) {
         uint256 to = Paginator.getTo(_existingGatewayOwners.length(), _offset, _limit);
 
         _gatewaysInfoArr = new GatewayInfo[](to - _offset);
@@ -245,12 +243,10 @@ contract Registry is IRegistry, Initializable, SignerOwnable {
         return _workflowsInfo[_id];
     }
 
-    function getWorkflows(uint256 _offset, uint256 _limit)
-        external
-        view
-        override
-        returns (Workflow[] memory _workflowsArr)
-    {
+    function getWorkflows(
+        uint256 _offset,
+        uint256 _limit
+    ) external view override returns (Workflow[] memory _workflowsArr) {
         uint256 to = Paginator.getTo(_existingWorkflowIds.length, _offset, _limit);
 
         _workflowsArr = new Workflow[](to - _offset);
@@ -271,6 +267,8 @@ contract Registry is IRegistry, Initializable, SignerOwnable {
     function isWorkflowExist(uint256 _id) public view override returns (bool) {
         return _workflowsInfo[_id].status != WorkflowStatus.NONE;
     }
+
+    function _authorizeUpgrade(address) internal virtual override onlySigner {}
 
     function _updateWorkflowStatus(uint256 _id, WorkflowStatus _newStatus) internal {
         _workflowsInfo[_id].status = _newStatus;
@@ -333,11 +331,7 @@ contract Registry is IRegistry, Initializable, SignerOwnable {
         require(isMainChain, "Registry: not a main chain");
     }
 
-    function _onlyRequiredStatus(
-        uint256 _id,
-        WorkflowStatus _statusToCheck,
-        bool _isEqual
-    ) internal view {
+    function _onlyRequiredStatus(uint256 _id, WorkflowStatus _statusToCheck, bool _isEqual) internal view {
         require((getWorkflowStatus(_id) == _statusToCheck) == _isEqual, "Registry: invalid workflow status");
     }
 

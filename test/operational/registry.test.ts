@@ -3,7 +3,14 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { Reverter } from '../helpers/reverter';
 import { wei } from '../helpers/utils';
-import { Gateway, GatewayFactory, Registry, BillingManager, SignerStorage, TestTarget } from '../../typechain';
+import {
+  Gateway,
+  GatewayFactory,
+  Registry,
+  BillingManager,
+  SignerStorage,
+  TestTarget,
+} from '../../generated-types/ethers';
 import { BigNumberish } from 'ethers';
 
 describe('Registry', () => {
@@ -30,6 +37,7 @@ describe('Registry', () => {
   before(async () => {
     [OWNER, FIRST, SIGNER] = await ethers.getSigners();
 
+    const ERC1967ProxyFactory = await ethers.getContractFactory('ERC1967Proxy');
     const RegistryFactory = await ethers.getContractFactory('Registry');
     const BillingManagerFactory = await ethers.getContractFactory('BillingManager');
     const SignerStorageFactory = await ethers.getContractFactory('SignerStorage');
@@ -37,8 +45,11 @@ describe('Registry', () => {
     const GatewayImplFactory = await ethers.getContractFactory('Gateway');
     const TestTargetFactory = await ethers.getContractFactory('TestTarget');
 
+    const registryImpl = await RegistryFactory.deploy();
+    const registryProxy = await ERC1967ProxyFactory.deploy(registryImpl.address, '0x');
+    registry = RegistryFactory.attach(registryProxy.address);
+
     signerStorage = await SignerStorageFactory.deploy();
-    registry = await RegistryFactory.deploy();
     billingManager = await BillingManagerFactory.deploy();
 
     gatewayFactory = await GatewayFactoryFactory.deploy();
@@ -87,6 +98,28 @@ describe('Registry', () => {
       await expect(
         registry.initialize(true, signerStorage.address, gatewayFactory.address, billingManager.address, 0)
       ).to.be.revertedWith(reason);
+    });
+  });
+
+  describe('upgradability', () => {
+    it('should correctly upgrade Registry contract', async () => {
+      const TestRegistryFactory = await ethers.getContractFactory('TestRegistry');
+
+      let testRegistry = TestRegistryFactory.attach(registry.address);
+
+      await expect(testRegistry.version()).to.be.revertedWithoutReason();
+
+      const newRegistryImpl = await TestRegistryFactory.deploy();
+
+      await testRegistry.connect(SIGNER).upgradeTo(newRegistryImpl.address);
+
+      expect(await testRegistry.version()).to.be.eq('v2.0.0');
+    });
+
+    it('should get exception if not a signer try to call upgareTo function', async () => {
+      const reason = 'SignerOwnable: only signer';
+
+      await expect(registry.upgradeTo(ethers.constants.AddressZero)).to.be.revertedWith(reason);
     });
   });
 
@@ -186,6 +219,14 @@ describe('Registry', () => {
       const reason = 'Registry: sender is not a billing manager';
 
       await expect(newRegistry.updateWorkflowTotalSpent(workflowId, spentAmount)).to.be.revertedWith(reason);
+    });
+
+    it('should get exception if workflow id does not exist', async () => {
+      const reason = 'Registry: workflow does not exist';
+
+      await expect(newRegistry.connect(BILLING_MANAGER).updateWorkflowTotalSpent(0, spentAmount)).to.be.revertedWith(
+        reason
+      );
     });
   });
 

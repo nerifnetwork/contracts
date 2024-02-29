@@ -76,11 +76,7 @@ contract SlashingVoting is ContractKeys, ValidatorOwnable, SignerOwnable, Initia
         contractRegistry = ContractRegistry(_contractRegistry);
     }
 
-    function voteWithReason(
-        address _validator,
-        SlashingReason _reason,
-        bytes calldata _nonce
-    ) external onlyValidator {
+    function voteWithReason(address _validator, SlashingReason _reason, bytes calldata _nonce) external onlyValidator {
         Staking staking = _stakingContract();
         DKG dkg = _dkgContract();
 

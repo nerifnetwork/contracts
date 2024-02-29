@@ -189,10 +189,10 @@ interface IRegistry {
      * @param _limit The maximum number of gateways to retrieve
      * @return _gatewaysInfoArr The array containing gateway information
      */
-    function getGatewaysInfo(uint256 _offset, uint256 _limit)
-        external
-        view
-        returns (GatewayInfo[] memory _gatewaysInfoArr);
+    function getGatewaysInfo(
+        uint256 _offset,
+        uint256 _limit
+    ) external view returns (GatewayInfo[] memory _gatewaysInfoArr);
 
     /**
      * @notice Retrieves the total count of workflows

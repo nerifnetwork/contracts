@@ -1,6 +1,6 @@
 import { ethers, config } from 'hardhat';
 import { HttpNetworkConfig } from 'hardhat/types';
-import { SignerStorage } from '../../typechain';
+import { SignerStorage } from '../../generated-types/ethers';
 import { Deployer } from './deployer';
 
 const defaultSidechainDeploymentParameters: SidechainDeploymentParameters = {

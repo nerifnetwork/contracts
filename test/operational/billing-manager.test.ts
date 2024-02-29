@@ -3,7 +3,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { Reverter } from '../helpers/reverter';
 import { wei } from '../helpers/utils';
-import { Gateway, GatewayFactory, Registry, BillingManager, SignerStorage } from '../../typechain';
+import { Gateway, GatewayFactory, Registry, BillingManager, SignerStorage } from '../../generated-types/ethers';
 
 describe('BillingManager', () => {
   const reverter = new Reverter();
@@ -23,6 +23,7 @@ describe('BillingManager', () => {
   before(async () => {
     [OWNER, FIRST, SIGNER] = await ethers.getSigners();
 
+    const ERC1967ProxyFactory = await ethers.getContractFactory('ERC1967Proxy');
     const RegistryFactory = await ethers.getContractFactory('Registry');
     const BillingManagerFactory = await ethers.getContractFactory('BillingManager');
     const SignerStorageFactory = await ethers.getContractFactory('SignerStorage');
@@ -31,7 +32,10 @@ describe('BillingManager', () => {
 
     signerStorage = await SignerStorageFactory.deploy();
     registry = await RegistryFactory.deploy();
-    billingManager = await BillingManagerFactory.deploy();
+
+    const billingManagerImpl = await BillingManagerFactory.deploy();
+    const billingManagerProxy = await ERC1967ProxyFactory.deploy(billingManagerImpl.address, '0x');
+    billingManager = BillingManagerFactory.attach(billingManagerProxy.address);
 
     gatewayFactory = await GatewayFactoryFactory.deploy();
     gatewayImpl = await GatewayImplFactory.deploy();
@@ -84,6 +88,28 @@ describe('BillingManager', () => {
     });
   });
 
+  describe('upgradability', () => {
+    it('should correctly upgrade BillingManager contract', async () => {
+      const TestBillingManagerFactory = await ethers.getContractFactory('TestBillingManager');
+
+      let testBillingManager = TestBillingManagerFactory.attach(billingManager.address);
+
+      await expect(testBillingManager.version()).to.be.revertedWithoutReason();
+
+      const newBillingManagerImpl = await TestBillingManagerFactory.deploy();
+
+      await testBillingManager.connect(SIGNER).upgradeTo(newBillingManagerImpl.address);
+
+      expect(await testBillingManager.version()).to.be.eq('v2.0.0');
+    });
+
+    it('should get exception if not a signer try to call upgareTo function', async () => {
+      const reason = 'SignerOwnable: only signer';
+
+      await expect(billingManager.upgradeTo(ethers.constants.AddressZero)).to.be.revertedWith(reason);
+    });
+  });
+
   describe('fundBalance', () => {
     it('should correctly fund balance for msg.sender', async () => {
       const fundBalance = wei('1');
@@ -96,6 +122,7 @@ describe('BillingManager', () => {
       const userFundsInfo = await billingManager.getUserFundsInfo(OWNER.address);
 
       expect(userFundsInfo.userFundBalance).to.be.eq(fundBalance);
+      expect(await billingManager.getTotalUsersCount()).to.be.eq(1);
     });
 
     it('should correctly fund balance for specific recipient', async () => {
@@ -340,6 +367,18 @@ describe('BillingManager', () => {
       expect(await billingManager.getUserAvailableFunds(OWNER.address)).to.be.eq('0');
     });
 
+    it('should correctly withdraw all user funds', async () => {
+      await billingManager['fundBalance(address)'](FIRST.address, { value: fundBalance });
+
+      expect(await billingManager.getUserAvailableFunds(FIRST.address)).to.be.eq(fundBalance);
+      expect(await billingManager.getTotalUsersCount()).to.be.eq(2);
+
+      const tx = await billingManager.connect(FIRST).withdrawFunds(fundBalance);
+
+      await expect(tx).to.changeEtherBalances([FIRST, billingManager], [fundBalance, fundBalance.mul(-1)]);
+      expect(await billingManager.getTotalUsersCount()).to.be.eq(1);
+    });
+
     it('should get exception if try to withdraw more than the available', async () => {
       const reason = 'BillingManager: Not enough available funds to withdraw';
 
@@ -383,6 +422,55 @@ describe('BillingManager', () => {
       await signerStorage.connect(SIGNER).setAddress(ethers.constants.AddressZero);
 
       await expect(billingManager.withdrawNetworkRewards()).to.be.revertedWith(reason);
+    });
+  });
+
+  describe('getters', () => {
+    const fundBalance = wei('1');
+
+    it('should return correct array with existing users addresses', async () => {
+      const signers = await ethers.getSigners();
+      const expectedArr = [];
+
+      for (let i = 0; i < signers.length; i++) {
+        await billingManager.connect(signers[i])['fundBalance()']({ value: fundBalance });
+
+        expect(await billingManager.getTotalUsersCount()).to.be.eq(i + 1);
+        expectedArr.push(signers[i].address);
+      }
+
+      expect(await billingManager.getExistingUsers(0, 10)).to.be.deep.eq(expectedArr.slice(0, 10));
+      expect(await billingManager.getExistingUsers(5, signers.length)).to.be.deep.eq(
+        expectedArr.slice(5, signers.length)
+      );
+
+      const numberToWithdraw = 3;
+
+      for (let i = 0; i < numberToWithdraw; i++) {
+        await billingManager.connect(signers[signers.length - 1 - i]).withdrawFunds(fundBalance);
+
+        expect(await billingManager.getTotalUsersCount()).to.be.eq(signers.length - 1 - i);
+      }
+
+      expect(await billingManager.getTotalUsersCount()).to.be.eq(signers.length - numberToWithdraw);
+      expect(await billingManager.getExistingUsers(0, signers.length)).to.be.deep.eq(
+        expectedArr.slice(0, signers.length - numberToWithdraw)
+      );
+    });
+
+    it('should return correct users funds info', async () => {
+      await billingManager['fundBalance()']({ value: fundBalance });
+      await billingManager.connect(FIRST)['fundBalance()']({ value: fundBalance.mul(2) });
+
+      const usersFundsInfo = await billingManager.getUsersFundsInfo(0, 10);
+
+      expect(usersFundsInfo.length).to.be.eq(2);
+
+      expect(usersFundsInfo[0].userAddr).to.be.eq(OWNER.address);
+      expect(usersFundsInfo[0].userFundBalance).to.be.eq(fundBalance);
+
+      expect(usersFundsInfo[1].userAddr).to.be.eq(FIRST.address);
+      expect(usersFundsInfo[1].userFundBalance).to.be.eq(fundBalance.mul(2));
     });
   });
 });

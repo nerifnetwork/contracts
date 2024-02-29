@@ -1,5 +1,5 @@
 import { ethers } from 'hardhat';
-import { Registry } from '../../typechain';
+import { Registry } from '../../generated-types/ethers';
 import { Deployer } from './deployer';
 import { BigNumber } from 'ethers';
 

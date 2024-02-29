@@ -1,15 +1,17 @@
-import * as dotenv from "dotenv";
-
-import { HardhatUserConfig, task } from "hardhat/config";
-import "@nomiclabs/hardhat-etherscan";
+import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-solhint";
-import "@nomicfoundation/hardhat-chai-matchers";
-import "@typechain/hardhat";
 import "@solarity/hardhat-gobind";
+import "@solarity/hardhat-migrate";
+import "@typechain/hardhat";
+import "hardhat-contract-sizer";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
+import "tsconfig-paths/register";
 
+import { HardhatUserConfig, task } from "hardhat/config";
+
+import * as dotenv from "dotenv";
 dotenv.config();
 
 task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
@@ -24,72 +26,79 @@ const accounts = process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KE
 
 const mainnets = {
   ethereum: {
-    chainId: 1,
     url: `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
     accounts,
+    gasMultiplier: 1.2,
   },
   polygon: {
-    chainId: 137,
     url: `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
-    accounts
+    accounts,
+    gasMultiplier: 1.2,
   },
-  zkevm: {
-    chainId: 1101,
+  polygonZkEVM: {
     url: `https://zkevm-rpc.com`,
-    accounts
+    accounts,
+    gasMultiplier: 1.2,
   },
   bsc: {
-    chainId: 56,
     url: 'https://rpc.ankr.com/bsc',
-    accounts
+    accounts,
+    gasMultiplier: 1.2,
   },
   gnosis: {
-    chainId: 100,
     url: 'https://rpc.gnosischain.com',
-    accounts
+    accounts,
+    gasMultiplier: 1.2,
   },
   linea: {
-    chainId: 59144,
     url: `https://linea-mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
     accounts,
+    gasMultiplier: 1.2,
   },
 }
 
 const testnets = {
   mumbai: {
-    chainId: 80001,
     url: `https://polygon-mumbai.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
     accounts,
+    gasMultiplier: 1.2,
   },
-  'zkevm-testnet': {
-    chainId: 1442,
+  polygonZkEVMTestnet: {
     url: `https://rpc.public.zkevm-test.net`,
     accounts,
+    gasMultiplier: 1.2,
   },
   goerli: {
-    chainId: 5,
     url: `https://goerli.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
     accounts,
+    gasMultiplier: 1.2,
   },
-  'bsc-testnet': {
-    chainId: 97,
+  bscTestnet: {
     url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
     accounts,
+    gasMultiplier: 1.2,
   },
-  'gnosis-chiado': {
-    chainId: 10200,
+  chiado: {
     url: 'https://rpc.chiadochain.net',
-    gasPrice: 1000000000,
     accounts,
+    gasMultiplier: 1.2,
   },
-  'linea-testnet': {
-    chainId: 59140,
+  lineaTestnet: {
     url: `https://linea-goerli.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
     accounts,
+    gasMultiplier: 1.2,
   },
 }
 
 const config: HardhatUserConfig = {
+  networks: {
+    ...mainnets,
+    ...testnets,
+    localhost: {
+      url: "http://127.0.0.1:8545",
+      gasMultiplier: 1.2,
+    },
+  },
   solidity: {
     compilers: [
       {
@@ -104,10 +113,6 @@ const config: HardhatUserConfig = {
       }
     ]
   },
-  networks: {
-    ...mainnets,
-    ...testnets,
-  },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
     currency: "USD",
@@ -116,64 +121,23 @@ const config: HardhatUserConfig = {
     apiKey: {
       // Testnets
       mumbai: process.env.POLYGONMUMBAISCAN_API_KEY || '',
-      "zkevm-testnet": process.env.ZKEVMTESTNETSCAN_API_KEY || '',
+      polygonZkEVMTestnet: process.env.ZKEVMTESTNETSCAN_API_KEY || '',
       goerli: process.env.ETHERGOERLISCAN_API_KEY || '',
-      "bsc-testnet": process.env.BSCTESTNETSCAN_API_KEY || '',
-      "gnosis-chiado": process.env.GNOSISCHIADOSCAN_API_KEY || '',
-      "linea-testnet": process.env.LINEATESTNETSCAN_API_KEY || '',
+      bscTestnet: process.env.BSCTESTNETSCAN_API_KEY || '',
+      chiado: process.env.GNOSISCHIADOSCAN_API_KEY || '',
+      lineaTestnet: process.env.LINEATESTNETSCAN_API_KEY || '',
 
       // Mainnets
       polygon: process.env.POLYGONSCAN_API_KEY || '',
-      zkevm: process.env.ZKEVMSCAN_API_KEY || '',
+      polygonZkEVM: process.env.ZKEVMSCAN_API_KEY || '',
       ethereum: process.env.ETHERSCAN_API_KEY || '',
       bsc: process.env.BSCSCAN_API_KEY || '',
       gnosis: process.env.GNOSISSCAN_API_KEY || '',
       linea: process.env.LINEASCAN_API_KEY || '',
     },
     customChains: [
-      // Testnets
       {
-        network: "mumbai",
-        chainId: 80001,
-        urls: {
-          apiURL: "https://api-testnet.polygonscan.com/api",
-          browserURL: "https://mumbai.polygonscan.com"
-        }
-      },
-      {
-        network: "zkevm-testnet",
-        chainId: 1442,
-        urls: {
-          apiURL: "https://api-testnet-zkevm.polygonscan.com/api",
-          browserURL: "https://testnet-zkevm.polygonscan.com"
-        }
-      },
-      {
-        network: "goerli",
-        chainId: 5,
-        urls: {
-          apiURL: "https://api-goerli.etherscan.io/api",
-          browserURL: "https://goerli.etherscan.io"
-        }
-      },
-      {
-        network: "bsc-testnet",
-        chainId: 97,
-        urls: {
-          apiURL: "https://api-testnet.bscscan.com/api",
-          browserURL: "https://testnet.bscscan.com"
-        }
-      },
-      {
-        network: "gnosis-chiado",
-        chainId: 10200,
-        urls: {
-          apiURL: "https://blockscout.com/gnosis/chiado/api",
-          browserURL: "https://blockscout.com/gnosis/chiado"
-        }
-      },
-      {
-        network: "linea-testnet",
+        network: "lineaTestnet",
         chainId: 59140,
         urls: {
           apiURL: "https://api-goerli.lineascan.build/api",
@@ -182,46 +146,6 @@ const config: HardhatUserConfig = {
       },
 
       // Mainnets
-      {
-        network: "polygon",
-        chainId: 137,
-        urls: {
-          apiURL: "https://api.polygonscan.com/api",
-          browserURL: "https://polygonscan.com"
-        }
-      },
-      {
-        network: "zkevm",
-        chainId: 1101,
-        urls: {
-          apiURL: "https://api-zkevm.polygonscan.com/api",
-          browserURL: "https://zkevm.polygonscan.com"
-        }
-      },
-      {
-        network: "ethereum",
-        chainId: 1,
-        urls: {
-          apiURL: "https://api.etherscan.io/api",
-          browserURL: "https://etherscan.io"
-        }
-      },
-      {
-        network: "bsc",
-        chainId: 56,
-        urls: {
-          apiURL: "https://api.bscscan.com/api",
-          browserURL: "https://bscscan.com"
-        }
-      },
-      {
-        network: "gnosis",
-        chainId: 100,
-        urls: {
-          apiURL: "https://api.gnosisscan.io/api",
-          browserURL: "https://gnosisscan.io"
-        }
-      },
       {
         network: "linea",
         chainId: 59144,
@@ -232,6 +156,9 @@ const config: HardhatUserConfig = {
       }
     ]
   },
+  migrate: {
+    pathToMigrations: "./deploy/",
+  },
   gobind: {
     outdir: "./pkg",
     deployable: true,
@@ -239,6 +166,12 @@ const config: HardhatUserConfig = {
     verbose: false,
     onlyFiles: ["./contracts"],
     skipFiles: ["./contracts/test", "./contracts/interfaces"],
+  },
+  typechain: {
+    outDir: "generated-types/ethers",
+    target: "ethers-v5",
+    alwaysGenerateOverloads: true,
+    discriminateTypes: true,
   },
 };
 

@@ -35,11 +35,13 @@ interface IBillingManager {
 
     /**
      * @notice Struct containing information about a user's funds
+     * @param userAddr The address of the user
      * @param userFundBalance The total balance of the user's funds
      * @param userLockedBalance The amount of the user's funds locked in pending workflow executions
      * @param pendingWorkflowExecutionIds The array of IDs of pending workflow executions
      */
     struct UserFundsInfo {
+        address userAddr;
         uint256 userFundBalance;
         uint256 userLockedBalance;
         uint256[] pendingWorkflowExecutionIds;
@@ -153,6 +155,12 @@ interface IBillingManager {
     function withdrawNetworkRewards() external;
 
     /**
+     * @notice Retrieves the total count of registered users
+     * @return uint256 The total count of registered users
+     */
+    function getTotalUsersCount() external view returns (uint256);
+
+    /**
      * @notice Retrieves the status of a workflow execution
      * @param _workflowExecutionId The ID of the workflow execution
      * @return The status of the workflow execution
@@ -174,21 +182,39 @@ interface IBillingManager {
     function getExecutionWorkflowId(uint256 _workflowExecutionId) external view returns (uint256);
 
     /**
-     * @notice Retrieves the funds information of a user
-     * @param _userAddr The address of the user
-     * @return Information about the user's funds
+     * @notice Retrieves an array of existing user addresses within the specified range
+     * @param _offset The starting index of users to retrieve
+     * @param _limit The maximum number of users to retrieve
+     * @return An array containing user addresses
      */
-    function getUserFundsInfo(address _userAddr) external view returns (UserFundsInfo memory);
+    function getExistingUsers(uint256 _offset, uint256 _limit) external view returns (address[] memory);
+
+    /**
+     * @notice Retrieves an array of user funds information within the specified range
+     * @param _offset The starting index of user funds information to retrieve
+     * @param _limit The maximum number of user funds information to retrieve
+     * @return _usersInfoArr An array containing information about user funds
+     */
+    function getUsersFundsInfo(
+        uint256 _offset,
+        uint256 _limit
+    ) external view returns (UserFundsInfo[] memory _usersInfoArr);
 
     /**
      * @notice Retrieves information about a workflow execution
      * @param _workflowExecutionId The ID of the workflow execution
      * @return Information about the workflow execution
      */
-    function getWorkflowExecutionInfo(uint256 _workflowExecutionId)
-        external
-        view
-        returns (WorkflowExecutionInfo memory);
+    function getWorkflowExecutionInfo(
+        uint256 _workflowExecutionId
+    ) external view returns (WorkflowExecutionInfo memory);
+
+    /**
+     * @notice Retrieves the funds information of a user
+     * @param _userAddr The address of the user
+     * @return Information about the user's funds
+     */
+    function getUserFundsInfo(address _userAddr) external view returns (UserFundsInfo memory);
 
     /**
      * @notice Retrieves the available funds of a user
