@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+import "@solarity/solidity-lib/libs/data-structures/StringSet.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 /**
@@ -21,15 +22,27 @@ interface IBillingManager {
         COMPLETED
     }
 
-    /**
-     * @notice Struct containing data representing a user's funds
-     * @param userFundBalance The total balance of the user's funds
-     * @param userLockedBalance The amount of the user's funds locked in pending workflow executions
-     * @param pendingWorkflowExecutionIds The set of IDs of pending workflow executions
-     */
-    struct UserFundsData {
-        uint256 userFundBalance;
-        uint256 userLockedBalance;
+    struct DepositAssetData {
+        address tokenAddr;
+        uint256 workflowExecutionDiscount;
+        uint256 networkRewards;
+        bool isPermitable;
+        bool isEnabled;
+    }
+
+    struct DepositAssetInfo {
+        string depositAssetKey;
+        DepositAssetData depositAssetData;
+    }
+
+    struct UserData {
+        StringSet.Set depositAssetKeys;
+        mapping(string => UserDepositData) userDepositsData;
+    }
+
+    struct UserDepositData {
+        uint256 userDepositedAmount;
+        uint256 userLockedAmount;
         EnumerableSet.UintSet pendingWorkflowExecutionIds;
     }
 
@@ -40,7 +53,7 @@ interface IBillingManager {
      * @param userLockedBalance The amount of the user's funds locked in pending workflow executions
      * @param pendingWorkflowExecutionIds The array of IDs of pending workflow executions
      */
-    struct UserFundsInfo {
+    struct UserDepositInfo {
         address userAddr;
         uint256 userFundBalance;
         uint256 userLockedBalance;
@@ -56,6 +69,7 @@ interface IBillingManager {
      * @param status The status of the workflow execution
      */
     struct WorkflowExecutionInfo {
+        string depositAssetKey;
         uint256 workflowId;
         uint256 executionLockedAmount;
         uint256 executionAmount;
@@ -63,13 +77,19 @@ interface IBillingManager {
         WorkflowExecutionStatus status;
     }
 
-    /**
-     * @notice Event emitted when a user's balance is funded
-     * @param userAddr The address of the user
-     * @param userCurrentBalance The current balance of the user
-     * @param fundedAmount The amount funded to the user's balance
-     */
-    event BalanceFunded(address indexed userAddr, uint256 userCurrentBalance, uint256 fundedAmount);
+    event DepositAssetAdded(string depositAssetKey, DepositAssetData depositAssetData);
+    event WorkflowExecutionDiscountUpdated(
+        string indexed depositAssetKey,
+        uint256 newWorkflowExecutionDiscount,
+        uint256 prevWorkflowExecutionDiscount
+    );
+    event DepositAssetEnabledStatusUpdated(string indexed depositAssetKey, bool newEnabledStatus);
+    event AssetDeposited(
+        string indexed depositAssetKey,
+        address tokensSender,
+        address depositRecipient,
+        uint256 depositAmount
+    );
 
     /**
      * @notice Event emitted when funds are withdrawn from a user's balance
@@ -118,12 +138,25 @@ interface IBillingManager {
         uint256 executionAmount
     );
 
+    function addDepositAsset(DepositAssetInfo[] memory _depositAssetInfoArr) external;
+
+    function updateWorkflowExecutionDiscount(
+        string memory _depositAssetKey,
+        uint256 _newWorkflowExecutionDiscount
+    ) external;
+
+    function updateDepositAssetEnabledStatus(string memory _depositAssetKey, bool _newEnabledStatus) external;
+
     /**
      * @notice Locks funds for a workflow execution
      * @param _workflowId The ID of the associated workflow
      * @param _executionLockedAmount The amount of funds to be locked for the execution
      */
-    function lockExecutionFunds(uint256 _workflowId, uint256 _executionLockedAmount) external;
+    function lockExecutionFunds(
+        string memory _depositAssetKey,
+        uint256 _workflowId,
+        uint256 _executionLockedAmount
+    ) external;
 
     /**
      * @notice Completes a workflow execution
@@ -132,27 +165,28 @@ interface IBillingManager {
      */
     function completeExecution(uint256 _workflowExecutionId, uint256 _executionAmount) external;
 
-    /**
-     * @notice Funds the msg.sender balance
-     */
-    function fundBalance() external payable;
+    function deposit(string memory _depositAssetKey, address _recipientAddr, uint256 _depositAmount) external payable;
 
-    /**
-     * @notice Funds the contract balance and assigns the funds to a specified recipient
-     * @param _recipientAddr The address of the recipient
-     */
-    function fundBalance(address _recipientAddr) external payable;
+    function depositWithPermit(
+        string memory _depositAssetKey,
+        address _recipientAddr,
+        uint256 _depositAmount,
+        uint256 _sigExpirationTime,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
+    ) external;
 
     /**
      * @notice Withdraws funds from the user's balance
      * @param _amountToWithdraw The amount to be withdrawn
      */
-    function withdrawFunds(uint256 _amountToWithdraw) external;
+    function withdrawFunds(string memory _depositAssetKey, uint256 _amountToWithdraw) external;
 
     /**
      * @notice Withdraws network rewards
      */
-    function withdrawNetworkRewards() external;
+    function withdrawNetworkRewards(string memory _depositAssetKey) external;
 
     /**
      * @notice Retrieves the total count of registered users
@@ -195,10 +229,11 @@ interface IBillingManager {
      * @param _limit The maximum number of user funds information to retrieve
      * @return _usersInfoArr An array containing information about user funds
      */
-    function getUsersFundsInfo(
+    function getUsersDepositInfo(
+        string memory _depositAssetKey,
         uint256 _offset,
         uint256 _limit
-    ) external view returns (UserFundsInfo[] memory _usersInfoArr);
+    ) external view returns (UserDepositInfo[] memory _usersInfoArr);
 
     /**
      * @notice Retrieves information about a workflow execution
@@ -214,12 +249,15 @@ interface IBillingManager {
      * @param _userAddr The address of the user
      * @return Information about the user's funds
      */
-    function getUserFundsInfo(address _userAddr) external view returns (UserFundsInfo memory);
+    function getUserDepositInfo(
+        address _userAddr,
+        string memory _depositAssetKey
+    ) external view returns (UserDepositInfo memory);
 
     /**
      * @notice Retrieves the available funds of a user
      * @param _userAddr The address of the user
      * @return The available funds of the user
      */
-    function getUserAvailableFunds(address _userAddr) external view returns (uint256);
+    function getUserAvailableFunds(address _userAddr, string memory _depositAssetKey) external view returns (uint256);
 }
