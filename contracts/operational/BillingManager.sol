@@ -31,7 +31,7 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
     uint256 public nextWorkflowExecutionId;
 
     EnumerableSet.AddressSet internal _existingUsers;
-    StringSet.Set internal _supportedDepositAssets;
+    StringSet.Set internal _supportedDepositAssetKeys;
 
     mapping(string => DepositAssetData) internal _depositAssetsData;
     mapping(address => UserData) internal _usersData;
@@ -65,7 +65,7 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
         _setSignerGetter(_signerGetterAddress);
     }
 
-    function addDepositAsset(DepositAssetInfo[] memory _depositAssetInfoArr) external onlySigner {
+    function addDepositAssets(DepositAssetInfo[] memory _depositAssetInfoArr) external onlySigner {
         for (uint256 i = 0; i < _depositAssetInfoArr.length; i++) {
             _addDepositAsset(_depositAssetInfoArr[i]);
         }
@@ -117,7 +117,7 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
 
         require(
             getUserAvailableFunds(workflowOwner, _depositAssetKey) >= _executionLockedAmount,
-            "BillingManager: Not enough funds to lock"
+            "BillingManager: Not enough available funds to lock"
         );
 
         uint256 currentWorkflowExecutionId = nextWorkflowExecutionId++;
@@ -136,7 +136,13 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
             WorkflowExecutionStatus.PENDING
         );
 
-        emit ExecutionFundsLocked(_workflowId, workflowOwner, currentWorkflowExecutionId, _executionLockedAmount);
+        emit ExecutionFundsLocked(
+            _depositAssetKey,
+            _workflowId,
+            workflowOwner,
+            currentWorkflowExecutionId,
+            _executionLockedAmount
+        );
     }
 
     function completeExecution(uint256 _workflowExecutionId, uint256 _executionAmount) external override onlySigner {
@@ -207,11 +213,9 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
             "BillingManager: Unable to deposit native currency with permit"
         );
 
-        DepositAssetData storage depositAssetData = _depositAssetsData[_depositAssetKey];
+        require(isDepositAssetPermitable(_depositAssetKey), "BillingManager: Deposit asset is not permitable");
 
-        require(depositAssetData.isPermitable, "BillingManager: Deposit asset is not permitable");
-
-        IERC20Permit(depositAssetData.tokenAddr).permit(
+        IERC20Permit(_depositAssetsData[_depositAssetKey].tokenAddr).permit(
             msg.sender,
             address(this),
             _depositAmount,
@@ -273,6 +277,23 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
         return _existingUsers.length();
     }
 
+    function getSupportedDepositAssetKeys() external view returns (string[] memory) {
+        return _supportedDepositAssetKeys.values();
+    }
+
+    function getDepositAssetsInfo(
+        string[] memory _depositAssetKeysArr
+    ) external view returns (DepositAssetInfo[] memory _depositAssetsInfoArr) {
+        _depositAssetsInfoArr = new DepositAssetInfo[](_depositAssetKeysArr.length);
+
+        for (uint256 i = 0; i < _depositAssetKeysArr.length; i++) {
+            _depositAssetsInfoArr[i] = DepositAssetInfo(
+                _depositAssetKeysArr[i],
+                _depositAssetsData[_depositAssetKeysArr[i]]
+            );
+        }
+    }
+
     function getWorkflowExecutionStatus(
         uint256 _workflowExecutionId
     ) external view override returns (WorkflowExecutionStatus) {
@@ -311,6 +332,14 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
         return _workflowsExecutionInfo[_workflowExecutionId];
     }
 
+    function getUserDepositAssetKeys(address _userAddr) external view returns (string[] memory) {
+        return _usersData[_userAddr].depositAssetKeys.values();
+    }
+
+    function getNetworkRewards(string memory _depositAssetKey) external view returns (uint256) {
+        return _depositAssetsData[_depositAssetKey].networkRewards;
+    }
+
     function getUserDepositInfo(
         address _userAddr,
         string memory _depositAssetKey
@@ -336,7 +365,7 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
     }
 
     function isDepositAssetSupported(string memory _depositAssetKey) public view returns (bool) {
-        return _supportedDepositAssets.contains(_depositAssetKey);
+        return _supportedDepositAssetKeys.contains(_depositAssetKey);
     }
 
     function isNativeDepositAsset(string memory _depositAssetKey) public view returns (bool) {
@@ -345,6 +374,10 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
 
     function isDepositAssetEnabled(string memory _depositAssetKey) public view returns (bool) {
         return _depositAssetsData[_depositAssetKey].isEnabled;
+    }
+
+    function isDepositAssetPermitable(string memory _depositAssetKey) public view returns (bool) {
+        return _depositAssetsData[_depositAssetKey].isPermitable;
     }
 
     function _authorizeUpgrade(address) internal virtual override onlySigner {}
@@ -366,7 +399,7 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
         );
 
         _depositAssetsData[_depositAssetInfo.depositAssetKey] = _depositAssetInfo.depositAssetData;
-        _supportedDepositAssets.add(_depositAssetInfo.depositAssetKey);
+        _supportedDepositAssetKeys.add(_depositAssetInfo.depositAssetKey);
 
         emit DepositAssetAdded(_depositAssetInfo.depositAssetKey, _depositAssetInfo.depositAssetData);
     }

@@ -49,14 +49,12 @@ interface IBillingManager {
     /**
      * @notice Struct containing information about a user's funds
      * @param userAddr The address of the user
-     * @param userFundBalance The total balance of the user's funds
-     * @param userLockedBalance The amount of the user's funds locked in pending workflow executions
      * @param pendingWorkflowExecutionIds The array of IDs of pending workflow executions
      */
     struct UserDepositInfo {
         address userAddr;
-        uint256 userFundBalance;
-        uint256 userLockedBalance;
+        uint256 userDepositedAmount;
+        uint256 userLockedAmount;
         uint256[] pendingWorkflowExecutionIds;
     }
 
@@ -113,6 +111,7 @@ interface IBillingManager {
      * @param executionLockedAmount The amount of funds locked for the execution
      */
     event ExecutionFundsLocked(
+        string indexed depositAssetKey,
         uint256 indexed workflowId,
         address indexed userAddr,
         uint256 workflowExecutionId,
@@ -138,7 +137,7 @@ interface IBillingManager {
         uint256 executionAmount
     );
 
-    function addDepositAsset(DepositAssetInfo[] memory _depositAssetInfoArr) external;
+    function addDepositAssets(DepositAssetInfo[] memory _depositAssetInfoArr) external;
 
     function updateWorkflowExecutionDiscount(
         string memory _depositAssetKey,

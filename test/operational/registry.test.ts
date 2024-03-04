@@ -10,6 +10,7 @@ import {
   BillingManager,
   SignerStorage,
   TestTarget,
+  IBillingManager,
 } from '../../generated-types/ethers';
 import { BigNumberish } from 'ethers';
 
@@ -29,6 +30,15 @@ describe('Registry', () => {
   let sideChainGatewayFactory: GatewayFactory;
   let gatewayImpl: Gateway;
   let testTarget: TestTarget;
+
+  const nativeDepositAssetKey: string = 'NATIVE';
+  const nativeDepositAssetData: IBillingManager.DepositAssetDataStruct = {
+    tokenAddr: ethers.constants.AddressZero,
+    workflowExecutionDiscount: 0,
+    networkRewards: 0,
+    isPermitable: false,
+    isEnabled: true,
+  };
 
   function getSetNumberCalldata(expectedNumber: BigNumberish): string {
     return testTarget.interface.encodeFunctionData('setNumber', [expectedNumber]);
@@ -63,7 +73,10 @@ describe('Registry', () => {
 
     await signerStorage.initialize(SIGNER.address);
     await registry.initialize(true, signerStorage.address, gatewayFactory.address, billingManager.address, 0);
-    await billingManager.initialize(registry.address, signerStorage.address);
+    await billingManager.initialize(registry.address, signerStorage.address, {
+      depositAssetKey: nativeDepositAssetKey,
+      depositAssetData: nativeDepositAssetData,
+    });
     await gatewayFactory.initialize(registry.address, gatewayImpl.address);
 
     await sideChainRegistry.initialize(
@@ -73,7 +86,10 @@ describe('Registry', () => {
       sideChainBillingManager.address,
       0
     );
-    await sideChainBillingManager.initialize(sideChainRegistry.address, signerStorage.address);
+    await sideChainBillingManager.initialize(sideChainRegistry.address, signerStorage.address, {
+      depositAssetKey: nativeDepositAssetKey,
+      depositAssetData: nativeDepositAssetData,
+    });
     await sideChainGatewayFactory.initialize(sideChainRegistry.address, gatewayImpl.address);
 
     await reverter.snapshot();
@@ -321,7 +337,7 @@ describe('Registry', () => {
   describe('perform', () => {
     const workflowId = 10;
     const workflowExecutionId = 0;
-    const fundBalance = wei('1');
+    const nativeDepositAmount = wei('1');
     const lockAmount = wei('0.5');
     const gasAmount = 1000000;
 
@@ -337,8 +353,10 @@ describe('Registry', () => {
       ]);
       await registry.connect(SIGNER).activateWorkflows([workflowId]);
 
-      await billingManager['fundBalance()']({ value: fundBalance });
-      await billingManager.connect(SIGNER).lockExecutionFunds(workflowId, lockAmount);
+      await billingManager.deposit(nativeDepositAssetKey, OWNER.address, nativeDepositAmount, {
+        value: nativeDepositAmount,
+      });
+      await billingManager.connect(SIGNER).lockExecutionFunds(nativeDepositAssetKey, workflowId, lockAmount);
     });
 
     it('should correctly perform function', async () => {
@@ -392,8 +410,10 @@ describe('Registry', () => {
           .perform(newWorkflowId, newWorkflowExecutionId, gasAmount, getSetNumberCalldata(10), testTarget.address)
       ).to.be.revertedWith(reason);
 
-      await billingManager.connect(FIRST)['fundBalance()']({ value: fundBalance });
-      await billingManager.connect(SIGNER).lockExecutionFunds(newWorkflowId, lockAmount);
+      await billingManager
+        .connect(FIRST)
+        .deposit(nativeDepositAssetKey, FIRST.address, nativeDepositAmount, { value: nativeDepositAmount });
+      await billingManager.connect(SIGNER).lockExecutionFunds(nativeDepositAssetKey, newWorkflowId, lockAmount);
       await billingManager.connect(SIGNER).completeExecution(newWorkflowExecutionId, lockAmount);
 
       await expect(
