@@ -255,18 +255,18 @@ contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
         }
     }
 
-    function getBaseWorkflowInfo(uint256 _workflowId) public view returns (BaseWorkflowInfo memory) {
+    function getBaseWorkflowInfo(uint256 _workflowId) public view override returns (BaseWorkflowInfo memory) {
         return _workflowsData[_workflowId].baseInfo;
     }
 
-    function getWorkflowDepositAssetKeys(uint256 _workflowId) public view returns (string[] memory) {
+    function getWorkflowDepositAssetKeys(uint256 _workflowId) public view override returns (string[] memory) {
         return _workflowsData[_workflowId].depositAssetKeys.values();
     }
 
     function getWorkflowDepositAssetsInfo(
         uint256 _workflowId,
         string[] memory _depositAssetKeys
-    ) public view returns (DepositAssetInfo[] memory _depositAssetsArr) {
+    ) public view override returns (DepositAssetInfo[] memory _depositAssetsArr) {
         _depositAssetsArr = new DepositAssetInfo[](_depositAssetKeys.length);
 
         for (uint256 i = 0; i < _depositAssetKeys.length; i++) {
@@ -277,7 +277,7 @@ contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
         }
     }
 
-    function getWorkflowInfo(uint256 _workflowId) public view returns (WorkflowInfo memory) {
+    function getWorkflowInfo(uint256 _workflowId) public view override returns (WorkflowInfo memory) {
         string[] memory depositAssetKeys = getWorkflowDepositAssetKeys(_workflowId);
 
         return

@@ -74,7 +74,7 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
     function updateWorkflowExecutionDiscount(
         string memory _depositAssetKey,
         uint256 _newWorkflowExecutionDiscount
-    ) external onlyExistingDepositAsset(_depositAssetKey) onlySigner {
+    ) external override onlyExistingDepositAsset(_depositAssetKey) onlySigner {
         uint256 currentWorkflowExecutionDiscount = _depositAssetsData[_depositAssetKey].workflowExecutionDiscount;
 
         _depositAssetsData[_depositAssetKey].workflowExecutionDiscount = _newWorkflowExecutionDiscount;
@@ -89,7 +89,7 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
     function updateDepositAssetEnabledStatus(
         string memory _depositAssetKey,
         bool _newEnabledStatus
-    ) external onlyExistingDepositAsset(_depositAssetKey) onlySigner {
+    ) external override onlyExistingDepositAsset(_depositAssetKey) onlySigner {
         require(
             _depositAssetsData[_depositAssetKey].isEnabled != _newEnabledStatus,
             "BillingManager: Invalid new enabled status"
@@ -364,19 +364,19 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
         return userDepositData.userDepositedAmount - userDepositData.userLockedAmount;
     }
 
-    function isDepositAssetSupported(string memory _depositAssetKey) public view returns (bool) {
+    function isDepositAssetSupported(string memory _depositAssetKey) public view override returns (bool) {
         return _supportedDepositAssetKeys.contains(_depositAssetKey);
     }
 
-    function isNativeDepositAsset(string memory _depositAssetKey) public view returns (bool) {
+    function isNativeDepositAsset(string memory _depositAssetKey) public view override returns (bool) {
         return Strings.equal(_depositAssetKey, nativeDepositAssetKey);
     }
 
-    function isDepositAssetEnabled(string memory _depositAssetKey) public view returns (bool) {
+    function isDepositAssetEnabled(string memory _depositAssetKey) public view override returns (bool) {
         return _depositAssetsData[_depositAssetKey].isEnabled;
     }
 
-    function isDepositAssetPermitable(string memory _depositAssetKey) public view returns (bool) {
+    function isDepositAssetPermitable(string memory _depositAssetKey) public view override returns (bool) {
         return _depositAssetsData[_depositAssetKey].isPermitable;
     }
 
