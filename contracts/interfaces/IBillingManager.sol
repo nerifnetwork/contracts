@@ -282,12 +282,6 @@ interface IBillingManager {
     function nextWorkflowExecutionId() external view returns (uint256);
 
     /**
-     * @notice Retrieves the total count of registered users
-     * @return uint256 The total count of registered users
-     */
-    function getTotalUsersCount() external view returns (uint256);
-
-    /**
      * @notice Retrieves an array of supported deposit asset keys
      * @return An array containing the keys of supported deposit assets
      */
@@ -301,6 +295,12 @@ interface IBillingManager {
     function getDepositAssetsInfo(
         string[] memory _depositAssetKeysArr
     ) external view returns (DepositAssetInfo[] memory);
+
+    /**
+     * @notice Retrieves the total count of registered users
+     * @return uint256 The total count of registered users
+     */
+    function getTotalUsersCount() external view returns (uint256);
 
     /**
      * @notice Retrieves the status of a workflow execution

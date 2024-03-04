@@ -15,6 +15,8 @@ import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@solarity/solidity-lib/libs/arrays/Paginator.sol";
 import "@solarity/solidity-lib/libs/data-structures/StringSet.sol";
 
+import "@solarity/solidity-lib/libs/arrays/Paginator.sol";
+
 import "../interfaces/IBillingManager.sol";
 import "../interfaces/SignerOwnable.sol";
 
