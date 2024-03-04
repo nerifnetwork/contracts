@@ -224,25 +224,29 @@ describe('Registry', () => {
     });
 
     it('should correctly update workflow total spent', async () => {
-      await newRegistry.connect(BILLING_MANAGER).updateWorkflowTotalSpent(workflowId, spentAmount);
+      await newRegistry
+        .connect(BILLING_MANAGER)
+        .updateWorkflowTotalSpent(nativeDepositAssetKey, workflowId, spentAmount);
 
-      const workflowInfo = await newRegistry.getWorkflow(workflowId);
+      const workflowInfo = await newRegistry.getWorkflowInfo(workflowId);
 
-      expect(workflowInfo.totalSpent).to.be.eq(spentAmount);
+      expect(workflowInfo.depositAssetsInfo[0].depositAssetTotalSpent).to.be.eq(spentAmount);
     });
 
     it('should get exception if not a billing manager try to call this function', async () => {
       const reason = 'Registry: sender is not a billing manager';
 
-      await expect(newRegistry.updateWorkflowTotalSpent(workflowId, spentAmount)).to.be.revertedWith(reason);
+      await expect(
+        newRegistry.updateWorkflowTotalSpent(nativeDepositAssetKey, workflowId, spentAmount)
+      ).to.be.revertedWith(reason);
     });
 
     it('should get exception if workflow id does not exist', async () => {
       const reason = 'Registry: workflow does not exist';
 
-      await expect(newRegistry.connect(BILLING_MANAGER).updateWorkflowTotalSpent(0, spentAmount)).to.be.revertedWith(
-        reason
-      );
+      await expect(
+        newRegistry.connect(BILLING_MANAGER).updateWorkflowTotalSpent(nativeDepositAssetKey, 0, spentAmount)
+      ).to.be.revertedWith(reason);
     });
   });
 
@@ -266,7 +270,7 @@ describe('Registry', () => {
       const tx = await registry.pauseWorkflows([workflowId]);
 
       await expect(tx).to.emit(registry, 'WorkflowStatusChanged').withArgs(workflowId, 3);
-      expect((await registry.getWorkflow(workflowId)).status).to.be.eq(3);
+      expect(await registry.getWorkflowStatus(workflowId)).to.be.eq(3);
     });
 
     it('should get exception if try to call this function not on a main chain', async () => {
@@ -312,7 +316,7 @@ describe('Registry', () => {
       const tx = await registry.resumeWorkflows([workflowId]);
 
       await expect(tx).to.emit(registry, 'WorkflowStatusChanged').withArgs(workflowId, 2);
-      expect((await registry.getWorkflow(workflowId)).status).to.be.eq(2);
+      expect(await registry.getWorkflowStatus(workflowId)).to.be.eq(2);
     });
 
     it('should get exception if try to call this function not on a main chain', async () => {
@@ -470,11 +474,11 @@ describe('Registry', () => {
 
       await expect(tx).to.emit(registry, 'WorkflowRegistered').withArgs(OWNER.address, workflowId, someHash);
 
-      const workflow = await registry.getWorkflow(workflowId);
+      const workflow = await registry.getWorkflowInfo(workflowId);
 
-      expect(workflow.status).to.be.eq(1);
-      expect(workflow.id).to.be.eq(workflowId);
-      expect(workflow.owner).to.be.eq(OWNER.address);
+      expect(workflow.baseInfo.status).to.be.eq(1);
+      expect(workflow.baseInfo.id).to.be.eq(workflowId);
+      expect(workflow.baseInfo.owner).to.be.eq(OWNER.address);
       expect(await registry.workflowsPerAddress(OWNER.address)).to.be.eq(1);
     });
 
@@ -493,11 +497,11 @@ describe('Registry', () => {
 
       await expect(tx).to.emit(sideChainRegistry, 'WorkflowRegistered').withArgs(OWNER.address, workflowId, someHash);
 
-      const workflow = await sideChainRegistry.getWorkflow(workflowId);
+      const workflow = await sideChainRegistry.getWorkflowInfo(workflowId);
 
-      expect(workflow.status).to.be.eq(2);
-      expect(workflow.id).to.be.eq(workflowId);
-      expect(workflow.owner).to.be.eq(OWNER.address);
+      expect(workflow.baseInfo.status).to.be.eq(2);
+      expect(workflow.baseInfo.id).to.be.eq(workflowId);
+      expect(workflow.baseInfo.owner).to.be.eq(OWNER.address);
       expect(await sideChainRegistry.workflowsPerAddress(OWNER.address)).to.be.eq(1);
 
       await sideChainRegistry.connect(SIGNER).registerWorkflows([
@@ -672,10 +676,10 @@ describe('Registry', () => {
 
       await expect(tx).to.emit(registry, 'WorkflowStatusChanged').withArgs(workflowId, 2);
 
-      const workflow = await registry.getWorkflow(workflowId);
+      const workflow = await registry.getWorkflowInfo(workflowId);
 
-      expect(workflow.status).to.be.eq(2);
-      expect(workflow.id).to.be.eq(workflowId);
+      expect(workflow.baseInfo.status).to.be.eq(2);
+      expect(workflow.baseInfo.id).to.be.eq(workflowId);
     });
 
     it('should get exception if try to call this function not on the mainchain', async () => {
@@ -735,10 +739,10 @@ describe('Registry', () => {
 
       await expect(tx).to.emit(registry, 'WorkflowStatusChanged').withArgs(workflowId, 4);
 
-      let workflow = await registry.getWorkflow(workflowId);
+      let workflow = await registry.getWorkflowInfo(workflowId);
 
-      expect(workflow.status).to.be.eq(4);
-      expect(workflow.id).to.be.eq(workflowId);
+      expect(workflow.baseInfo.status).to.be.eq(4);
+      expect(workflow.baseInfo.id).to.be.eq(workflowId);
 
       expect(await registry.workflowsPerAddress(OWNER.address)).to.be.eq(0);
 
@@ -748,10 +752,10 @@ describe('Registry', () => {
         .to.emit(sideChainRegistry, 'WorkflowStatusChanged')
         .withArgs(workflowId + 1, 4);
 
-      workflow = await sideChainRegistry.getWorkflow(workflowId + 1);
+      workflow = await sideChainRegistry.getWorkflowInfo(workflowId + 1);
 
-      expect(workflow.status).to.be.eq(4);
-      expect(workflow.id).to.be.eq(workflowId + 1);
+      expect(workflow.baseInfo.status).to.be.eq(4);
+      expect(workflow.baseInfo.id).to.be.eq(workflowId + 1);
 
       expect(await registry.workflowsPerAddress(OWNER.address)).to.be.eq(0);
     });
@@ -883,12 +887,12 @@ describe('Registry', () => {
 
       expect(await registry.getTotalWorkflowsCount()).to.be.eq(expectedWorkflowsInfo.length);
 
-      const workflowsInfo = await registry.getWorkflows(0, 10);
+      const workflowsInfo = await registry.getWorkflowsInfo(0, 10);
 
       workflowsInfo.forEach((el, index) => {
-        expect(el.id).to.be.eq(expectedWorkflowsInfo[index].workflowId);
-        expect(el.owner).to.be.eq(expectedWorkflowsInfo[index].workflowOwner);
-        expect(el.hash).to.be.eq(expectedWorkflowsInfo[index].hash);
+        expect(el.baseInfo.id).to.be.eq(expectedWorkflowsInfo[index].workflowId);
+        expect(el.baseInfo.owner).to.be.eq(expectedWorkflowsInfo[index].workflowOwner);
+        expect(el.baseInfo.hash).to.be.eq(expectedWorkflowsInfo[index].hash);
       });
     });
   });

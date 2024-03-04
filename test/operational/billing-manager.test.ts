@@ -829,9 +829,10 @@ describe('BillingManager', () => {
       expect(workflowExecutionInfo.status).to.be.eq(2);
       expect(workflowExecutionInfo.executionAmount).to.be.eq(tokensExecutionAmount);
 
-      const workflowInfo = await registry.getWorkflow(defaultWorkflowId);
+      const workflowInfo = await registry.getWorkflowInfo(defaultWorkflowId);
 
-      expect(workflowInfo.totalSpent).to.be.eq(tokensExecutionAmount);
+      expect(workflowInfo.depositAssetKeys).to.be.deep.eq([nerifAssetKey]);
+      expect(workflowInfo.depositAssetsInfo).to.be.deep.eq([[nerifAssetKey, tokensExecutionAmount]]);
 
       const depositAssetInfo = (await billingManager.getDepositAssetsInfo([nerifAssetKey]))[0];
 

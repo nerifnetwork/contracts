@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
 import "@solarity/solidity-lib/libs/arrays/Paginator.sol";
+import "@solarity/solidity-lib/libs/data-structures/StringSet.sol";
 
 import "../interfaces/SignerOwnable.sol";
 import "../interfaces/IGateway.sol";
@@ -15,6 +16,7 @@ import "../interfaces/IRegistry.sol";
 
 contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
     using EnumerableSet for EnumerableSet.AddressSet;
+    using StringSet for StringSet.Set;
 
     uint256 internal constant PERFORM_GAS_CUSHION = 5_000;
     string internal constant GATEWAY_PERFORM_FUNC_SIGNATURE = "perform(uint256,address,bytes)";
@@ -30,7 +32,7 @@ contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
 
     mapping(address => uint256) public workflowsPerAddress;
 
-    mapping(uint256 => Workflow) internal _workflowsInfo;
+    mapping(uint256 => WorkflowData) internal _workflowsData;
     mapping(address => address) internal _gateways;
 
     modifier onlyMainchain() {
@@ -77,12 +79,14 @@ contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
     }
 
     function updateWorkflowTotalSpent(
+        string memory _depositAssetKey,
         uint256 _workflowId,
         uint256 _workflowExecutionAmount
     ) external override onlyExistingWorkflow(_workflowId) {
         require(msg.sender == address(billingManager), "Registry: sender is not a billing manager");
 
-        _workflowsInfo[_workflowId].totalSpent += _workflowExecutionAmount;
+        _workflowsData[_workflowId].depositAssetKeys.add(_depositAssetKey);
+        _workflowsData[_workflowId].depositAssetsTotalSpent[_depositAssetKey] += _workflowExecutionAmount;
     }
 
     function pauseWorkflows(uint256[] calldata _workflowIds) external override onlyMainchain {
@@ -132,16 +136,15 @@ contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
             }
 
             require(
-                _workflowsInfo[currentRegisterInfo.id].status == WorkflowStatus.NONE,
+                _workflowsData[currentRegisterInfo.id].baseInfo.status == WorkflowStatus.NONE,
                 "Registry: workflow id is already exists"
             );
 
-            _workflowsInfo[currentRegisterInfo.id] = Workflow(
+            _workflowsData[currentRegisterInfo.id].baseInfo = BaseWorkflowInfo(
                 currentRegisterInfo.id,
                 currentRegisterInfo.workflowOwner,
                 currentRegisterInfo.hash,
-                isMainChainLocal ? WorkflowStatus.PENDING : WorkflowStatus.ACTIVE,
-                0
+                isMainChainLocal ? WorkflowStatus.PENDING : WorkflowStatus.ACTIVE
             );
             workflowsPerAddress[currentRegisterInfo.workflowOwner]++;
             _existingWorkflowIds.push(currentRegisterInfo.id);
@@ -239,39 +242,68 @@ contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
         return _existingWorkflowIds.length;
     }
 
-    function getWorkflow(uint256 _id) external view override returns (Workflow memory) {
-        return _workflowsInfo[_id];
-    }
-
-    function getWorkflows(
+    function getWorkflowsInfo(
         uint256 _offset,
         uint256 _limit
-    ) external view override returns (Workflow[] memory _workflowsArr) {
+    ) external view override returns (WorkflowInfo[] memory _workflowsInfoArr) {
         uint256 to = Paginator.getTo(_existingWorkflowIds.length, _offset, _limit);
 
-        _workflowsArr = new Workflow[](to - _offset);
+        _workflowsInfoArr = new WorkflowInfo[](to - _offset);
 
         for (uint256 i = _offset; i < to; i++) {
-            _workflowsArr[i - _offset] = _workflowsInfo[_existingWorkflowIds[i]];
+            _workflowsInfoArr[i - _offset] = getWorkflowInfo(_existingWorkflowIds[i]);
         }
     }
 
+    function getBaseWorkflowInfo(uint256 _workflowId) public view returns (BaseWorkflowInfo memory) {
+        return _workflowsData[_workflowId].baseInfo;
+    }
+
+    function getWorkflowDepositAssetKeys(uint256 _workflowId) public view returns (string[] memory) {
+        return _workflowsData[_workflowId].depositAssetKeys.values();
+    }
+
+    function getWorkflowDepositAssetsInfo(
+        uint256 _workflowId,
+        string[] memory _depositAssetKeys
+    ) public view returns (DepositAssetInfo[] memory _depositAssetsArr) {
+        _depositAssetsArr = new DepositAssetInfo[](_depositAssetKeys.length);
+
+        for (uint256 i = 0; i < _depositAssetKeys.length; i++) {
+            _depositAssetsArr[i] = DepositAssetInfo(
+                _depositAssetKeys[i],
+                _workflowsData[_workflowId].depositAssetsTotalSpent[_depositAssetKeys[i]]
+            );
+        }
+    }
+
+    function getWorkflowInfo(uint256 _workflowId) public view returns (WorkflowInfo memory) {
+        string[] memory depositAssetKeys = getWorkflowDepositAssetKeys(_workflowId);
+
+        return
+            WorkflowInfo(
+                getBaseWorkflowInfo(_workflowId),
+                depositAssetKeys,
+                getWorkflowDepositAssetsInfo(_workflowId, depositAssetKeys)
+            );
+    }
+
     function getWorkflowOwner(uint256 _id) public view override returns (address) {
-        return _workflowsInfo[_id].owner;
+        return _workflowsData[_id].baseInfo.owner;
     }
 
     function getWorkflowStatus(uint256 _id) public view override returns (WorkflowStatus) {
-        return _workflowsInfo[_id].status;
+        return _workflowsData[_id].baseInfo.status;
     }
 
     function isWorkflowExist(uint256 _id) public view override returns (bool) {
-        return _workflowsInfo[_id].status != WorkflowStatus.NONE;
+        return _workflowsData[_id].baseInfo.status != WorkflowStatus.NONE;
     }
 
     function _authorizeUpgrade(address) internal virtual override onlySigner {}
 
     function _updateWorkflowStatus(uint256 _id, WorkflowStatus _newStatus) internal {
-        _workflowsInfo[_id].status = _newStatus;
+        _workflowsData[_id].baseInfo.status = _newStatus;
 
         emit WorkflowStatusChanged(_id, _newStatus);
     }

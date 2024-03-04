@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+import "@solarity/solidity-lib/libs/data-structures/StringSet.sol";
+
 /**
  * @title IRegistry
  * @notice Interface for the Registry contract, responsible for managing workflows, gateways, and configurations
@@ -22,20 +24,28 @@ interface IRegistry {
         CANCELLED
     }
 
-    /**
-     * @notice Struct representing a workflow
-     * @param id The unique identifier of the workflow
-     * @param owner The address of the owner of the workflow
-     * @param hash The hash representing the content or configuration of the workflow
-     * @param status The status of the workflow (see WorkflowStatus enum)
-     * @param totalSpent The total amount spent on the workflow
-     */
-    struct Workflow {
+    struct DepositAssetInfo {
+        string depositAssetKey;
+        uint256 depositAssetTotalSpent;
+    }
+
+    struct BaseWorkflowInfo {
         uint256 id;
         address owner;
         bytes hash;
         WorkflowStatus status;
-        uint256 totalSpent;
+    }
+
+    struct WorkflowData {
+        BaseWorkflowInfo baseInfo;
+        StringSet.Set depositAssetKeys;
+        mapping(string => uint256) depositAssetsTotalSpent;
+    }
+
+    struct WorkflowInfo {
+        BaseWorkflowInfo baseInfo;
+        string[] depositAssetKeys;
+        DepositAssetInfo[] depositAssetsInfo;
     }
 
     /**
@@ -122,7 +132,11 @@ interface IRegistry {
      * @param _workflowId The ID of the workflow
      * @param _workflowExecutionAmount The amount spent on the workflow execution
      */
-    function updateWorkflowTotalSpent(uint256 _workflowId, uint256 _workflowExecutionAmount) external;
+    function updateWorkflowTotalSpent(
+        string memory _depositAssetKey,
+        uint256 _workflowId,
+        uint256 _workflowExecutionAmount
+    ) external;
 
     /**
      * @notice Pauses workflows with the given IDs
@@ -201,19 +215,15 @@ interface IRegistry {
     function getTotalWorkflowsCount() external view returns (uint256);
 
     /**
-     * @notice Retrieves the workflow information associated with the given ID
-     * @param _id The ID of the workflow to retrieve
-     * @return The workflow information associated with the given ID
-     */
-    function getWorkflow(uint256 _id) external view returns (Workflow memory);
-
-    /**
      * @notice Retrieves an array of workflows within the specified range
      * @param _offset The starting index of workflows to retrieve
      * @param _limit The maximum number of workflows to retrieve
-     * @return _workflowsArr The array containing workflow information
+     * @return _workflowsInfoArr The array containing workflow information
      */
-    function getWorkflows(uint256 _offset, uint256 _limit) external view returns (Workflow[] memory _workflowsArr);
+    function getWorkflowsInfo(
+        uint256 _offset,
+        uint256 _limit
+    ) external view returns (WorkflowInfo[] memory _workflowsInfoArr);
 
     /**
      * @notice Retrieves the owner address of the workflow associated with the given ID

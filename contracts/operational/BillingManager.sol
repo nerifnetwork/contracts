@@ -178,7 +178,7 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
 
         _depositAssetsData[depositAssetKey].networkRewards += _executionAmount;
 
-        registry.updateWorkflowTotalSpent(workflowExecutionInfo.workflowId, _executionAmount);
+        registry.updateWorkflowTotalSpent(depositAssetKey, workflowExecutionInfo.workflowId, _executionAmount);
 
         emit ExecutionCompleted(_workflowExecutionId, _executionAmount);
     }
