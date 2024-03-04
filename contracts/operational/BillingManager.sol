@@ -57,7 +57,7 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
     function initialize(
         address _registryAddr,
         address _signerGetterAddress,
-        DepositAssetInfo memory _nativeDepositAssetInfo
+        DepositAssetInfo calldata _nativeDepositAssetInfo
     ) external initializer {
         registry = Registry(_registryAddr);
 
@@ -67,14 +67,14 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
         _setSignerGetter(_signerGetterAddress);
     }
 
-    function addDepositAssets(DepositAssetInfo[] memory _depositAssetInfoArr) external onlySigner {
+    function addDepositAssets(DepositAssetInfo[] calldata _depositAssetInfoArr) external onlySigner {
         for (uint256 i = 0; i < _depositAssetInfoArr.length; i++) {
             _addDepositAsset(_depositAssetInfoArr[i]);
         }
     }
 
     function updateWorkflowExecutionDiscount(
-        string memory _depositAssetKey,
+        string calldata _depositAssetKey,
         uint256 _newWorkflowExecutionDiscount
     ) external override onlyExistingDepositAsset(_depositAssetKey) onlySigner {
         uint256 currentWorkflowExecutionDiscount = _depositAssetsData[_depositAssetKey].workflowExecutionDiscount;
@@ -89,7 +89,7 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
     }
 
     function updateDepositAssetEnabledStatus(
-        string memory _depositAssetKey,
+        string calldata _depositAssetKey,
         bool _newEnabledStatus
     ) external override onlyExistingDepositAsset(_depositAssetKey) onlySigner {
         require(
@@ -103,16 +103,10 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
     }
 
     function lockExecutionFunds(
-        string memory _depositAssetKey,
+        string calldata _depositAssetKey,
         uint256 _workflowId,
         uint256 _executionLockedAmount
-    )
-        external
-        override
-        onlySigner
-        onlyExistingDepositAsset(_depositAssetKey)
-        onlyEnabledDepositAsset(_depositAssetKey)
-    {
+    ) external override onlySigner onlyExistingDepositAsset(_depositAssetKey) {
         require(registry.isWorkflowExist(_workflowId), "BillingManager: Workflow does not exist");
 
         address workflowOwner = registry.getWorkflowOwner(_workflowId);
@@ -284,7 +278,7 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
     }
 
     function getDepositAssetsInfo(
-        string[] memory _depositAssetKeysArr
+        string[] calldata _depositAssetKeysArr
     ) external view returns (DepositAssetInfo[] memory _depositAssetsInfoArr) {
         _depositAssetsInfoArr = new DepositAssetInfo[](_depositAssetKeysArr.length);
 

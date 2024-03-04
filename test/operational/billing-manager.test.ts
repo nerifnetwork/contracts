@@ -734,6 +734,19 @@ describe('BillingManager', () => {
       expect(workflowExecutionInfo.executionLockedAmount).to.be.eq(tokensLockAmount.mul(2));
     });
 
+    it('should correctly lock disabled asset', async () => {
+      await billingManager.deposit(nerifAssetKey, OWNER.address, depositTokensAmount);
+      await billingManager.connect(SIGNER).updateDepositAssetEnabledStatus(nerifAssetKey, false);
+
+      await billingManager.connect(SIGNER).lockExecutionFunds(nerifAssetKey, defaultWorkflowId, tokensLockAmount);
+
+      const userDepositInfo = await billingManager.getUserDepositInfo(OWNER.address, nerifAssetKey);
+
+      expect(userDepositInfo.userAddr).to.be.eq(OWNER.address);
+      expect(userDepositInfo.userDepositedAmount).to.be.eq(depositTokensAmount);
+      expect(userDepositInfo.userLockedAmount).to.be.eq(tokensLockAmount);
+    });
+
     it('should get exception if not a signer try to call this function', async () => {
       const reason = 'SignerOwnable: only signer';
 
@@ -747,16 +760,6 @@ describe('BillingManager', () => {
 
       await expect(
         billingManager.connect(SIGNER).lockExecutionFunds('SOME_KEY', 10, tokensLockAmount)
-      ).to.be.revertedWith(reason);
-    });
-
-    it('should get exception if try to lock disabled deposit asset', async () => {
-      const reason = 'BillingManager: Deposit asset is disabled';
-
-      await billingManager.connect(SIGNER).updateDepositAssetEnabledStatus(nerifAssetKey, false);
-
-      await expect(
-        billingManager.connect(SIGNER).lockExecutionFunds(nerifAssetKey, 10, tokensLockAmount)
       ).to.be.revertedWith(reason);
     });
 
