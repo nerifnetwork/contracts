@@ -23,6 +23,7 @@ export type SystemContractsInitParams = {
 
 export type OperationalContractsInitParams = {
   maxWorkflowsPerAccount: BigNumber;
+  nativeDepositAssetData: NativeDepositAssetData;
   signer?: string;
 };
 
@@ -35,6 +36,12 @@ export type SlashingVotingInitParams = {
   epochPeriod: BigNumber;
   slashingThresold: BigNumber;
   slashingEpochs: BigNumber;
+};
+
+export type NativeDepositAssetData = {
+  nativeDepositAssetKey: string;
+  workflowExecutionDiscount: BigNumber;
+  isEnabled: boolean;
 };
 
 export function parseConfig(configPath: string = ''): Config {
@@ -86,6 +93,9 @@ function validateOperationalContractsInitParams(
   operationalContractsInitParams: OperationalContractsInitParams
 ) {
   nonEmptyField(operationalContractsInitParams.maxWorkflowsPerAccount, 'maxWorkflowsPerAccount');
+  nonUndefinedField(operationalContractsInitParams.nativeDepositAssetData, 'nativeDepositAssetData');
+
+  validateNativeDepositAssetData(operationalContractsInitParams.nativeDepositAssetData);
 
   if (
     !isMainChain &&
@@ -105,6 +115,12 @@ function validateSlashingVotingInitParams(slashingVotingInitParams: SlashingVoti
   nonEmptyField(slashingVotingInitParams.epochPeriod, 'epochPeriod');
   nonEmptyField(slashingVotingInitParams.slashingThresold, 'slashingThresold');
   nonEmptyField(slashingVotingInitParams.slashingEpochs, 'slashingEpochs');
+}
+
+function validateNativeDepositAssetData(nativeDepositAssetData: NativeDepositAssetData) {
+  nonEmptyField(nativeDepositAssetData.nativeDepositAssetKey, 'nativeDepositAssetKey');
+  nonEmptyField(nativeDepositAssetData.workflowExecutionDiscount, 'workflowExecutionDiscount');
+  nonEmptyField(nativeDepositAssetData.isEnabled, 'isEnabled');
 }
 
 function nonEmptyField(fieldValue: any, fieldName: string) {

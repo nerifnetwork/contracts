@@ -9,6 +9,7 @@ import {
   SignerStorage__factory,
 } from '../generated-types/ethers';
 import { parseConfig } from './helpers/configParser';
+import { ethers } from 'hardhat';
 
 export = async (deployer: Deployer) => {
   const config = parseConfig();
@@ -33,7 +34,16 @@ export = async (deployer: Deployer) => {
     await signerStorage.initialize(config.operationalContractsInitParams.signer);
   }
 
-  await billingManager.initialize(registry.address, signerStorage.address);
+  await billingManager.initialize(registry.address, signerStorage.address, {
+    depositAssetKey: config.operationalContractsInitParams.nativeDepositAssetData.nativeDepositAssetKey,
+    depositAssetData: {
+      tokenAddr: ethers.constants.AddressZero,
+      workflowExecutionDiscount: config.operationalContractsInitParams.nativeDepositAssetData.workflowExecutionDiscount,
+      isEnabled: config.operationalContractsInitParams.nativeDepositAssetData.isEnabled,
+      networkRewards: 0,
+      isPermitable: false,
+    }
+  });
   await gatewayFactory.initialize(registry.address, gatewayImpl.address);
   await registry.initialize(
     config.isMainChain,
