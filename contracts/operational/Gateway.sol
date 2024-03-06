@@ -4,8 +4,8 @@ pragma solidity ^0.8.18;
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "../interfaces/IGateway.sol";
-import "../interfaces/IRegistry.sol";
+import "../interfaces/operational/IGateway.sol";
+import "../interfaces/operational/IRegistry.sol";
 
 import "./Registry.sol";
 

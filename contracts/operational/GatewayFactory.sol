@@ -6,8 +6,8 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@solarity/solidity-lib/proxy/beacon/ProxyBeacon.sol";
 import "@solarity/solidity-lib/proxy/beacon/PublicBeaconProxy.sol";
 
-import "../interfaces/IGateway.sol";
-import "../interfaces/IGatewayFactory.sol";
+import "../interfaces/operational/IGateway.sol";
+import "../interfaces/operational/IGatewayFactory.sol";
 
 contract GatewayFactory is IGatewayFactory, OwnableUpgradeable {
     ProxyBeacon public gatewayBeacon;
