@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+import "@solarity/solidity-lib/libs/data-structures/StringSet.sol";
+
 /**
  * @title IRegistry
  * @notice Interface for the Registry contract, responsible for managing workflows, gateways, and configurations
@@ -23,19 +25,52 @@ interface IRegistry {
     }
 
     /**
-     * @notice Struct representing a workflow
+     * @dev Struct containing information about a deposit asset
+     * @param depositAssetKey The unique key identifying the deposit asset
+     * @param depositAssetTotalSpent The total amount spent on the deposit asset
+     */
+    struct DepositAssetInfo {
+        string depositAssetKey;
+        uint256 depositAssetTotalSpent;
+    }
+
+    /**
+     * @dev Struct containing basic information about a workflow
      * @param id The unique identifier of the workflow
      * @param owner The address of the owner of the workflow
      * @param hash The hash representing the content or configuration of the workflow
-     * @param status The status of the workflow (see WorkflowStatus enum)
-     * @param totalSpent The total amount spent on the workflow
+     * @param status The status of the workflow
      */
-    struct Workflow {
+    struct BaseWorkflowInfo {
         uint256 id;
         address owner;
         bytes hash;
         WorkflowStatus status;
-        uint256 totalSpent;
+    }
+
+    /**
+     * @dev Struct containing data about a workflow, including deposit asset information
+     * @param baseInfo Basic information about the workflow
+     * @param depositAssetKeys Set containing keys of all deposit assets associated with the workflow
+     * @param depositAssetsTotalSpent Mapping from deposit asset keys to total
+     * amounts spent on those assets within the workflow
+     */
+    struct WorkflowData {
+        BaseWorkflowInfo baseInfo;
+        StringSet.Set depositAssetKeys;
+        mapping(string => uint256) depositAssetsTotalSpent;
+    }
+
+    /**
+     * @dev Struct containing information about a workflow, including deposit asset details
+     * @param baseInfo Basic information about the workflow
+     * @param depositAssetKeys Array of keys identifying deposit assets associated with the workflow
+     * @param depositAssetsInfo Array containing information about the deposit assets associated with the workflow
+     */
+    struct WorkflowInfo {
+        BaseWorkflowInfo baseInfo;
+        string[] depositAssetKeys;
+        DepositAssetInfo[] depositAssetsInfo;
     }
 
     /**
@@ -122,7 +157,11 @@ interface IRegistry {
      * @param _workflowId The ID of the workflow
      * @param _workflowExecutionAmount The amount spent on the workflow execution
      */
-    function updateWorkflowTotalSpent(uint256 _workflowId, uint256 _workflowExecutionAmount) external;
+    function updateWorkflowTotalSpent(
+        string memory _depositAssetKey,
+        uint256 _workflowId,
+        uint256 _workflowExecutionAmount
+    ) external;
 
     /**
      * @notice Pauses workflows with the given IDs
@@ -201,19 +240,47 @@ interface IRegistry {
     function getTotalWorkflowsCount() external view returns (uint256);
 
     /**
-     * @notice Retrieves the workflow information associated with the given ID
-     * @param _id The ID of the workflow to retrieve
-     * @return The workflow information associated with the given ID
-     */
-    function getWorkflow(uint256 _id) external view returns (Workflow memory);
-
-    /**
      * @notice Retrieves an array of workflows within the specified range
      * @param _offset The starting index of workflows to retrieve
      * @param _limit The maximum number of workflows to retrieve
-     * @return _workflowsArr The array containing workflow information
+     * @return _workflowsInfoArr The array containing workflow information
      */
-    function getWorkflows(uint256 _offset, uint256 _limit) external view returns (Workflow[] memory _workflowsArr);
+    function getWorkflowsInfo(
+        uint256 _offset,
+        uint256 _limit
+    ) external view returns (WorkflowInfo[] memory _workflowsInfoArr);
+
+    /**
+     * @notice Retrieves basic information about a workflow
+     * @param _workflowId The unique identifier of the workflow
+     * @return The basic information about the workflow
+     */
+    function getBaseWorkflowInfo(uint256 _workflowId) external view returns (BaseWorkflowInfo memory);
+
+    /**
+     * @notice Retrieves the deposit asset keys associated with a workflow
+     * @param _workflowId The unique identifier of the workflow
+     * @return An array containing the deposit asset keys associated with the workflow
+     */
+    function getWorkflowDepositAssetKeys(uint256 _workflowId) external view returns (string[] memory);
+
+    /**
+     * @notice Retrieves information about specific deposit assets associated with a workflow
+     * @param _workflowId The unique identifier of the workflow
+     * @param _depositAssetKeys An array containing the keys of deposit assets for which to retrieve information
+     * @return An array containing information about the specified deposit assets
+     */
+    function getWorkflowDepositAssetsInfo(
+        uint256 _workflowId,
+        string[] memory _depositAssetKeys
+    ) external view returns (DepositAssetInfo[] memory);
+
+    /**
+     * @notice Retrieves detailed information about a workflow, including deposit asset details
+     * @param _workflowId The unique identifier of the workflow
+     * @return Information about the workflow, including deposit asset details
+     */
+    function getWorkflowInfo(uint256 _workflowId) external view returns (WorkflowInfo memory);
 
     /**
      * @notice Retrieves the owner address of the workflow associated with the given ID

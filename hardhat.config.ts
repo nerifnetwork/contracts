@@ -98,6 +98,10 @@ const config: HardhatUserConfig = {
       url: "http://127.0.0.1:8545",
       gasMultiplier: 1.2,
     },
+    hardhat: {
+      initialDate: "1970-01-01T00:00:00Z",
+      chainId: 1,
+    },
   },
   solidity: {
     compilers: [

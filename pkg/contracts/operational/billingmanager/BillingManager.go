@@ -29,16 +29,32 @@ var (
 	_ = abi.ConvertType
 )
 
-// IBillingManagerUserFundsInfo is an auto generated low-level Go binding around an user-defined struct.
-type IBillingManagerUserFundsInfo struct {
+// IBillingManagerDepositAssetData is an auto generated low-level Go binding around an user-defined struct.
+type IBillingManagerDepositAssetData struct {
+	TokenAddr                 common.Address
+	WorkflowExecutionDiscount *big.Int
+	NetworkRewards            *big.Int
+	IsPermitable              bool
+	IsEnabled                 bool
+}
+
+// IBillingManagerDepositAssetInfo is an auto generated low-level Go binding around an user-defined struct.
+type IBillingManagerDepositAssetInfo struct {
+	DepositAssetKey  string
+	DepositAssetData IBillingManagerDepositAssetData
+}
+
+// IBillingManagerUserDepositInfo is an auto generated low-level Go binding around an user-defined struct.
+type IBillingManagerUserDepositInfo struct {
 	UserAddr                    common.Address
-	UserFundBalance             *big.Int
-	UserLockedBalance           *big.Int
+	UserDepositedAmount         *big.Int
+	UserLockedAmount            *big.Int
 	PendingWorkflowExecutionIds []*big.Int
 }
 
 // IBillingManagerWorkflowExecutionInfo is an auto generated low-level Go binding around an user-defined struct.
 type IBillingManagerWorkflowExecutionInfo struct {
+	DepositAssetKey       string
 	WorkflowId            *big.Int
 	ExecutionLockedAmount *big.Int
 	ExecutionAmount       *big.Int
@@ -48,8 +64,8 @@ type IBillingManagerWorkflowExecutionInfo struct {
 
 // BillingManagerMetaData contains all meta data concerning the BillingManager contract.
 var BillingManagerMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"previousAdmin\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newAdmin\",\"type\":\"address\"}],\"name\":\"AdminChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"userAddr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"userCurrentBalance\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"fundedAmount\",\"type\":\"uint256\"}],\"name\":\"BalanceFunded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"beacon\",\"type\":\"address\"}],\"name\":\"BeaconUpgraded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"workflowExecutionId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"executionAmount\",\"type\":\"uint256\"}],\"name\":\"ExecutionCompleted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"workflowId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"userAddr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"workflowExecutionId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"executionLockedAmount\",\"type\":\"uint256\"}],\"name\":\"ExecutionFundsLocked\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"recipientAddr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"rewardsAmount\",\"type\":\"uint256\"}],\"name\":\"RewardsWithdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"workflowExecutionId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"executionLockedAmount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"executionAmount\",\"type\":\"uint256\"}],\"name\":\"UnexpectedExecutionAmountFound\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"implementation\",\"type\":\"address\"}],\"name\":\"Upgraded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"userAddr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"withdrawnAmount\",\"type\":\"uint256\"}],\"name\":\"UserFundsWithdrawn\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_workflowExecutionId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_executionAmount\",\"type\":\"uint256\"}],\"name\":\"completeExecution\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_recipientAddr\",\"type\":\"address\"}],\"name\":\"fundBalance\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"fundBalance\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_workflowExecutionId\",\"type\":\"uint256\"}],\"name\":\"getExecutionWorkflowId\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_offset\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_limit\",\"type\":\"uint256\"}],\"name\":\"getExistingUsers\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getTotalUsersCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_userAddr\",\"type\":\"address\"}],\"name\":\"getUserAvailableFunds\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_userAddr\",\"type\":\"address\"}],\"name\":\"getUserFundsInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"userAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"userFundBalance\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"userLockedBalance\",\"type\":\"uint256\"},{\"internalType\":\"uint256[]\",\"name\":\"pendingWorkflowExecutionIds\",\"type\":\"uint256[]\"}],\"internalType\":\"structIBillingManager.UserFundsInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_offset\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_limit\",\"type\":\"uint256\"}],\"name\":\"getUsersFundsInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"userAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"userFundBalance\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"userLockedBalance\",\"type\":\"uint256\"},{\"internalType\":\"uint256[]\",\"name\":\"pendingWorkflowExecutionIds\",\"type\":\"uint256[]\"}],\"internalType\":\"structIBillingManager.UserFundsInfo[]\",\"name\":\"_usersInfoArr\",\"type\":\"tuple[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_workflowExecutionId\",\"type\":\"uint256\"}],\"name\":\"getWorkflowExecutionInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"workflowId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"executionLockedAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"executionAmount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"workflowOwner\",\"type\":\"address\"},{\"internalType\":\"enumIBillingManager.WorkflowExecutionStatus\",\"name\":\"status\",\"type\":\"uint8\"}],\"internalType\":\"structIBillingManager.WorkflowExecutionInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_workflowExecutionId\",\"type\":\"uint256\"}],\"name\":\"getWorkflowExecutionOwner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_workflowExecutionId\",\"type\":\"uint256\"}],\"name\":\"getWorkflowExecutionStatus\",\"outputs\":[{\"internalType\":\"enumIBillingManager.WorkflowExecutionStatus\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_registryAddr\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_signerGetterAddress\",\"type\":\"address\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_workflowId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_executionLockedAmount\",\"type\":\"uint256\"}],\"name\":\"lockExecutionFunds\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"networkRewards\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nextWorkflowExecutionId\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"proxiableUUID\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"registry\",\"outputs\":[{\"internalType\":\"contractRegistry\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"signerGetter\",\"outputs\":[{\"internalType\":\"contractISignerAddress\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newImplementation\",\"type\":\"address\"}],\"name\":\"upgradeTo\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newImplementation\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"upgradeToAndCall\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amountToWithdraw\",\"type\":\"uint256\"}],\"name\":\"withdrawFunds\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"withdrawNetworkRewards\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
-	Bin: "0x60a06040523060805234801561001457600080fd5b5060805161237561004c60003960008181610793015281816107d3015281816109e701528181610a270152610aba01526123756000f3fe6080604052600436106101445760003560e01c806352d1902d116100b65780637b1039991161006f5780637b103999146103c257806380017563146103e2578063c4cffb7614610402578063ef4f272d14610422578063f65868121461044f578063f9b41fd51461046f57600080fd5b806352d1902d146102ac5780635c211f88146102c15780636b091226146102ff5780636b5d42061461032c5780636e136778146103425780637105e9701461037b57600080fd5b80633659cfe6116101085780633659cfe6146101f75780633c06794514610217578063485cc9551461021f57806348cf8bab1461023f5780634a686e491461026c5780634f1ef2861461029957600080fd5b80630561010c146101595780630ad5a86514610181578063155dd5ee1461019457806324293941146101b45780632cdf71a7146101ca57600080fd5b366101545761015233610484565b005b600080fd5b34801561016557600080fd5b5061016e610578565b6040519081526020015b60405180910390f35b61015261018f366004611db7565b610589565b3480156101a057600080fd5b506101526101af366004611dd4565b610595565b3480156101c057600080fd5b5061016e60035481565b3480156101d657600080fd5b506101ea6101e5366004611ded565b61068c565b6040516101789190611e80565b34801561020357600080fd5b50610152610212366004611db7565b610789565b610152610865565b34801561022b57600080fd5b5061015261023a366004611ee2565b610870565b34801561024b57600080fd5b5061025f61025a366004611ded565b6109c6565b6040516101789190611f1b565b34801561027857600080fd5b5061016e610287366004611dd4565b60009081526007602052604090205490565b6101526102a7366004611f7e565b6109dd565b3480156102b857600080fd5b5061016e610aad565b3480156102cd57600080fd5b506000546102e7906201000090046001600160a01b031681565b6040516001600160a01b039091168152602001610178565b34801561030b57600080fd5b5061031f61031a366004611db7565b610b60565b6040516101789190612042565b34801561033857600080fd5b5061016e60025481565b34801561034e57600080fd5b506102e761035d366004611dd4565b6000908152600760205260409020600301546001600160a01b031690565b34801561038757600080fd5b506103b5610396366004611dd4565b600090815260076020526040902060030154600160a01b900460ff1690565b604051610178919061208d565b3480156103ce57600080fd5b506001546102e7906001600160a01b031681565b3480156103ee57600080fd5b506101526103fd366004611ded565b610bea565b34801561040e57600080fd5b5061016e61041d366004611db7565b610ed3565b34801561042e57600080fd5b5061044261043d366004611dd4565b610efc565b604051610178919061209b565b34801561045b57600080fd5b5061015261046a366004611ded565b610f8d565b34801561047b57600080fd5b50610152611332565b600034116104e35760405162461bcd60e51b815260206004820152602160248201527f42696c6c696e674d616e616765723a205a65726f2066756e647320746f2061646044820152601960fa1b60648201526084015b60405180910390fd5b6001600160a01b0381166000908152600660205260408120546105079034906120f3565b6001600160a01b0383166000908152600660205260409020819055905061052f6004836114c0565b50604080518281523460208201526001600160a01b038416917f3be325f4f5fcedd7332727df6cd7ca2679dbd8e6a6332f45e0faeeb23b7d54a191015b60405180910390a25050565b600061058460046114d5565b905090565b61059281610484565b50565b8061059f33610ed3565b101561060c5760405162461bcd60e51b815260206004820152603660248201527f42696c6c696e674d616e616765723a204e6f7420656e6f75676820617661696c60448201527561626c652066756e647320746f20776974686472617760501b60648201526084016104da565b33600090815260066020526040812054610627908390612106565b3360009081526006602052604081208290559091508190036106505761064e6004336114df565b505b61065a33836114f4565b60405182815233907f7f9d7c82d89883dcf97d377c4a3098b9a25d87d6d25dc4b289531d7a38460a089060200161056c565b606060006106a461069d60046114d5565b858561160d565b90506106b08482612106565b67ffffffffffffffff8111156106c8576106c8611f68565b60405190808252806020026020018201604052801561072d57816020015b61071a604051806080016040528060006001600160a01b031681526020016000815260200160008152602001606081525090565b8152602001906001900390816106e65790505b509150835b818110156107815761074861031a600483611638565b836107538784612106565b8151811061076357610763612119565b602002602001018190525080806107799061212f565b915050610732565b505092915050565b6001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001630036107d15760405162461bcd60e51b81526004016104da90612148565b7f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031661081a6000805160206122f9833981519152546001600160a01b031690565b6001600160a01b0316146108405760405162461bcd60e51b81526004016104da90612194565b61084981611644565b60408051600080825260208201909252610592918391906116dd565b61086e33610484565b565b600054610100900460ff16158080156108905750600054600160ff909116105b806108aa5750303b1580156108aa575060005460ff166001145b61090d5760405162461bcd60e51b815260206004820152602e60248201527f496e697469616c697a61626c653a20636f6e747261637420697320616c72656160448201526d191e481a5b9a5d1a585b1a5e995960921b60648201526084016104da565b6000805460ff191660011790558015610930576000805461ff0019166101001790555b600180546001600160a01b0385166001600160a01b031990911617905561097b82600080546001600160a01b03909216620100000262010000600160b01b0319909216919091179055565b80156109c1576000805461ff0019169055604051600181527f7f26b83ff96e1f2b6a682f133852f6798a09c465da95921460cefb38474024989060200160405180910390a15b505050565b60606109d460048484611848565b90505b92915050565b6001600160a01b037f0000000000000000000000000000000000000000000000000000000000000000163003610a255760405162461bcd60e51b81526004016104da90612148565b7f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0316610a6e6000805160206122f9833981519152546001600160a01b031690565b6001600160a01b031614610a945760405162461bcd60e51b81526004016104da90612194565b610a9d82611644565b610aa9828260016116dd565b5050565b6000306001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001614610b4d5760405162461bcd60e51b815260206004820152603860248201527f555550535570677261646561626c653a206d757374206e6f742062652063616c60448201527f6c6564207468726f7567682064656c656761746563616c6c000000000000000060648201526084016104da565b506000805160206122f983398151915290565b610b94604051806080016040528060006001600160a01b031681526020016000815260200160008152602001606081525090565b6001600160a01b03821660008181526006602090815260409182902082516080810184529384528054918401919091526001810154918301919091529060608101610be16002840161190a565b90529392505050565b60005460408051630d14b70160e11b8152905133926201000090046001600160a01b031691631a296e029160048083019260209291908290030181865afa158015610c39573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610c5d91906121e0565b6001600160a01b031614610c835760405162461bcd60e51b81526004016104da906121fd565b600082815260076020526040902060016003820154600160a01b900460ff166002811115610cb357610cb3612055565b14610d195760405162461bcd60e51b815260206004820152603060248201527f42696c6c696e674d616e616765723a204e6f7420612070656e64696e6720776f60448201526f3935b33637bb9032bc32b1baba34b7b760811b60648201526084016104da565b60038101546001600160a01b03166000908152600660205260409020600182015483811015610daf57610d6a848284600101548560000154610d5b9190612106565b610d6591906120f3565b611917565b60408051878152602081018490529081018290529094507faba1d671589f510878d4421f3e9f5574d37ecf6735d3f3df2be569b62b9015d99060600160405180910390a15b60038301805460ff60a01b1916600160a11b17905560028301849055815484908390600090610ddf908490612106565b9250508190555080826001016000828254610dfa9190612106565b90915550610e0d9050600283018661192d565b508360026000828254610e2091906120f3565b90915550506001548354604051632851165f60e21b81526001600160a01b039092169163a144597c91610e60918890600401918252602082015260400190565b600060405180830381600087803b158015610e7a57600080fd5b505af1158015610e8e573d6000803e3d6000fd5b505060408051888152602081018890527f70114d139c12c9f15fb8a74cc0b9d9f2070f048d32cdf038844425444bad7b52935001905060405180910390a15050505050565b6001600160a01b0381166000908152600660205260408120600181015490546109d79190612106565b610f04611d5a565b600082815260076020908152604091829020825160a081018452815481526001820154928101929092526002808201549383019390935260038101546001600160a01b0381166060840152919290916080840191600160a01b90910460ff1690811115610f7357610f73612055565b6002811115610f8457610f84612055565b90525092915050565b60005460408051630d14b70160e11b8152905133926201000090046001600160a01b031691631a296e029160048083019260209291908290030181865afa158015610fdc573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061100091906121e0565b6001600160a01b0316146110265760405162461bcd60e51b81526004016104da906121fd565b600154604051639b2bfaa360e01b8152600481018490526001600160a01b0390911690639b2bfaa390602401602060405180830381865afa15801561106f573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906110939190612234565b6110ef5760405162461bcd60e51b815260206004820152602760248201527f42696c6c696e674d616e616765723a20576f726b666c6f7720646f6573206e6f6044820152661d08195e1a5cdd60ca1b60648201526084016104da565b60015460405163d69cd27560e01b8152600481018490526000916001600160a01b03169063d69cd27590602401602060405180830381865afa158015611139573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061115d91906121e0565b6001600160a01b03811660009081526006602052604090209091508261118283610ed3565b10156111e15760405162461bcd60e51b815260206004820152602860248201527f42696c6c696e674d616e616765723a204e6f7420656e6f7567682066756e647360448201526720746f206c6f636b60c01b60648201526084016104da565b60038054600091826111f28361212f565b9190505590508382600101600082825461120c91906120f3565b9091555061121f90506002830182611939565b506040518060a0016040528086815260200185815260200160008152602001846001600160a01b031681526020016001600281111561126057611260612055565b9052600082815260076020908152604091829020835181559083015160018201559082015160028083019190915560608301516003830180546001600160a01b039092166001600160a01b031983168117825560808601519391926001600160a81b0319161790600160a01b9084908111156112de576112de612055565b02179055505060408051838152602081018790526001600160a01b038616925087917fc77a14be8053ff3df25436e566ff7bd5d0da84a96e23ced50e403617fab5e97d910160405180910390a35050505050565b600254806113995760405162461bcd60e51b815260206004820152602e60248201527f42696c6c696e674d616e616765723a204e6f206e6574776f726b20726577617260448201526d647320746f20776974686472617760901b60648201526084016104da565b60026000905560008060029054906101000a90046001600160a01b03166001600160a01b0316631a296e026040518163ffffffff1660e01b8152600401602060405180830381865afa1580156113f3573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061141791906121e0565b90506001600160a01b03811661147b5760405162461bcd60e51b815260206004820152602360248201527f42696c6c696e674d616e616765723a205a65726f207369676e6572206164647260448201526265737360e81b60648201526084016104da565b61148581836114f4565b806001600160a01b03167f8a43c4352486ec339f487f64af78ca5cbf06cd47833f073d3baf3a193e5031618360405161056c91815260200190565b60006109d4836001600160a01b038416611941565b60006109d7825490565b60006109d4836001600160a01b038416611990565b804710156115445760405162461bcd60e51b815260206004820152601d60248201527f416464726573733a20696e73756666696369656e742062616c616e636500000060448201526064016104da565b6000826001600160a01b03168260405160006040518083038185875af1925050503d8060008114611591576040519150601f19603f3d011682016040523d82523d6000602084013e611596565b606091505b50509050806109c15760405162461bcd60e51b815260206004820152603a60248201527f416464726573733a20756e61626c6520746f2073656e642076616c75652c207260448201527f6563697069656e74206d6179206861766520726576657274656400000000000060648201526084016104da565b600061161982846120f3565b9050838111156116265750825b808311156116315750815b9392505050565b60006109d48383611a8a565b60005460408051630d14b70160e11b8152905133926201000090046001600160a01b031691631a296e029160048083019260209291908290030181865afa158015611693573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906116b791906121e0565b6001600160a01b0316146105925760405162461bcd60e51b81526004016104da906121fd565b7f4910fdfa16fed3260ed0e7147f7cc6da11a60208b5b9406d12a635614ffd91435460ff1615611710576109c183611ab4565b826001600160a01b03166352d1902d6040518163ffffffff1660e01b8152600401602060405180830381865afa92505050801561176a575060408051601f3d908101601f1916820190925261176791810190612256565b60015b6117cd5760405162461bcd60e51b815260206004820152602e60248201527f45524331393637557067726164653a206e657720696d706c656d656e7461746960448201526d6f6e206973206e6f74205555505360901b60648201526084016104da565b6000805160206122f9833981519152811461183c5760405162461bcd60e51b815260206004820152602960248201527f45524331393637557067726164653a20756e737570706f727465642070726f786044820152681a58589b195555525160ba1b60648201526084016104da565b506109c1838383611b50565b6060600061185861069d866114d5565b90506118648482612106565b67ffffffffffffffff81111561187c5761187c611f68565b6040519080825280602002602001820160405280156118a5578160200160208202803683370190505b509150835b81811015611901576118bc8682611638565b836118c78784612106565b815181106118d7576118d7612119565b6001600160a01b0390921660209283029190910190910152806118f98161212f565b9150506118aa565b50509392505050565b6060600061163183611b7b565b600081831061192657816109d4565b5090919050565b60006109d48383611990565b60006109d483835b6000818152600183016020526040812054611988575081546001818101845560008481526020808220909301849055845484825282860190935260409020919091556109d7565b5060006109d7565b60008181526001830160205260408120548015611a795760006119b4600183612106565b85549091506000906119c890600190612106565b9050818114611a2d5760008660000182815481106119e8576119e8612119565b9060005260206000200154905080876000018481548110611a0b57611a0b612119565b6000918252602080832090910192909255918252600188019052604090208390555b8554869080611a3e57611a3e61226f565b6001900381819060005260206000200160009055905585600101600086815260200190815260200160002060009055600193505050506109d7565b60009150506109d7565b5092915050565b6000826000018281548110611aa157611aa1612119565b9060005260206000200154905092915050565b6001600160a01b0381163b611b215760405162461bcd60e51b815260206004820152602d60248201527f455243313936373a206e657720696d706c656d656e746174696f6e206973206e60448201526c1bdd08184818dbdb9d1c9858dd609a1b60648201526084016104da565b6000805160206122f983398151915280546001600160a01b0319166001600160a01b0392909216919091179055565b611b5983611bd7565b600082511180611b665750805b156109c157611b758383611c17565b50505050565b606081600001805480602002602001604051908101604052809291908181526020018280548015611bcb57602002820191906000526020600020905b815481526020019060010190808311611bb7575b50505050509050919050565b611be081611ab4565b6040516001600160a01b038216907fbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b90600090a250565b60606109d48383604051806060016040528060278152602001612319602791396060600080856001600160a01b031685604051611c5491906122a9565b600060405180830381855af49150503d8060008114611c8f576040519150601f19603f3d011682016040523d82523d6000602084013e611c94565b606091505b5091509150611ca586838387611caf565b9695505050505050565b60608315611d1e578251600003611d17576001600160a01b0385163b611d175760405162461bcd60e51b815260206004820152601d60248201527f416464726573733a2063616c6c20746f206e6f6e2d636f6e747261637400000060448201526064016104da565b5081611d28565b611d288383611d30565b949350505050565b815115611d405781518083602001fd5b8060405162461bcd60e51b81526004016104da91906122c5565b6040518060a0016040528060008152602001600081526020016000815260200160006001600160a01b0316815260200160006002811115611d9d57611d9d612055565b905290565b6001600160a01b038116811461059257600080fd5b600060208284031215611dc957600080fd5b813561163181611da2565b600060208284031215611de657600080fd5b5035919050565b60008060408385031215611e0057600080fd5b50508035926020909101359150565b80516001600160a01b0316825260208082015181840152604080830151908401526060808301516080918501829052805191850182905260009290810191839060a08701905b80831015611e755784518252938301936001929092019190830190611e55565b509695505050505050565b6000602080830181845280855180835260408601915060408160051b870101925083870160005b82811015611ed557603f19888603018452611ec3858351611e0f565b94509285019290850190600101611ea7565b5092979650505050505050565b60008060408385031215611ef557600080fd5b8235611f0081611da2565b91506020830135611f1081611da2565b809150509250929050565b6020808252825182820181905260009190848201906040850190845b81811015611f5c5783516001600160a01b031683529284019291840191600101611f37565b50909695505050505050565b634e487b7160e01b600052604160045260246000fd5b60008060408385031215611f9157600080fd5b8235611f9c81611da2565b9150602083013567ffffffffffffffff80821115611fb957600080fd5b818501915085601f830112611fcd57600080fd5b813581811115611fdf57611fdf611f68565b604051601f8201601f19908116603f0116810190838211818310171561200757612007611f68565b8160405282815288602084870101111561202057600080fd5b8260208601602083013760006020848301015280955050505050509250929050565b6020815260006109d46020830184611e0f565b634e487b7160e01b600052602160045260246000fd5b6003811061208957634e487b7160e01b600052602160045260246000fd5b9052565b602081016109d7828461206b565b8151815260208083015190820152604080830151908201526060808301516001600160a01b03169082015260808083015160a0830191611a839084018261206b565b634e487b7160e01b600052601160045260246000fd5b808201808211156109d7576109d76120dd565b818103818111156109d7576109d76120dd565b634e487b7160e01b600052603260045260246000fd5b600060018201612141576121416120dd565b5060010190565b6020808252602c908201527f46756e6374696f6e206d7573742062652063616c6c6564207468726f7567682060408201526b19195b1959d85d1958d85b1b60a21b606082015260800190565b6020808252602c908201527f46756e6374696f6e206d7573742062652063616c6c6564207468726f7567682060408201526b6163746976652070726f787960a01b606082015260800190565b6000602082840312156121f257600080fd5b815161163181611da2565b6020808252601a908201527f5369676e65724f776e61626c653a206f6e6c79207369676e6572000000000000604082015260600190565b60006020828403121561224657600080fd5b8151801515811461163157600080fd5b60006020828403121561226857600080fd5b5051919050565b634e487b7160e01b600052603160045260246000fd5b60005b838110156122a0578181015183820152602001612288565b50506000910152565b600082516122bb818460208701612285565b9190910192915050565b60208152600082518060208401526122e4816040850160208701612285565b601f01601f1916919091016040019291505056fe360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc416464726573733a206c6f772d6c6576656c2064656c65676174652063616c6c206661696c6564a2646970667358221220e16d61f03c2c9f6580bbd0e6c24164b91432315874f300059c551725f52154c564736f6c63430008120033",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"previousAdmin\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newAdmin\",\"type\":\"address\"}],\"name\":\"AdminChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"string\",\"name\":\"depositAssetKey\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"tokensSender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"depositRecipient\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"depositAmount\",\"type\":\"uint256\"}],\"name\":\"AssetDeposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"beacon\",\"type\":\"address\"}],\"name\":\"BeaconUpgraded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"string\",\"name\":\"depositAssetKey\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"tokenAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"workflowExecutionDiscount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"networkRewards\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"isPermitable\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"isEnabled\",\"type\":\"bool\"}],\"indexed\":false,\"internalType\":\"structIBillingManager.DepositAssetData\",\"name\":\"depositAssetData\",\"type\":\"tuple\"}],\"name\":\"DepositAssetAdded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"string\",\"name\":\"depositAssetKey\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"newEnabledStatus\",\"type\":\"bool\"}],\"name\":\"DepositAssetEnabledStatusUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"workflowExecutionId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"executionAmount\",\"type\":\"uint256\"}],\"name\":\"ExecutionCompleted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"string\",\"name\":\"depositAssetKey\",\"type\":\"string\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"workflowId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"userAddr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"workflowExecutionId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"executionLockedAmount\",\"type\":\"uint256\"}],\"name\":\"ExecutionFundsLocked\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"recipientAddr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"rewardsAmount\",\"type\":\"uint256\"}],\"name\":\"RewardsWithdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"workflowExecutionId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"executionLockedAmount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"executionAmount\",\"type\":\"uint256\"}],\"name\":\"UnexpectedExecutionAmountFound\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"implementation\",\"type\":\"address\"}],\"name\":\"Upgraded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"userAddr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"withdrawnAmount\",\"type\":\"uint256\"}],\"name\":\"UserFundsWithdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"string\",\"name\":\"depositAssetKey\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newWorkflowExecutionDiscount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"prevWorkflowExecutionDiscount\",\"type\":\"uint256\"}],\"name\":\"WorkflowExecutionDiscountUpdated\",\"type\":\"event\"},{\"inputs\":[{\"components\":[{\"internalType\":\"string\",\"name\":\"depositAssetKey\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"tokenAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"workflowExecutionDiscount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"networkRewards\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"isPermitable\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"isEnabled\",\"type\":\"bool\"}],\"internalType\":\"structIBillingManager.DepositAssetData\",\"name\":\"depositAssetData\",\"type\":\"tuple\"}],\"internalType\":\"structIBillingManager.DepositAssetInfo[]\",\"name\":\"_depositAssetInfoArr\",\"type\":\"tuple[]\"}],\"name\":\"addDepositAssets\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_workflowExecutionId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_executionAmount\",\"type\":\"uint256\"}],\"name\":\"completeExecution\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_depositAssetKey\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"_recipientAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_depositAmount\",\"type\":\"uint256\"}],\"name\":\"deposit\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_depositAssetKey\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"_recipientAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_depositAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_sigExpirationTime\",\"type\":\"uint256\"},{\"internalType\":\"uint8\",\"name\":\"_v\",\"type\":\"uint8\"},{\"internalType\":\"bytes32\",\"name\":\"_r\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"_s\",\"type\":\"bytes32\"}],\"name\":\"depositWithPermit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string[]\",\"name\":\"_depositAssetKeysArr\",\"type\":\"string[]\"}],\"name\":\"getDepositAssetsInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"string\",\"name\":\"depositAssetKey\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"tokenAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"workflowExecutionDiscount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"networkRewards\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"isPermitable\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"isEnabled\",\"type\":\"bool\"}],\"internalType\":\"structIBillingManager.DepositAssetData\",\"name\":\"depositAssetData\",\"type\":\"tuple\"}],\"internalType\":\"structIBillingManager.DepositAssetInfo[]\",\"name\":\"_depositAssetsInfoArr\",\"type\":\"tuple[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_workflowExecutionId\",\"type\":\"uint256\"}],\"name\":\"getExecutionWorkflowId\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_offset\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_limit\",\"type\":\"uint256\"}],\"name\":\"getExistingUsers\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_depositAssetKey\",\"type\":\"string\"}],\"name\":\"getNetworkRewards\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getSupportedDepositAssetKeys\",\"outputs\":[{\"internalType\":\"string[]\",\"name\":\"\",\"type\":\"string[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getTotalUsersCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_userAddr\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"_depositAssetKey\",\"type\":\"string\"}],\"name\":\"getUserAvailableFunds\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_userAddr\",\"type\":\"address\"}],\"name\":\"getUserDepositAssetKeys\",\"outputs\":[{\"internalType\":\"string[]\",\"name\":\"\",\"type\":\"string[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_userAddr\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"_depositAssetKey\",\"type\":\"string\"}],\"name\":\"getUserDepositInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"userAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"userDepositedAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"userLockedAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256[]\",\"name\":\"pendingWorkflowExecutionIds\",\"type\":\"uint256[]\"}],\"internalType\":\"structIBillingManager.UserDepositInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_depositAssetKey\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"_offset\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_limit\",\"type\":\"uint256\"}],\"name\":\"getUsersDepositInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"userAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"userDepositedAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"userLockedAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256[]\",\"name\":\"pendingWorkflowExecutionIds\",\"type\":\"uint256[]\"}],\"internalType\":\"structIBillingManager.UserDepositInfo[]\",\"name\":\"_usersInfoArr\",\"type\":\"tuple[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_workflowExecutionId\",\"type\":\"uint256\"}],\"name\":\"getWorkflowExecutionInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"string\",\"name\":\"depositAssetKey\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"workflowId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"executionLockedAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"executionAmount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"workflowOwner\",\"type\":\"address\"},{\"internalType\":\"enumIBillingManager.WorkflowExecutionStatus\",\"name\":\"status\",\"type\":\"uint8\"}],\"internalType\":\"structIBillingManager.WorkflowExecutionInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_workflowExecutionId\",\"type\":\"uint256\"}],\"name\":\"getWorkflowExecutionOwner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_workflowExecutionId\",\"type\":\"uint256\"}],\"name\":\"getWorkflowExecutionStatus\",\"outputs\":[{\"internalType\":\"enumIBillingManager.WorkflowExecutionStatus\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_registryAddr\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_signerGetterAddress\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"depositAssetKey\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"tokenAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"workflowExecutionDiscount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"networkRewards\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"isPermitable\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"isEnabled\",\"type\":\"bool\"}],\"internalType\":\"structIBillingManager.DepositAssetData\",\"name\":\"depositAssetData\",\"type\":\"tuple\"}],\"internalType\":\"structIBillingManager.DepositAssetInfo\",\"name\":\"_nativeDepositAssetInfo\",\"type\":\"tuple\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_depositAssetKey\",\"type\":\"string\"}],\"name\":\"isDepositAssetEnabled\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_depositAssetKey\",\"type\":\"string\"}],\"name\":\"isDepositAssetPermitable\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_depositAssetKey\",\"type\":\"string\"}],\"name\":\"isDepositAssetSupported\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_depositAssetKey\",\"type\":\"string\"}],\"name\":\"isNativeDepositAsset\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_depositAssetKey\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"_workflowId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_executionLockedAmount\",\"type\":\"uint256\"}],\"name\":\"lockExecutionFunds\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nativeDepositAssetKey\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nextWorkflowExecutionId\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"proxiableUUID\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"registry\",\"outputs\":[{\"internalType\":\"contractRegistry\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"signerGetter\",\"outputs\":[{\"internalType\":\"contractISignerAddress\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_depositAssetKey\",\"type\":\"string\"},{\"internalType\":\"bool\",\"name\":\"_newEnabledStatus\",\"type\":\"bool\"}],\"name\":\"updateDepositAssetEnabledStatus\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_depositAssetKey\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"_newWorkflowExecutionDiscount\",\"type\":\"uint256\"}],\"name\":\"updateWorkflowExecutionDiscount\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newImplementation\",\"type\":\"address\"}],\"name\":\"upgradeTo\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newImplementation\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"upgradeToAndCall\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_depositAssetKey\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"_amountToWithdraw\",\"type\":\"uint256\"}],\"name\":\"withdrawFunds\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_depositAssetKey\",\"type\":\"string\"}],\"name\":\"withdrawNetworkRewards\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
+	Bin: "0x60a06040523060805234801561001457600080fd5b506080516143f061004c60003960008181610d9301528181610dd301528181611187015281816111c7015261125a01526143f06000f3fe6080604052600436106101fd5760003560e01c80635ec26c461161010d5780639769b439116100a0578063c172bfd71161006f578063c172bfd714610757578063c471020414610777578063c66ae1e814610797578063ef4f272d146107b7578063f3883e26146107e457600080fd5b80639769b439146106d5578063a19ddf5b146106f5578063a266f96314610722578063afb3f30a1461073757600080fd5b80637b103999116100dc5780637b103999146106485780637c1c6fba146106685780637d7f83841461068857806380017563146106b557600080fd5b80635ec26c4614610588578063606a679f146105a85780636e136778146105c85780637105e9701461060157600080fd5b8063379135121161019057806352d1902d1161015f57806352d1902d146104d557806355cbf5a5146104ea5780635a53669c1461050a5780635af6b0431461052a5780635c211f881461054a57600080fd5b8063379135121461043857806348cf8bab146104655780634a686e49146104925780634f1ef286146104c257600080fd5b80632b888682116101cc5780632b888682146103a657806333c25326146103d65780633659cfe6146103f85780633666cec51461041857600080fd5b80630561010c1461033557806316fb02dd1461035d578063242939411461037d5780632a48ac9a1461039357600080fd5b36610330576002805461020f90613636565b80601f016020809104026020016040519081016040528092919081815260200182805461023b90613636565b80156102885780601f1061025d57610100808354040283529160200191610288565b820191906000526020600020905b81548152906001019060200180831161026b57829003601f168201915b505050505061029681610811565b61032e600280546102a690613636565b80601f01602080910402602001604051908101604052809291908181526020018280546102d290613636565b801561031f5780601f106102f45761010080835404028352916020019161031f565b820191906000526020600020905b81548152906001019060200180831161030257829003601f168201915b50505050503333346001610880565b005b600080fd5b34801561034157600080fd5b5061034a6109eb565b6040519081526020015b60405180910390f35b34801561036957600080fd5b5061032e610378366004613771565b6109fc565b34801561038957600080fd5b5061034a60035481565b61032e6103a13660046137ba565b610bcc565b3480156103b257600080fd5b506103c66103c1366004613771565b610cc7565b6040519015158152602001610354565b3480156103e257600080fd5b506103eb610cfb565b6040516103549190613863565b34801561040457600080fd5b5061032e610413366004613876565b610d89565b34801561042457600080fd5b5061032e610433366004613893565b610e65565b34801561044457600080fd5b50610458610453366004613945565b61101b565b6040516103549190613a34565b34801561047157600080fd5b50610485610480366004613ab6565b611166565b6040516103549190613ad8565b34801561049e57600080fd5b5061034a6104ad366004613b25565b6000908152600a602052604090206001015490565b61032e6104d0366004613b3e565b61117d565b3480156104e157600080fd5b5061034a61124d565b3480156104f657600080fd5b5061032e610505366004613c61565b611300565b34801561051657600080fd5b5061034a610525366004613771565b611462565b34801561053657600080fd5b5061034a610545366004613cc2565b61148d565b34801561055657600080fd5b50600054610570906201000090046001600160a01b031681565b6040516001600160a01b039091168152602001610354565b34801561059457600080fd5b5061032e6105a3366004613d07565b6114e3565b3480156105b457600080fd5b506103c66105c3366004613771565b6118f6565b3480156105d457600080fd5b506105706105e3366004613b25565b6000908152600a60205260409020600401546001600160a01b031690565b34801561060d57600080fd5b5061063b61061c366004613b25565b6000908152600a6020526040902060040154600160a01b900460ff1690565b6040516103549190613d8c565b34801561065457600080fd5b50600154610570906001600160a01b031681565b34801561067457600080fd5b5061032e610683366004613d9a565b611903565b34801561069457600080fd5b506106a86106a3366004613d07565b6119dc565b6040516103549190613eae565b3480156106c157600080fd5b5061032e6106d0366004613ab6565b611adf565b3480156106e157600080fd5b5061032e6106f0366004613f03565b611e9f565b34801561070157600080fd5b50610715610710366004613876565b61201e565b6040516103549190613f47565b34801561072e57600080fd5b50610715612042565b34801561074357600080fd5b506103c6610752366004613771565b61204e565b34801561076357600080fd5b5061032e610772366004613f9c565b6120f5565b34801561078357600080fd5b506103c6610792366004613771565b6122af565b3480156107a357600080fd5b5061032e6107b2366004613f03565b6122dd565b3480156107c357600080fd5b506107d76107d2366004613b25565b61241e565b6040516103549190613fed565b3480156107f057600080fd5b506108046107ff366004613cc2565b61253c565b6040516103549190614055565b61081a81610cc7565b61087d5760405162461bcd60e51b815260206004820152602960248201527f42696c6c696e674d616e616765723a204465706f73697420617373657420697360448201526808191a5cd8589b195960ba1b60648201526084015b60405180910390fd5b50565b600082116108dc5760405162461bcd60e51b815260206004820152602360248201527f42696c6c696e674d616e616765723a205a65726f206465706f73697420616d6f6044820152621d5b9d60ea1b6064820152608401610874565b80610918576109188430846008896040516108f79190614068565b908152604051908190036020019020546001600160a01b03169291906125f0565b6001600160a01b03831660009081526009602052604090819020905183906002830190610946908990614068565b90815260200160405180910390206000016000828254610966919061409a565b909155506109769050818761265b565b506109826004856126bd565b50856040516109919190614068565b604080519182900382206001600160a01b03808916845287166020840152908201859052907ffbc2fad7e5ffeb083133f666db8691af5364707e2b5bf9d1f6f93834433aeca49060600160405180910390a2505050505050565b60006109f760046126d2565b905090565b80610a06816126dc565b6000600883604051610a189190614068565b908152604051908190036020019020600281015490915080610a935760405162461bcd60e51b815260206004820152602e60248201527f42696c6c696e674d616e616765723a204e6f206e6574776f726b20726577617260448201526d647320746f20776974686472617760901b6064820152608401610874565b816002016000905560008060029054906101000a90046001600160a01b03166001600160a01b0316631a296e026040518163ffffffff1660e01b8152600401602060405180830381865afa158015610aef573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610b1391906140ad565b90506001600160a01b038116610b775760405162461bcd60e51b815260206004820152602360248201527f42696c6c696e674d616e616765723a205a65726f207369676e6572206164647260448201526265737360e81b6064820152608401610874565b610b82858284612746565b806001600160a01b03167f8a43c4352486ec339f487f64af78ca5cbf06cd47833f073d3baf3a193e50316183604051610bbd91815260200190565b60405180910390a25050505050565b82610bd6816126dc565b83610be081610811565b6000610beb8661204e565b90508015610c5157348414610c4c5760405162461bcd60e51b815260206004820152602160248201527f42696c6c696e674d616e616765723a20496e76616c6964206d73672e76616c756044820152606560f81b6064820152608401610874565b610cb2565b3415610cb25760405162461bcd60e51b815260206004820152602a60248201527f42696c6c696e674d616e616765723a204e6f742061206e6174697665206465706044820152691bdcda5d08185cdcd95d60b21b6064820152608401610874565b610cbf8633878785610880565b505050505050565b6000600882604051610cd99190614068565b9081526040519081900360200190206003015460ff6101009091041692915050565b60028054610d0890613636565b80601f0160208091040260200160405190810160405280929190818152602001828054610d3490613636565b8015610d815780601f10610d5657610100808354040283529160200191610d81565b820191906000526020600020905b815481529060010190602001808311610d6457829003601f168201915b505050505081565b6001600160a01b037f0000000000000000000000000000000000000000000000000000000000000000163003610dd15760405162461bcd60e51b8152600401610874906140ca565b7f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0316610e1a600080516020614374833981519152546001600160a01b031690565b6001600160a01b031614610e405760405162461bcd60e51b815260040161087490614116565b610e4981612798565b6040805160008082526020820190925261087d91839190612831565b86610e6f816126dc565b87610e7981610811565b610e828961204e565b15610ef55760405162461bcd60e51b815260206004820152603d60248201527f42696c6c696e674d616e616765723a20556e61626c6520746f206465706f736960448201527f74206e61746976652063757272656e63792077697468207065726d69740000006064820152608401610874565b610efe896122af565b610f625760405162461bcd60e51b815260206004820152602f60248201527f42696c6c696e674d616e616765723a204465706f73697420617373657420697360448201526e206e6f74207065726d697461626c6560881b6064820152608401610874565b600889604051610f729190614068565b9081526040519081900360200181205463d505accf60e01b8252336004830152306024830152604482018990526064820188905260ff8716608483015260a4820186905260c482018590526001600160a01b03169063d505accf9060e401600060405180830381600087803b158015610fea57600080fd5b505af1158015610ffe573d6000803e3d6000fd5b5050505061101089338a8a6000610880565b505050505050505050565b606081516001600160401b038111156110365761103661366a565b60405190808252806020026020018201604052801561106f57816020015b61105c613596565b8152602001906001900390816110545790505b50905060005b825181101561116057604051806040016040528084838151811061109b5761109b614162565b6020026020010151815260200160088584815181106110bc576110bc614162565b60200260200101516040516110d19190614068565b90815260408051918290036020908101832060a08401835280546001600160a01b031684526001810154918401919091526002810154918301919091526003015460ff8082161515606084015261010090910416151560808201529052825183908390811061114257611142614162565b6020026020010181905250808061115890614178565b915050611075565b50919050565b60606111746004848461299c565b90505b92915050565b6001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001630036111c55760405162461bcd60e51b8152600401610874906140ca565b7f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031661120e600080516020614374833981519152546001600160a01b031690565b6001600160a01b0316146112345760405162461bcd60e51b815260040161087490614116565b61123d82612798565b61124982826001612831565b5050565b6000306001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016146112ed5760405162461bcd60e51b815260206004820152603860248201527f555550535570677261646561626c653a206d757374206e6f742062652063616c60448201527f6c6564207468726f7567682064656c656761746563616c6c00000000000000006064820152608401610874565b5060008051602061437483398151915290565b600054610100900460ff16158080156113205750600054600160ff909116105b8061133a5750303b15801561133a575060005460ff166001145b61139d5760405162461bcd60e51b815260206004820152602e60248201527f496e697469616c697a61626c653a20636f6e747261637420697320616c72656160448201526d191e481a5b9a5d1a585b1a5e995960921b6064820152608401610874565b6000805460ff1916600117905580156113c0576000805461ff0019166101001790555b600180546001600160a01b0319166001600160a01b03861617905581516002906113ea90826141d7565b506113f482612a54565b6000805462010000600160b01b031916620100006001600160a01b03861602179055801561145c576000805461ff0019169055604051600181527f7f26b83ff96e1f2b6a682f133852f6798a09c465da95921460cefb38474024989060200160405180910390a15b50505050565b60006008826040516114749190614068565b9081526020016040518091039020600201549050919050565b6001600160a01b03821660009081526009602052604080822090518291600201906114b9908590614068565b908152604051908190036020019020600181015481549192506114db91614296565b949350505050565b60005460408051630d14b70160e11b8152905133926201000090046001600160a01b031691631a296e029160048083019260209291908290030181865afa158015611532573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061155691906140ad565b6001600160a01b03161461157c5760405162461bcd60e51b8152600401610874906142a9565b82611586816126dc565b8361159081610811565b600154604051639b2bfaa360e01b8152600481018690526001600160a01b0390911690639b2bfaa390602401602060405180830381865afa1580156115d9573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906115fd91906142e0565b6116595760405162461bcd60e51b815260206004820152602760248201527f42696c6c696e674d616e616765723a20576f726b666c6f7720646f6573206e6f6044820152661d08195e1a5cdd60ca1b6064820152608401610874565b60015460405163d69cd27560e01b8152600481018690526000916001600160a01b03169063d69cd27590602401602060405180830381865afa1580156116a3573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906116c791906140ad565b9050836116d4828861148d565b101561173d5760405162461bcd60e51b815260206004820152603260248201527f42696c6c696e674d616e616765723a204e6f7420656e6f75676820617661696c60448201527161626c652066756e647320746f206c6f636b60701b6064820152608401610874565b600380546000918261174e83614178565b919050559050600060096000846001600160a01b03166001600160a01b031681526020019081526020016000206002018860405161178c9190614068565b90815260200160405180910390209050858160010160008282546117b0919061409a565b909155506117c390506002820183612d01565b506040805160c08101825289815260208101899052908101879052600060608201526001600160a01b038416608082015260a08101600190526000838152600a602052604090208151819061181890826141d7565b506020820151600182015560408201516002808301919091556060830151600383015560808301516004830180546001600160a01b039092166001600160a01b031983168117825560a08601519391926001600160a81b0319161790600160a01b90849081111561188b5761188b613d54565b0217905550905050826001600160a01b031687896040516118ac9190614068565b60408051918290038220868352602083018b9052917f318669d1aaaf361c152eec849d7bf340dcac03acfb197842a8fd141df0a408fa910160405180910390a45050505050505050565b6000611177600683612d0d565b60005460408051630d14b70160e11b8152905133926201000090046001600160a01b031691631a296e029160048083019260209291908290030181865afa158015611952573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061197691906140ad565b6001600160a01b03161461199c5760405162461bcd60e51b8152600401610874906142a9565b60005b8151811015611249576119ca8282815181106119bd576119bd614162565b6020026020010151612a54565b806119d481614178565b91505061199f565b606060006119f46119ed60046126d2565b8585612d3a565b9050611a008482614296565b6001600160401b03811115611a1757611a1761366a565b604051908082528060200260200182016040528015611a7c57816020015b611a69604051806080016040528060006001600160a01b031681526020016000815260200160008152602001606081525090565b815260200190600190039081611a355790505b509150835b81811015611ad657611a9d611a97600483612d65565b8761253c565b83611aa88784614296565b81518110611ab857611ab8614162565b60200260200101819052508080611ace90614178565b915050611a81565b50509392505050565b60005460408051630d14b70160e11b8152905133926201000090046001600160a01b031691631a296e029160048083019260209291908290030181865afa158015611b2e573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611b5291906140ad565b6001600160a01b031614611b785760405162461bcd60e51b8152600401610874906142a9565b6000828152600a6020526040902060016004820154600160a01b900460ff166002811115611ba857611ba8613d54565b14611c0e5760405162461bcd60e51b815260206004820152603060248201527f42696c6c696e674d616e616765723a204e6f7420612070656e64696e6720776f60448201526f3935b33637bb9032bc32b1baba34b7b760811b6064820152608401610874565b6000816000018054611c1f90613636565b80601f0160208091040260200160405190810160405280929190818152602001828054611c4b90613636565b8015611c985780601f10611c6d57610100808354040283529160200191611c98565b820191906000526020600020905b815481529060010190602001808311611c7b57829003601f168201915b50505060048501546001600160a01b03166000908152600960205260408082209051949550909360029091019250611cd291508490614068565b908152604051908190036020019020600284015490915084811015611d5e57611d19858284600101548560000154611d0a9190614296565b611d14919061409a565b612d71565b60408051888152602081018490529081018290529095507faba1d671589f510878d4421f3e9f5574d37ecf6735d3f3df2be569b62b9015d99060600160405180910390a15b60048401805460ff60a01b1916600160a11b17905560038401859055815485908390600090611d8e908490614296565b9250508190555080826001016000828254611da99190614296565b90915550611dbc90506002830187612d87565b5084600884604051611dce9190614068565b90815260200160405180910390206002016000828254611dee919061409a565b9091555050600180549085015460405163ae09340f60e01b81526001600160a01b039092169163ae09340f91611e2b918791908a906004016142fd565b600060405180830381600087803b158015611e4557600080fd5b505af1158015611e59573d6000803e3d6000fd5b505060408051898152602081018990527f70114d139c12c9f15fb8a74cc0b9d9f2070f048d32cdf038844425444bad7b52935001905060405180910390a1505050505050565b81611ea9816126dc565b60008211611f095760405162461bcd60e51b815260206004820152602760248201527f42696c6c696e674d616e616765723a205a65726f20616d6f756e7420746f20776044820152666974686472617760c81b6064820152608401610874565b81611f14338561148d565b1015611f815760405162461bcd60e51b815260206004820152603660248201527f42696c6c696e674d616e616765723a204e6f7420656e6f75676820617661696c60448201527561626c652066756e647320746f20776974686472617760501b6064820152608401610874565b336000908152600960205260408082209051600290910190611fa4908690614068565b908152602001604051809103902090506000838260000154611fc69190614296565b80835590506000819003611fe157611fdf600433612d93565b505b611fec853386612746565b60405184815233907f7f9d7c82d89883dcf97d377c4a3098b9a25d87d6d25dc4b289531d7a38460a0890602001610bbd565b6001600160a01b038116600090815260096020526040902060609061117790612da8565b60606109f76006612da8565b6000611177826002805461206190613636565b80601f016020809104026020016040519081016040528092919081815260200182805461208d90613636565b80156120da5780601f106120af576101008083540402835291602001916120da565b820191906000526020600020905b8154815290600101906020018083116120bd57829003601f168201915b50505050508051602091820120825192909101919091201490565b816120ff816126dc565b60005460408051630d14b70160e11b8152905133926201000090046001600160a01b031691631a296e029160048083019260209291908290030181865afa15801561214e573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061217291906140ad565b6001600160a01b0316146121985760405162461bcd60e51b8152600401610874906142a9565b8115156008846040516121ab9190614068565b9081526040519081900360200190206003015460ff610100909104161515036122295760405162461bcd60e51b815260206004820152602a60248201527f42696c6c696e674d616e616765723a20496e76616c6964206e657720656e61626044820152696c65642073746174757360b01b6064820152608401610874565b8160088460405161223a9190614068565b90815260405190819003602001812060030180549215156101000261ff00199093169290921790915561226e908490614068565b6040519081900381208315158252907f838dfb07f2f9eda916131303b1c93fcdb2d1f0cfae1f651eee30c8bd440913569060200160405180910390a2505050565b60006008826040516122c19190614068565b9081526040519081900360200190206003015460ff1692915050565b816122e7816126dc565b60005460408051630d14b70160e11b8152905133926201000090046001600160a01b031691631a296e029160048083019260209291908290030181865afa158015612336573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061235a91906140ad565b6001600160a01b0316146123805760405162461bcd60e51b8152600401610874906142a9565b60006008846040516123929190614068565b9081526020016040518091039020600101549050826008856040516123b79190614068565b908152604051908190036020018120600101919091556123d8908590614068565b6040805191829003822085835260208301849052917f70c21b53e4a29c6a334ae8d8d80a885023e4749ee873d6594b3f6cbb66140b6b910160405180910390a250505050565b6124266135ec565b6000828152600a602052604090819020815160c0810190925280548290829061244e90613636565b80601f016020809104026020016040519081016040528092919081815260200182805461247a90613636565b80156124c75780601f1061249c576101008083540402835291602001916124c7565b820191906000526020600020905b8154815290600101906020018083116124aa57829003601f168201915b50505091835250506001820154602082015260028083015460408301526003830154606083015260048301546001600160a01b038116608084015260a090920191600160a01b900460ff169081111561252257612522613d54565b600281111561253357612533613d54565b90525092915050565b612570604051806080016040528060006001600160a01b031681526020016000815260200160008152602001606081525090565b6001600160a01b038316600090815260096020526040808220905160029091019061259c908590614068565b908152602001604051809103902090506040518060800160405280856001600160a01b0316815260200182600001548152602001826001015481526020016125e683600201612e85565b9052949350505050565b6040516001600160a01b038085166024830152831660448201526064810182905261145c9085906323b872dd60e01b906084015b60408051601f198184030181529190526020810180516001600160e01b03166001600160e01b031990931692909217909152612e92565b60006126678383612d0d565b6126b55782546001810184556000848152602090200161268783826141d7565b508254604051600185019061269d908590614068565b90815260405190819003602001902055506001611177565b506000611177565b6000611174836001600160a01b038416612f67565b6000611177825490565b6126e5816118f6565b61087d5760405162461bcd60e51b815260206004820152602c60248201527f42696c6c696e674d616e616765723a204465706f73697420617373657420646f60448201526b195cc81b9bdd08195e1a5cdd60a21b6064820152608401610874565b61274f8361204e565b156127635761275e8282612fae565b505050565b61275e82826008866040516127789190614068565b908152604051908190036020019020546001600160a01b031691906130c7565b60005460408051630d14b70160e11b8152905133926201000090046001600160a01b031691631a296e029160048083019260209291908290030181865afa1580156127e7573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061280b91906140ad565b6001600160a01b03161461087d5760405162461bcd60e51b8152600401610874906142a9565b7f4910fdfa16fed3260ed0e7147f7cc6da11a60208b5b9406d12a635614ffd91435460ff16156128645761275e836130f7565b826001600160a01b03166352d1902d6040518163ffffffff1660e01b8152600401602060405180830381865afa9250505080156128be575060408051601f3d908101601f191682019092526128bb91810190614322565b60015b6129215760405162461bcd60e51b815260206004820152602e60248201527f45524331393637557067726164653a206e657720696d706c656d656e7461746960448201526d6f6e206973206e6f74205555505360901b6064820152608401610874565b60008051602061437483398151915281146129905760405162461bcd60e51b815260206004820152602960248201527f45524331393637557067726164653a20756e737570706f727465642070726f786044820152681a58589b195555525160ba1b6064820152608401610874565b5061275e838383613193565b606060006129ac6119ed866126d2565b90506129b88482614296565b6001600160401b038111156129cf576129cf61366a565b6040519080825280602002602001820160405280156129f8578160200160208202803683370190505b509150835b81811015611ad657612a0f8682612d65565b83612a1a8784614296565b81518110612a2a57612a2a614162565b6001600160a01b039092166020928302919091019091015280612a4c81614178565b9150506129fd565b8051612a5f906118f6565b15612ac15760405162461bcd60e51b815260206004820152602c60248201527f42696c6c696e674d616e616765723a204465706f73697420617373657420616c60448201526b72656164792065786973747360a01b6064820152608401610874565b6020810151516001600160a01b0316151580612aed5750612aed81600001516002805461206190613636565b612b555760405162461bcd60e51b815260206004820152603360248201527f42696c6c696e674d616e616765723a20496e76616c6964206465706f73697420604482015272617373657420746f6b656e206164647265737360681b6064820152608401610874565b805151612bb65760405162461bcd60e51b815260206004820152602960248201527f42696c6c696e674d616e616765723a20496e76616c6964206465706f736974206044820152686173736574206b657960b81b6064820152608401610874565b60208101516040015115612c275760405162461bcd60e51b815260206004820152603260248201527f42696c6c696e674d616e616765723a20496e76616c696420696e6974206e6574604482015271776f726b20726577617264732076616c756560701b6064820152608401610874565b60208101518151604051600891612c3d91614068565b90815260408051918290036020908101909220835181546001600160a01b039091166001600160a01b0319909116178155918301516001830155820151600282015560608201516003909101805460809093015115156101000261ff00199215159290921661ffff19909316929092171790558051612cbe9060069061265b565b50805160208201516040517f310a01f49fbf43988aa0ce4a44296f5fc9f1fe442769d2416f1965d6a1cd236e92612cf692909161433b565b60405180910390a150565b60006111748383612f67565b60008260010182604051612d219190614068565b9081526040519081900360200190205415159392505050565b6000612d46828461409a565b905083811115612d535750825b80831115612d5e5750815b9392505050565b600061117483836131b8565b6000818310612d805781611174565b5090919050565b600061117483836131e2565b6000611174836001600160a01b0384166131e2565b606081600001805480602002602001604051908101604052809291908181526020016000905b82821015612e7a578382906000526020600020018054612ded90613636565b80601f0160208091040260200160405190810160405280929190818152602001828054612e1990613636565b8015612e665780601f10612e3b57610100808354040283529160200191612e66565b820191906000526020600020905b815481529060010190602001808311612e4957829003601f168201915b505050505081526020019060010190612dce565b505050509050919050565b60606000612d5e836132d5565b6000612ee7826040518060400160405280602081526020017f5361666545524332303a206c6f772d6c6576656c2063616c6c206661696c6564815250856001600160a01b03166133319092919063ffffffff16565b9050805160001480612f08575080806020019051810190612f0891906142e0565b61275e5760405162461bcd60e51b815260206004820152602a60248201527f5361666545524332303a204552433230206f7065726174696f6e20646964206e6044820152691bdd081cdd58d8d9595960b21b6064820152608401610874565b60008181526001830160205260408120546126b557508154600181810184556000848152602080822090930184905584548482528286019093526040902091909155611177565b80471015612ffe5760405162461bcd60e51b815260206004820152601d60248201527f416464726573733a20696e73756666696369656e742062616c616e63650000006044820152606401610874565b6000826001600160a01b03168260405160006040518083038185875af1925050503d806000811461304b576040519150601f19603f3d011682016040523d82523d6000602084013e613050565b606091505b505090508061275e5760405162461bcd60e51b815260206004820152603a60248201527f416464726573733a20756e61626c6520746f2073656e642076616c75652c207260448201527f6563697069656e74206d617920686176652072657665727465640000000000006064820152608401610874565b6040516001600160a01b03831660248201526044810182905261275e90849063a9059cbb60e01b90606401612624565b6001600160a01b0381163b6131645760405162461bcd60e51b815260206004820152602d60248201527f455243313936373a206e657720696d706c656d656e746174696f6e206973206e60448201526c1bdd08184818dbdb9d1c9858dd609a1b6064820152608401610874565b60008051602061437483398151915280546001600160a01b0319166001600160a01b0392909216919091179055565b61319c83613340565b6000825111806131a95750805b1561275e5761145c8383613380565b60008260000182815481106131cf576131cf614162565b9060005260206000200154905092915050565b600081815260018301602052604081205480156132cb576000613206600183614296565b855490915060009061321a90600190614296565b905081811461327f57600086600001828154811061323a5761323a614162565b906000526020600020015490508087600001848154811061325d5761325d614162565b6000918252602080832090910192909255918252600188019052604090208390555b85548690806132905761329061435d565b600190038181906000526020600020016000905590558560010160008681526020019081526020016000206000905560019350505050611177565b6000915050611177565b60608160000180548060200260200160405190810160405280929190818152602001828054801561332557602002820191906000526020600020905b815481526020019060010190808311613311575b50505050509050919050565b60606114db84846000856133a5565b613349816130f7565b6040516001600160a01b038216907fbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b90600090a250565b6060611174838360405180606001604052806027815260200161439460279139613480565b6060824710156134065760405162461bcd60e51b815260206004820152602660248201527f416464726573733a20696e73756666696369656e742062616c616e636520666f6044820152651c8818d85b1b60d21b6064820152608401610874565b600080866001600160a01b031685876040516134229190614068565b60006040518083038185875af1925050503d806000811461345f576040519150601f19603f3d011682016040523d82523d6000602084013e613464565b606091505b5091509150613475878383876134f8565b979650505050505050565b6060600080856001600160a01b03168560405161349d9190614068565b600060405180830381855af49150503d80600081146134d8576040519150601f19603f3d011682016040523d82523d6000602084013e6134dd565b606091505b50915091506134ee868383876134f8565b9695505050505050565b60608315613567578251600003613560576001600160a01b0385163b6135605760405162461bcd60e51b815260206004820152601d60248201527f416464726573733a2063616c6c20746f206e6f6e2d636f6e74726163740000006044820152606401610874565b50816114db565b6114db838381511561357c5781518083602001fd5b8060405162461bcd60e51b81526004016108749190613863565b6040518060400160405280606081526020016135e76040518060a0016040528060006001600160a01b0316815260200160008152602001600081526020016000151581526020016000151581525090565b905290565b6040518060c001604052806060815260200160008152602001600081526020016000815260200160006001600160a01b03168152602001600060028111156135e7576135e7613d54565b600181811c9082168061364a57607f821691505b60208210810361116057634e487b7160e01b600052602260045260246000fd5b634e487b7160e01b600052604160045260246000fd5b604080519081016001600160401b03811182821017156136a2576136a261366a565b60405290565b60405160a081016001600160401b03811182821017156136a2576136a261366a565b604051601f8201601f191681016001600160401b03811182821017156136f2576136f261366a565b604052919050565b60006001600160401b038311156137135761371361366a565b613726601f8401601f19166020016136ca565b905082815283838301111561373a57600080fd5b828260208301376000602084830101529392505050565b600082601f83011261376257600080fd5b611174838335602085016136fa565b60006020828403121561378357600080fd5b81356001600160401b0381111561379957600080fd5b6114db84828501613751565b6001600160a01b038116811461087d57600080fd5b6000806000606084860312156137cf57600080fd5b83356001600160401b038111156137e557600080fd5b6137f186828701613751565b9350506020840135613802816137a5565b929592945050506040919091013590565b60005b8381101561382e578181015183820152602001613816565b50506000910152565b6000815180845261384f816020860160208601613813565b601f01601f19169290920160200192915050565b6020815260006111746020830184613837565b60006020828403121561388857600080fd5b8135612d5e816137a5565b600080600080600080600060e0888a0312156138ae57600080fd5b87356001600160401b038111156138c457600080fd5b6138d08a828b01613751565b97505060208801356138e1816137a5565b95506040880135945060608801359350608088013560ff8116811461390557600080fd5b9699959850939692959460a0840135945060c09093013592915050565b60006001600160401b0382111561393b5761393b61366a565b5060051b60200190565b6000602080838503121561395857600080fd5b82356001600160401b038082111561396f57600080fd5b818501915085601f83011261398357600080fd5b813561399661399182613922565b6136ca565b81815260059190911b830184019084810190888311156139b557600080fd5b8585015b838110156139ed578035858111156139d15760008081fd5b6139df8b89838a0101613751565b8452509186019186016139b9565b5098975050505050505050565b80516001600160a01b0316825260208082015190830152604080820151908301526060808201511515908301526080908101511515910152565b6000602080830181845280855180835260408601915060408160051b870101925083870160005b82811015613aa957603f19888603018452815160c08151818852613a8182890182613837565b915050878201519150613a96888801836139fa565b9550509285019290850190600101613a5b565b5092979650505050505050565b60008060408385031215613ac957600080fd5b50508035926020909101359150565b6020808252825182820181905260009190848201906040850190845b81811015613b195783516001600160a01b031683529284019291840191600101613af4565b50909695505050505050565b600060208284031215613b3757600080fd5b5035919050565b60008060408385031215613b5157600080fd5b8235613b5c816137a5565b915060208301356001600160401b03811115613b7757600080fd5b8301601f81018513613b8857600080fd5b613b97858235602084016136fa565b9150509250929050565b801515811461087d57600080fd5b600081830360c0811215613bc257600080fd5b613bca613680565b915082356001600160401b03811115613be257600080fd5b613bee85828601613751565b83525060a0601f1982011215613c0357600080fd5b50613c0c6136a8565b6020830135613c1a816137a5565b815260408381013560208301526060840135908201526080830135613c3e81613ba1565b606082015260a0830135613c5181613ba1565b6080820152602082015292915050565b600080600060608486031215613c7657600080fd5b8335613c81816137a5565b92506020840135613c91816137a5565b915060408401356001600160401b03811115613cac57600080fd5b613cb886828701613baf565b9150509250925092565b60008060408385031215613cd557600080fd5b8235613ce0816137a5565b915060208301356001600160401b03811115613cfb57600080fd5b613b9785828601613751565b600080600060608486031215613d1c57600080fd5b83356001600160401b03811115613d3257600080fd5b613d3e86828701613751565b9660208601359650604090950135949350505050565b634e487b7160e01b600052602160045260246000fd5b60038110613d8857634e487b7160e01b600052602160045260246000fd5b9052565b602081016111778284613d6a565b60006020808385031215613dad57600080fd5b82356001600160401b0380821115613dc457600080fd5b818501915085601f830112613dd857600080fd5b8135613de661399182613922565b81815260059190911b83018401908481019088831115613e0557600080fd5b8585015b838110156139ed57803585811115613e215760008081fd5b613e2f8b89838a0101613baf565b845250918601918601613e09565b80516001600160a01b0316825260208082015181840152604080830151908401526060808301516080918501829052805191850182905260009290810191839060a08701905b80831015613ea35784518252938301936001929092019190830190613e83565b509695505050505050565b6000602080830181845280855180835260408601915060408160051b870101925083870160005b82811015613aa957603f19888603018452613ef1858351613e3d565b94509285019290850190600101613ed5565b60008060408385031215613f1657600080fd5b82356001600160401b03811115613f2c57600080fd5b613f3885828601613751565b95602094909401359450505050565b6000602080830181845280855180835260408601915060408160051b870101925083870160005b82811015613aa957603f19888603018452613f8a858351613837565b94509285019290850190600101613f6e565b60008060408385031215613faf57600080fd5b82356001600160401b03811115613fc557600080fd5b613fd185828601613751565b9250506020830135613fe281613ba1565b809150509250929050565b602081526000825160c0602084015261400960e0840182613837565b905060208401516040840152604084015160608401526060840151608084015260018060a01b0360808501511660a084015260a084015161404d60c0850182613d6a565b509392505050565b6020815260006111746020830184613e3d565b6000825161407a818460208701613813565b9190910192915050565b634e487b7160e01b600052601160045260246000fd5b8082018082111561117757611177614084565b6000602082840312156140bf57600080fd5b8151612d5e816137a5565b6020808252602c908201527f46756e6374696f6e206d7573742062652063616c6c6564207468726f7567682060408201526b19195b1959d85d1958d85b1b60a21b606082015260800190565b6020808252602c908201527f46756e6374696f6e206d7573742062652063616c6c6564207468726f7567682060408201526b6163746976652070726f787960a01b606082015260800190565b634e487b7160e01b600052603260045260246000fd5b60006001820161418a5761418a614084565b5060010190565b601f82111561275e57600081815260208120601f850160051c810160208610156141b85750805b601f850160051c820191505b81811015610cbf578281556001016141c4565b81516001600160401b038111156141f0576141f061366a565b614204816141fe8454613636565b84614191565b602080601f83116001811461423957600084156142215750858301515b600019600386901b1c1916600185901b178555610cbf565b600085815260208120601f198616915b8281101561426857888601518255948401946001909101908401614249565b50858210156142865787850151600019600388901b60f8161c191681555b5050505050600190811b01905550565b8181038181111561117757611177614084565b6020808252601a908201527f5369676e65724f776e61626c653a206f6e6c79207369676e6572000000000000604082015260600190565b6000602082840312156142f257600080fd5b8151612d5e81613ba1565b6060815260006143106060830186613837565b60208301949094525060400152919050565b60006020828403121561433457600080fd5b5051919050565b60c08152600061434e60c0830185613837565b9050612d5e60208301846139fa565b634e487b7160e01b600052603160045260246000fdfe360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc416464726573733a206c6f772d6c6576656c2064656c65676174652063616c6c206661696c6564a2646970667358221220d9120aa5fee99120b6daed86823e3ea9a070b90d307d657c763d6af9cde5439f64736f6c63430008120033",
 }
 
 // BillingManagerABI is the input ABI used to generate the binding from.
@@ -219,6 +235,37 @@ func (_BillingManager *BillingManagerTransactorRaw) Transact(opts *bind.Transact
 	return _BillingManager.Contract.contract.Transact(opts, method, params...)
 }
 
+// GetDepositAssetsInfo is a free data retrieval call binding the contract method 0x37913512.
+//
+// Solidity: function getDepositAssetsInfo(string[] _depositAssetKeysArr) view returns((string,(address,uint256,uint256,bool,bool))[] _depositAssetsInfoArr)
+func (_BillingManager *BillingManagerCaller) GetDepositAssetsInfo(opts *bind.CallOpts, _depositAssetKeysArr []string) ([]IBillingManagerDepositAssetInfo, error) {
+	var out []interface{}
+	err := _BillingManager.contract.Call(opts, &out, "getDepositAssetsInfo", _depositAssetKeysArr)
+
+	if err != nil {
+		return *new([]IBillingManagerDepositAssetInfo), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]IBillingManagerDepositAssetInfo)).(*[]IBillingManagerDepositAssetInfo)
+
+	return out0, err
+
+}
+
+// GetDepositAssetsInfo is a free data retrieval call binding the contract method 0x37913512.
+//
+// Solidity: function getDepositAssetsInfo(string[] _depositAssetKeysArr) view returns((string,(address,uint256,uint256,bool,bool))[] _depositAssetsInfoArr)
+func (_BillingManager *BillingManagerSession) GetDepositAssetsInfo(_depositAssetKeysArr []string) ([]IBillingManagerDepositAssetInfo, error) {
+	return _BillingManager.Contract.GetDepositAssetsInfo(&_BillingManager.CallOpts, _depositAssetKeysArr)
+}
+
+// GetDepositAssetsInfo is a free data retrieval call binding the contract method 0x37913512.
+//
+// Solidity: function getDepositAssetsInfo(string[] _depositAssetKeysArr) view returns((string,(address,uint256,uint256,bool,bool))[] _depositAssetsInfoArr)
+func (_BillingManager *BillingManagerCallerSession) GetDepositAssetsInfo(_depositAssetKeysArr []string) ([]IBillingManagerDepositAssetInfo, error) {
+	return _BillingManager.Contract.GetDepositAssetsInfo(&_BillingManager.CallOpts, _depositAssetKeysArr)
+}
+
 // GetExecutionWorkflowId is a free data retrieval call binding the contract method 0x4a686e49.
 //
 // Solidity: function getExecutionWorkflowId(uint256 _workflowExecutionId) view returns(uint256)
@@ -281,6 +328,68 @@ func (_BillingManager *BillingManagerCallerSession) GetExistingUsers(_offset *bi
 	return _BillingManager.Contract.GetExistingUsers(&_BillingManager.CallOpts, _offset, _limit)
 }
 
+// GetNetworkRewards is a free data retrieval call binding the contract method 0x5a53669c.
+//
+// Solidity: function getNetworkRewards(string _depositAssetKey) view returns(uint256)
+func (_BillingManager *BillingManagerCaller) GetNetworkRewards(opts *bind.CallOpts, _depositAssetKey string) (*big.Int, error) {
+	var out []interface{}
+	err := _BillingManager.contract.Call(opts, &out, "getNetworkRewards", _depositAssetKey)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// GetNetworkRewards is a free data retrieval call binding the contract method 0x5a53669c.
+//
+// Solidity: function getNetworkRewards(string _depositAssetKey) view returns(uint256)
+func (_BillingManager *BillingManagerSession) GetNetworkRewards(_depositAssetKey string) (*big.Int, error) {
+	return _BillingManager.Contract.GetNetworkRewards(&_BillingManager.CallOpts, _depositAssetKey)
+}
+
+// GetNetworkRewards is a free data retrieval call binding the contract method 0x5a53669c.
+//
+// Solidity: function getNetworkRewards(string _depositAssetKey) view returns(uint256)
+func (_BillingManager *BillingManagerCallerSession) GetNetworkRewards(_depositAssetKey string) (*big.Int, error) {
+	return _BillingManager.Contract.GetNetworkRewards(&_BillingManager.CallOpts, _depositAssetKey)
+}
+
+// GetSupportedDepositAssetKeys is a free data retrieval call binding the contract method 0xa266f963.
+//
+// Solidity: function getSupportedDepositAssetKeys() view returns(string[])
+func (_BillingManager *BillingManagerCaller) GetSupportedDepositAssetKeys(opts *bind.CallOpts) ([]string, error) {
+	var out []interface{}
+	err := _BillingManager.contract.Call(opts, &out, "getSupportedDepositAssetKeys")
+
+	if err != nil {
+		return *new([]string), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]string)).(*[]string)
+
+	return out0, err
+
+}
+
+// GetSupportedDepositAssetKeys is a free data retrieval call binding the contract method 0xa266f963.
+//
+// Solidity: function getSupportedDepositAssetKeys() view returns(string[])
+func (_BillingManager *BillingManagerSession) GetSupportedDepositAssetKeys() ([]string, error) {
+	return _BillingManager.Contract.GetSupportedDepositAssetKeys(&_BillingManager.CallOpts)
+}
+
+// GetSupportedDepositAssetKeys is a free data retrieval call binding the contract method 0xa266f963.
+//
+// Solidity: function getSupportedDepositAssetKeys() view returns(string[])
+func (_BillingManager *BillingManagerCallerSession) GetSupportedDepositAssetKeys() ([]string, error) {
+	return _BillingManager.Contract.GetSupportedDepositAssetKeys(&_BillingManager.CallOpts)
+}
+
 // GetTotalUsersCount is a free data retrieval call binding the contract method 0x0561010c.
 //
 // Solidity: function getTotalUsersCount() view returns(uint256)
@@ -312,12 +421,12 @@ func (_BillingManager *BillingManagerCallerSession) GetTotalUsersCount() (*big.I
 	return _BillingManager.Contract.GetTotalUsersCount(&_BillingManager.CallOpts)
 }
 
-// GetUserAvailableFunds is a free data retrieval call binding the contract method 0xc4cffb76.
+// GetUserAvailableFunds is a free data retrieval call binding the contract method 0x5af6b043.
 //
-// Solidity: function getUserAvailableFunds(address _userAddr) view returns(uint256)
-func (_BillingManager *BillingManagerCaller) GetUserAvailableFunds(opts *bind.CallOpts, _userAddr common.Address) (*big.Int, error) {
+// Solidity: function getUserAvailableFunds(address _userAddr, string _depositAssetKey) view returns(uint256)
+func (_BillingManager *BillingManagerCaller) GetUserAvailableFunds(opts *bind.CallOpts, _userAddr common.Address, _depositAssetKey string) (*big.Int, error) {
 	var out []interface{}
-	err := _BillingManager.contract.Call(opts, &out, "getUserAvailableFunds", _userAddr)
+	err := _BillingManager.contract.Call(opts, &out, "getUserAvailableFunds", _userAddr, _depositAssetKey)
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -329,85 +438,116 @@ func (_BillingManager *BillingManagerCaller) GetUserAvailableFunds(opts *bind.Ca
 
 }
 
-// GetUserAvailableFunds is a free data retrieval call binding the contract method 0xc4cffb76.
+// GetUserAvailableFunds is a free data retrieval call binding the contract method 0x5af6b043.
 //
-// Solidity: function getUserAvailableFunds(address _userAddr) view returns(uint256)
-func (_BillingManager *BillingManagerSession) GetUserAvailableFunds(_userAddr common.Address) (*big.Int, error) {
-	return _BillingManager.Contract.GetUserAvailableFunds(&_BillingManager.CallOpts, _userAddr)
+// Solidity: function getUserAvailableFunds(address _userAddr, string _depositAssetKey) view returns(uint256)
+func (_BillingManager *BillingManagerSession) GetUserAvailableFunds(_userAddr common.Address, _depositAssetKey string) (*big.Int, error) {
+	return _BillingManager.Contract.GetUserAvailableFunds(&_BillingManager.CallOpts, _userAddr, _depositAssetKey)
 }
 
-// GetUserAvailableFunds is a free data retrieval call binding the contract method 0xc4cffb76.
+// GetUserAvailableFunds is a free data retrieval call binding the contract method 0x5af6b043.
 //
-// Solidity: function getUserAvailableFunds(address _userAddr) view returns(uint256)
-func (_BillingManager *BillingManagerCallerSession) GetUserAvailableFunds(_userAddr common.Address) (*big.Int, error) {
-	return _BillingManager.Contract.GetUserAvailableFunds(&_BillingManager.CallOpts, _userAddr)
+// Solidity: function getUserAvailableFunds(address _userAddr, string _depositAssetKey) view returns(uint256)
+func (_BillingManager *BillingManagerCallerSession) GetUserAvailableFunds(_userAddr common.Address, _depositAssetKey string) (*big.Int, error) {
+	return _BillingManager.Contract.GetUserAvailableFunds(&_BillingManager.CallOpts, _userAddr, _depositAssetKey)
 }
 
-// GetUserFundsInfo is a free data retrieval call binding the contract method 0x6b091226.
+// GetUserDepositAssetKeys is a free data retrieval call binding the contract method 0xa19ddf5b.
 //
-// Solidity: function getUserFundsInfo(address _userAddr) view returns((address,uint256,uint256,uint256[]))
-func (_BillingManager *BillingManagerCaller) GetUserFundsInfo(opts *bind.CallOpts, _userAddr common.Address) (IBillingManagerUserFundsInfo, error) {
+// Solidity: function getUserDepositAssetKeys(address _userAddr) view returns(string[])
+func (_BillingManager *BillingManagerCaller) GetUserDepositAssetKeys(opts *bind.CallOpts, _userAddr common.Address) ([]string, error) {
 	var out []interface{}
-	err := _BillingManager.contract.Call(opts, &out, "getUserFundsInfo", _userAddr)
+	err := _BillingManager.contract.Call(opts, &out, "getUserDepositAssetKeys", _userAddr)
 
 	if err != nil {
-		return *new(IBillingManagerUserFundsInfo), err
+		return *new([]string), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(IBillingManagerUserFundsInfo)).(*IBillingManagerUserFundsInfo)
+	out0 := *abi.ConvertType(out[0], new([]string)).(*[]string)
 
 	return out0, err
 
 }
 
-// GetUserFundsInfo is a free data retrieval call binding the contract method 0x6b091226.
+// GetUserDepositAssetKeys is a free data retrieval call binding the contract method 0xa19ddf5b.
 //
-// Solidity: function getUserFundsInfo(address _userAddr) view returns((address,uint256,uint256,uint256[]))
-func (_BillingManager *BillingManagerSession) GetUserFundsInfo(_userAddr common.Address) (IBillingManagerUserFundsInfo, error) {
-	return _BillingManager.Contract.GetUserFundsInfo(&_BillingManager.CallOpts, _userAddr)
+// Solidity: function getUserDepositAssetKeys(address _userAddr) view returns(string[])
+func (_BillingManager *BillingManagerSession) GetUserDepositAssetKeys(_userAddr common.Address) ([]string, error) {
+	return _BillingManager.Contract.GetUserDepositAssetKeys(&_BillingManager.CallOpts, _userAddr)
 }
 
-// GetUserFundsInfo is a free data retrieval call binding the contract method 0x6b091226.
+// GetUserDepositAssetKeys is a free data retrieval call binding the contract method 0xa19ddf5b.
 //
-// Solidity: function getUserFundsInfo(address _userAddr) view returns((address,uint256,uint256,uint256[]))
-func (_BillingManager *BillingManagerCallerSession) GetUserFundsInfo(_userAddr common.Address) (IBillingManagerUserFundsInfo, error) {
-	return _BillingManager.Contract.GetUserFundsInfo(&_BillingManager.CallOpts, _userAddr)
+// Solidity: function getUserDepositAssetKeys(address _userAddr) view returns(string[])
+func (_BillingManager *BillingManagerCallerSession) GetUserDepositAssetKeys(_userAddr common.Address) ([]string, error) {
+	return _BillingManager.Contract.GetUserDepositAssetKeys(&_BillingManager.CallOpts, _userAddr)
 }
 
-// GetUsersFundsInfo is a free data retrieval call binding the contract method 0x2cdf71a7.
+// GetUserDepositInfo is a free data retrieval call binding the contract method 0xf3883e26.
 //
-// Solidity: function getUsersFundsInfo(uint256 _offset, uint256 _limit) view returns((address,uint256,uint256,uint256[])[] _usersInfoArr)
-func (_BillingManager *BillingManagerCaller) GetUsersFundsInfo(opts *bind.CallOpts, _offset *big.Int, _limit *big.Int) ([]IBillingManagerUserFundsInfo, error) {
+// Solidity: function getUserDepositInfo(address _userAddr, string _depositAssetKey) view returns((address,uint256,uint256,uint256[]))
+func (_BillingManager *BillingManagerCaller) GetUserDepositInfo(opts *bind.CallOpts, _userAddr common.Address, _depositAssetKey string) (IBillingManagerUserDepositInfo, error) {
 	var out []interface{}
-	err := _BillingManager.contract.Call(opts, &out, "getUsersFundsInfo", _offset, _limit)
+	err := _BillingManager.contract.Call(opts, &out, "getUserDepositInfo", _userAddr, _depositAssetKey)
 
 	if err != nil {
-		return *new([]IBillingManagerUserFundsInfo), err
+		return *new(IBillingManagerUserDepositInfo), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new([]IBillingManagerUserFundsInfo)).(*[]IBillingManagerUserFundsInfo)
+	out0 := *abi.ConvertType(out[0], new(IBillingManagerUserDepositInfo)).(*IBillingManagerUserDepositInfo)
 
 	return out0, err
 
 }
 
-// GetUsersFundsInfo is a free data retrieval call binding the contract method 0x2cdf71a7.
+// GetUserDepositInfo is a free data retrieval call binding the contract method 0xf3883e26.
 //
-// Solidity: function getUsersFundsInfo(uint256 _offset, uint256 _limit) view returns((address,uint256,uint256,uint256[])[] _usersInfoArr)
-func (_BillingManager *BillingManagerSession) GetUsersFundsInfo(_offset *big.Int, _limit *big.Int) ([]IBillingManagerUserFundsInfo, error) {
-	return _BillingManager.Contract.GetUsersFundsInfo(&_BillingManager.CallOpts, _offset, _limit)
+// Solidity: function getUserDepositInfo(address _userAddr, string _depositAssetKey) view returns((address,uint256,uint256,uint256[]))
+func (_BillingManager *BillingManagerSession) GetUserDepositInfo(_userAddr common.Address, _depositAssetKey string) (IBillingManagerUserDepositInfo, error) {
+	return _BillingManager.Contract.GetUserDepositInfo(&_BillingManager.CallOpts, _userAddr, _depositAssetKey)
 }
 
-// GetUsersFundsInfo is a free data retrieval call binding the contract method 0x2cdf71a7.
+// GetUserDepositInfo is a free data retrieval call binding the contract method 0xf3883e26.
 //
-// Solidity: function getUsersFundsInfo(uint256 _offset, uint256 _limit) view returns((address,uint256,uint256,uint256[])[] _usersInfoArr)
-func (_BillingManager *BillingManagerCallerSession) GetUsersFundsInfo(_offset *big.Int, _limit *big.Int) ([]IBillingManagerUserFundsInfo, error) {
-	return _BillingManager.Contract.GetUsersFundsInfo(&_BillingManager.CallOpts, _offset, _limit)
+// Solidity: function getUserDepositInfo(address _userAddr, string _depositAssetKey) view returns((address,uint256,uint256,uint256[]))
+func (_BillingManager *BillingManagerCallerSession) GetUserDepositInfo(_userAddr common.Address, _depositAssetKey string) (IBillingManagerUserDepositInfo, error) {
+	return _BillingManager.Contract.GetUserDepositInfo(&_BillingManager.CallOpts, _userAddr, _depositAssetKey)
+}
+
+// GetUsersDepositInfo is a free data retrieval call binding the contract method 0x7d7f8384.
+//
+// Solidity: function getUsersDepositInfo(string _depositAssetKey, uint256 _offset, uint256 _limit) view returns((address,uint256,uint256,uint256[])[] _usersInfoArr)
+func (_BillingManager *BillingManagerCaller) GetUsersDepositInfo(opts *bind.CallOpts, _depositAssetKey string, _offset *big.Int, _limit *big.Int) ([]IBillingManagerUserDepositInfo, error) {
+	var out []interface{}
+	err := _BillingManager.contract.Call(opts, &out, "getUsersDepositInfo", _depositAssetKey, _offset, _limit)
+
+	if err != nil {
+		return *new([]IBillingManagerUserDepositInfo), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]IBillingManagerUserDepositInfo)).(*[]IBillingManagerUserDepositInfo)
+
+	return out0, err
+
+}
+
+// GetUsersDepositInfo is a free data retrieval call binding the contract method 0x7d7f8384.
+//
+// Solidity: function getUsersDepositInfo(string _depositAssetKey, uint256 _offset, uint256 _limit) view returns((address,uint256,uint256,uint256[])[] _usersInfoArr)
+func (_BillingManager *BillingManagerSession) GetUsersDepositInfo(_depositAssetKey string, _offset *big.Int, _limit *big.Int) ([]IBillingManagerUserDepositInfo, error) {
+	return _BillingManager.Contract.GetUsersDepositInfo(&_BillingManager.CallOpts, _depositAssetKey, _offset, _limit)
+}
+
+// GetUsersDepositInfo is a free data retrieval call binding the contract method 0x7d7f8384.
+//
+// Solidity: function getUsersDepositInfo(string _depositAssetKey, uint256 _offset, uint256 _limit) view returns((address,uint256,uint256,uint256[])[] _usersInfoArr)
+func (_BillingManager *BillingManagerCallerSession) GetUsersDepositInfo(_depositAssetKey string, _offset *big.Int, _limit *big.Int) ([]IBillingManagerUserDepositInfo, error) {
+	return _BillingManager.Contract.GetUsersDepositInfo(&_BillingManager.CallOpts, _depositAssetKey, _offset, _limit)
 }
 
 // GetWorkflowExecutionInfo is a free data retrieval call binding the contract method 0xef4f272d.
 //
-// Solidity: function getWorkflowExecutionInfo(uint256 _workflowExecutionId) view returns((uint256,uint256,uint256,address,uint8))
+// Solidity: function getWorkflowExecutionInfo(uint256 _workflowExecutionId) view returns((string,uint256,uint256,uint256,address,uint8))
 func (_BillingManager *BillingManagerCaller) GetWorkflowExecutionInfo(opts *bind.CallOpts, _workflowExecutionId *big.Int) (IBillingManagerWorkflowExecutionInfo, error) {
 	var out []interface{}
 	err := _BillingManager.contract.Call(opts, &out, "getWorkflowExecutionInfo", _workflowExecutionId)
@@ -424,14 +564,14 @@ func (_BillingManager *BillingManagerCaller) GetWorkflowExecutionInfo(opts *bind
 
 // GetWorkflowExecutionInfo is a free data retrieval call binding the contract method 0xef4f272d.
 //
-// Solidity: function getWorkflowExecutionInfo(uint256 _workflowExecutionId) view returns((uint256,uint256,uint256,address,uint8))
+// Solidity: function getWorkflowExecutionInfo(uint256 _workflowExecutionId) view returns((string,uint256,uint256,uint256,address,uint8))
 func (_BillingManager *BillingManagerSession) GetWorkflowExecutionInfo(_workflowExecutionId *big.Int) (IBillingManagerWorkflowExecutionInfo, error) {
 	return _BillingManager.Contract.GetWorkflowExecutionInfo(&_BillingManager.CallOpts, _workflowExecutionId)
 }
 
 // GetWorkflowExecutionInfo is a free data retrieval call binding the contract method 0xef4f272d.
 //
-// Solidity: function getWorkflowExecutionInfo(uint256 _workflowExecutionId) view returns((uint256,uint256,uint256,address,uint8))
+// Solidity: function getWorkflowExecutionInfo(uint256 _workflowExecutionId) view returns((string,uint256,uint256,uint256,address,uint8))
 func (_BillingManager *BillingManagerCallerSession) GetWorkflowExecutionInfo(_workflowExecutionId *big.Int) (IBillingManagerWorkflowExecutionInfo, error) {
 	return _BillingManager.Contract.GetWorkflowExecutionInfo(&_BillingManager.CallOpts, _workflowExecutionId)
 }
@@ -498,35 +638,159 @@ func (_BillingManager *BillingManagerCallerSession) GetWorkflowExecutionStatus(_
 	return _BillingManager.Contract.GetWorkflowExecutionStatus(&_BillingManager.CallOpts, _workflowExecutionId)
 }
 
-// NetworkRewards is a free data retrieval call binding the contract method 0x6b5d4206.
+// IsDepositAssetEnabled is a free data retrieval call binding the contract method 0x2b888682.
 //
-// Solidity: function networkRewards() view returns(uint256)
-func (_BillingManager *BillingManagerCaller) NetworkRewards(opts *bind.CallOpts) (*big.Int, error) {
+// Solidity: function isDepositAssetEnabled(string _depositAssetKey) view returns(bool)
+func (_BillingManager *BillingManagerCaller) IsDepositAssetEnabled(opts *bind.CallOpts, _depositAssetKey string) (bool, error) {
 	var out []interface{}
-	err := _BillingManager.contract.Call(opts, &out, "networkRewards")
+	err := _BillingManager.contract.Call(opts, &out, "isDepositAssetEnabled", _depositAssetKey)
 
 	if err != nil {
-		return *new(*big.Int), err
+		return *new(bool), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
 
 	return out0, err
 
 }
 
-// NetworkRewards is a free data retrieval call binding the contract method 0x6b5d4206.
+// IsDepositAssetEnabled is a free data retrieval call binding the contract method 0x2b888682.
 //
-// Solidity: function networkRewards() view returns(uint256)
-func (_BillingManager *BillingManagerSession) NetworkRewards() (*big.Int, error) {
-	return _BillingManager.Contract.NetworkRewards(&_BillingManager.CallOpts)
+// Solidity: function isDepositAssetEnabled(string _depositAssetKey) view returns(bool)
+func (_BillingManager *BillingManagerSession) IsDepositAssetEnabled(_depositAssetKey string) (bool, error) {
+	return _BillingManager.Contract.IsDepositAssetEnabled(&_BillingManager.CallOpts, _depositAssetKey)
 }
 
-// NetworkRewards is a free data retrieval call binding the contract method 0x6b5d4206.
+// IsDepositAssetEnabled is a free data retrieval call binding the contract method 0x2b888682.
 //
-// Solidity: function networkRewards() view returns(uint256)
-func (_BillingManager *BillingManagerCallerSession) NetworkRewards() (*big.Int, error) {
-	return _BillingManager.Contract.NetworkRewards(&_BillingManager.CallOpts)
+// Solidity: function isDepositAssetEnabled(string _depositAssetKey) view returns(bool)
+func (_BillingManager *BillingManagerCallerSession) IsDepositAssetEnabled(_depositAssetKey string) (bool, error) {
+	return _BillingManager.Contract.IsDepositAssetEnabled(&_BillingManager.CallOpts, _depositAssetKey)
+}
+
+// IsDepositAssetPermitable is a free data retrieval call binding the contract method 0xc4710204.
+//
+// Solidity: function isDepositAssetPermitable(string _depositAssetKey) view returns(bool)
+func (_BillingManager *BillingManagerCaller) IsDepositAssetPermitable(opts *bind.CallOpts, _depositAssetKey string) (bool, error) {
+	var out []interface{}
+	err := _BillingManager.contract.Call(opts, &out, "isDepositAssetPermitable", _depositAssetKey)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// IsDepositAssetPermitable is a free data retrieval call binding the contract method 0xc4710204.
+//
+// Solidity: function isDepositAssetPermitable(string _depositAssetKey) view returns(bool)
+func (_BillingManager *BillingManagerSession) IsDepositAssetPermitable(_depositAssetKey string) (bool, error) {
+	return _BillingManager.Contract.IsDepositAssetPermitable(&_BillingManager.CallOpts, _depositAssetKey)
+}
+
+// IsDepositAssetPermitable is a free data retrieval call binding the contract method 0xc4710204.
+//
+// Solidity: function isDepositAssetPermitable(string _depositAssetKey) view returns(bool)
+func (_BillingManager *BillingManagerCallerSession) IsDepositAssetPermitable(_depositAssetKey string) (bool, error) {
+	return _BillingManager.Contract.IsDepositAssetPermitable(&_BillingManager.CallOpts, _depositAssetKey)
+}
+
+// IsDepositAssetSupported is a free data retrieval call binding the contract method 0x606a679f.
+//
+// Solidity: function isDepositAssetSupported(string _depositAssetKey) view returns(bool)
+func (_BillingManager *BillingManagerCaller) IsDepositAssetSupported(opts *bind.CallOpts, _depositAssetKey string) (bool, error) {
+	var out []interface{}
+	err := _BillingManager.contract.Call(opts, &out, "isDepositAssetSupported", _depositAssetKey)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// IsDepositAssetSupported is a free data retrieval call binding the contract method 0x606a679f.
+//
+// Solidity: function isDepositAssetSupported(string _depositAssetKey) view returns(bool)
+func (_BillingManager *BillingManagerSession) IsDepositAssetSupported(_depositAssetKey string) (bool, error) {
+	return _BillingManager.Contract.IsDepositAssetSupported(&_BillingManager.CallOpts, _depositAssetKey)
+}
+
+// IsDepositAssetSupported is a free data retrieval call binding the contract method 0x606a679f.
+//
+// Solidity: function isDepositAssetSupported(string _depositAssetKey) view returns(bool)
+func (_BillingManager *BillingManagerCallerSession) IsDepositAssetSupported(_depositAssetKey string) (bool, error) {
+	return _BillingManager.Contract.IsDepositAssetSupported(&_BillingManager.CallOpts, _depositAssetKey)
+}
+
+// IsNativeDepositAsset is a free data retrieval call binding the contract method 0xafb3f30a.
+//
+// Solidity: function isNativeDepositAsset(string _depositAssetKey) view returns(bool)
+func (_BillingManager *BillingManagerCaller) IsNativeDepositAsset(opts *bind.CallOpts, _depositAssetKey string) (bool, error) {
+	var out []interface{}
+	err := _BillingManager.contract.Call(opts, &out, "isNativeDepositAsset", _depositAssetKey)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// IsNativeDepositAsset is a free data retrieval call binding the contract method 0xafb3f30a.
+//
+// Solidity: function isNativeDepositAsset(string _depositAssetKey) view returns(bool)
+func (_BillingManager *BillingManagerSession) IsNativeDepositAsset(_depositAssetKey string) (bool, error) {
+	return _BillingManager.Contract.IsNativeDepositAsset(&_BillingManager.CallOpts, _depositAssetKey)
+}
+
+// IsNativeDepositAsset is a free data retrieval call binding the contract method 0xafb3f30a.
+//
+// Solidity: function isNativeDepositAsset(string _depositAssetKey) view returns(bool)
+func (_BillingManager *BillingManagerCallerSession) IsNativeDepositAsset(_depositAssetKey string) (bool, error) {
+	return _BillingManager.Contract.IsNativeDepositAsset(&_BillingManager.CallOpts, _depositAssetKey)
+}
+
+// NativeDepositAssetKey is a free data retrieval call binding the contract method 0x33c25326.
+//
+// Solidity: function nativeDepositAssetKey() view returns(string)
+func (_BillingManager *BillingManagerCaller) NativeDepositAssetKey(opts *bind.CallOpts) (string, error) {
+	var out []interface{}
+	err := _BillingManager.contract.Call(opts, &out, "nativeDepositAssetKey")
+
+	if err != nil {
+		return *new(string), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(string)).(*string)
+
+	return out0, err
+
+}
+
+// NativeDepositAssetKey is a free data retrieval call binding the contract method 0x33c25326.
+//
+// Solidity: function nativeDepositAssetKey() view returns(string)
+func (_BillingManager *BillingManagerSession) NativeDepositAssetKey() (string, error) {
+	return _BillingManager.Contract.NativeDepositAssetKey(&_BillingManager.CallOpts)
+}
+
+// NativeDepositAssetKey is a free data retrieval call binding the contract method 0x33c25326.
+//
+// Solidity: function nativeDepositAssetKey() view returns(string)
+func (_BillingManager *BillingManagerCallerSession) NativeDepositAssetKey() (string, error) {
+	return _BillingManager.Contract.NativeDepositAssetKey(&_BillingManager.CallOpts)
 }
 
 // NextWorkflowExecutionId is a free data retrieval call binding the contract method 0x24293941.
@@ -653,6 +917,27 @@ func (_BillingManager *BillingManagerCallerSession) SignerGetter() (common.Addre
 	return _BillingManager.Contract.SignerGetter(&_BillingManager.CallOpts)
 }
 
+// AddDepositAssets is a paid mutator transaction binding the contract method 0x7c1c6fba.
+//
+// Solidity: function addDepositAssets((string,(address,uint256,uint256,bool,bool))[] _depositAssetInfoArr) returns()
+func (_BillingManager *BillingManagerTransactor) AddDepositAssets(opts *bind.TransactOpts, _depositAssetInfoArr []IBillingManagerDepositAssetInfo) (*types.Transaction, error) {
+	return _BillingManager.contract.Transact(opts, "addDepositAssets", _depositAssetInfoArr)
+}
+
+// AddDepositAssets is a paid mutator transaction binding the contract method 0x7c1c6fba.
+//
+// Solidity: function addDepositAssets((string,(address,uint256,uint256,bool,bool))[] _depositAssetInfoArr) returns()
+func (_BillingManager *BillingManagerSession) AddDepositAssets(_depositAssetInfoArr []IBillingManagerDepositAssetInfo) (*types.Transaction, error) {
+	return _BillingManager.Contract.AddDepositAssets(&_BillingManager.TransactOpts, _depositAssetInfoArr)
+}
+
+// AddDepositAssets is a paid mutator transaction binding the contract method 0x7c1c6fba.
+//
+// Solidity: function addDepositAssets((string,(address,uint256,uint256,bool,bool))[] _depositAssetInfoArr) returns()
+func (_BillingManager *BillingManagerTransactorSession) AddDepositAssets(_depositAssetInfoArr []IBillingManagerDepositAssetInfo) (*types.Transaction, error) {
+	return _BillingManager.Contract.AddDepositAssets(&_BillingManager.TransactOpts, _depositAssetInfoArr)
+}
+
 // CompleteExecution is a paid mutator transaction binding the contract method 0x80017563.
 //
 // Solidity: function completeExecution(uint256 _workflowExecutionId, uint256 _executionAmount) returns()
@@ -674,88 +959,130 @@ func (_BillingManager *BillingManagerTransactorSession) CompleteExecution(_workf
 	return _BillingManager.Contract.CompleteExecution(&_BillingManager.TransactOpts, _workflowExecutionId, _executionAmount)
 }
 
-// FundBalance is a paid mutator transaction binding the contract method 0x0ad5a865.
+// Deposit is a paid mutator transaction binding the contract method 0x2a48ac9a.
 //
-// Solidity: function fundBalance(address _recipientAddr) payable returns()
-func (_BillingManager *BillingManagerTransactor) FundBalance(opts *bind.TransactOpts, _recipientAddr common.Address) (*types.Transaction, error) {
-	return _BillingManager.contract.Transact(opts, "fundBalance", _recipientAddr)
+// Solidity: function deposit(string _depositAssetKey, address _recipientAddr, uint256 _depositAmount) payable returns()
+func (_BillingManager *BillingManagerTransactor) Deposit(opts *bind.TransactOpts, _depositAssetKey string, _recipientAddr common.Address, _depositAmount *big.Int) (*types.Transaction, error) {
+	return _BillingManager.contract.Transact(opts, "deposit", _depositAssetKey, _recipientAddr, _depositAmount)
 }
 
-// FundBalance is a paid mutator transaction binding the contract method 0x0ad5a865.
+// Deposit is a paid mutator transaction binding the contract method 0x2a48ac9a.
 //
-// Solidity: function fundBalance(address _recipientAddr) payable returns()
-func (_BillingManager *BillingManagerSession) FundBalance(_recipientAddr common.Address) (*types.Transaction, error) {
-	return _BillingManager.Contract.FundBalance(&_BillingManager.TransactOpts, _recipientAddr)
+// Solidity: function deposit(string _depositAssetKey, address _recipientAddr, uint256 _depositAmount) payable returns()
+func (_BillingManager *BillingManagerSession) Deposit(_depositAssetKey string, _recipientAddr common.Address, _depositAmount *big.Int) (*types.Transaction, error) {
+	return _BillingManager.Contract.Deposit(&_BillingManager.TransactOpts, _depositAssetKey, _recipientAddr, _depositAmount)
 }
 
-// FundBalance is a paid mutator transaction binding the contract method 0x0ad5a865.
+// Deposit is a paid mutator transaction binding the contract method 0x2a48ac9a.
 //
-// Solidity: function fundBalance(address _recipientAddr) payable returns()
-func (_BillingManager *BillingManagerTransactorSession) FundBalance(_recipientAddr common.Address) (*types.Transaction, error) {
-	return _BillingManager.Contract.FundBalance(&_BillingManager.TransactOpts, _recipientAddr)
+// Solidity: function deposit(string _depositAssetKey, address _recipientAddr, uint256 _depositAmount) payable returns()
+func (_BillingManager *BillingManagerTransactorSession) Deposit(_depositAssetKey string, _recipientAddr common.Address, _depositAmount *big.Int) (*types.Transaction, error) {
+	return _BillingManager.Contract.Deposit(&_BillingManager.TransactOpts, _depositAssetKey, _recipientAddr, _depositAmount)
 }
 
-// FundBalance0 is a paid mutator transaction binding the contract method 0x3c067945.
+// DepositWithPermit is a paid mutator transaction binding the contract method 0x3666cec5.
 //
-// Solidity: function fundBalance() payable returns()
-func (_BillingManager *BillingManagerTransactor) FundBalance0(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _BillingManager.contract.Transact(opts, "fundBalance0")
+// Solidity: function depositWithPermit(string _depositAssetKey, address _recipientAddr, uint256 _depositAmount, uint256 _sigExpirationTime, uint8 _v, bytes32 _r, bytes32 _s) returns()
+func (_BillingManager *BillingManagerTransactor) DepositWithPermit(opts *bind.TransactOpts, _depositAssetKey string, _recipientAddr common.Address, _depositAmount *big.Int, _sigExpirationTime *big.Int, _v uint8, _r [32]byte, _s [32]byte) (*types.Transaction, error) {
+	return _BillingManager.contract.Transact(opts, "depositWithPermit", _depositAssetKey, _recipientAddr, _depositAmount, _sigExpirationTime, _v, _r, _s)
 }
 
-// FundBalance0 is a paid mutator transaction binding the contract method 0x3c067945.
+// DepositWithPermit is a paid mutator transaction binding the contract method 0x3666cec5.
 //
-// Solidity: function fundBalance() payable returns()
-func (_BillingManager *BillingManagerSession) FundBalance0() (*types.Transaction, error) {
-	return _BillingManager.Contract.FundBalance0(&_BillingManager.TransactOpts)
+// Solidity: function depositWithPermit(string _depositAssetKey, address _recipientAddr, uint256 _depositAmount, uint256 _sigExpirationTime, uint8 _v, bytes32 _r, bytes32 _s) returns()
+func (_BillingManager *BillingManagerSession) DepositWithPermit(_depositAssetKey string, _recipientAddr common.Address, _depositAmount *big.Int, _sigExpirationTime *big.Int, _v uint8, _r [32]byte, _s [32]byte) (*types.Transaction, error) {
+	return _BillingManager.Contract.DepositWithPermit(&_BillingManager.TransactOpts, _depositAssetKey, _recipientAddr, _depositAmount, _sigExpirationTime, _v, _r, _s)
 }
 
-// FundBalance0 is a paid mutator transaction binding the contract method 0x3c067945.
+// DepositWithPermit is a paid mutator transaction binding the contract method 0x3666cec5.
 //
-// Solidity: function fundBalance() payable returns()
-func (_BillingManager *BillingManagerTransactorSession) FundBalance0() (*types.Transaction, error) {
-	return _BillingManager.Contract.FundBalance0(&_BillingManager.TransactOpts)
+// Solidity: function depositWithPermit(string _depositAssetKey, address _recipientAddr, uint256 _depositAmount, uint256 _sigExpirationTime, uint8 _v, bytes32 _r, bytes32 _s) returns()
+func (_BillingManager *BillingManagerTransactorSession) DepositWithPermit(_depositAssetKey string, _recipientAddr common.Address, _depositAmount *big.Int, _sigExpirationTime *big.Int, _v uint8, _r [32]byte, _s [32]byte) (*types.Transaction, error) {
+	return _BillingManager.Contract.DepositWithPermit(&_BillingManager.TransactOpts, _depositAssetKey, _recipientAddr, _depositAmount, _sigExpirationTime, _v, _r, _s)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0x485cc955.
+// Initialize is a paid mutator transaction binding the contract method 0x55cbf5a5.
 //
-// Solidity: function initialize(address _registryAddr, address _signerGetterAddress) returns()
-func (_BillingManager *BillingManagerTransactor) Initialize(opts *bind.TransactOpts, _registryAddr common.Address, _signerGetterAddress common.Address) (*types.Transaction, error) {
-	return _BillingManager.contract.Transact(opts, "initialize", _registryAddr, _signerGetterAddress)
+// Solidity: function initialize(address _registryAddr, address _signerGetterAddress, (string,(address,uint256,uint256,bool,bool)) _nativeDepositAssetInfo) returns()
+func (_BillingManager *BillingManagerTransactor) Initialize(opts *bind.TransactOpts, _registryAddr common.Address, _signerGetterAddress common.Address, _nativeDepositAssetInfo IBillingManagerDepositAssetInfo) (*types.Transaction, error) {
+	return _BillingManager.contract.Transact(opts, "initialize", _registryAddr, _signerGetterAddress, _nativeDepositAssetInfo)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0x485cc955.
+// Initialize is a paid mutator transaction binding the contract method 0x55cbf5a5.
 //
-// Solidity: function initialize(address _registryAddr, address _signerGetterAddress) returns()
-func (_BillingManager *BillingManagerSession) Initialize(_registryAddr common.Address, _signerGetterAddress common.Address) (*types.Transaction, error) {
-	return _BillingManager.Contract.Initialize(&_BillingManager.TransactOpts, _registryAddr, _signerGetterAddress)
+// Solidity: function initialize(address _registryAddr, address _signerGetterAddress, (string,(address,uint256,uint256,bool,bool)) _nativeDepositAssetInfo) returns()
+func (_BillingManager *BillingManagerSession) Initialize(_registryAddr common.Address, _signerGetterAddress common.Address, _nativeDepositAssetInfo IBillingManagerDepositAssetInfo) (*types.Transaction, error) {
+	return _BillingManager.Contract.Initialize(&_BillingManager.TransactOpts, _registryAddr, _signerGetterAddress, _nativeDepositAssetInfo)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0x485cc955.
+// Initialize is a paid mutator transaction binding the contract method 0x55cbf5a5.
 //
-// Solidity: function initialize(address _registryAddr, address _signerGetterAddress) returns()
-func (_BillingManager *BillingManagerTransactorSession) Initialize(_registryAddr common.Address, _signerGetterAddress common.Address) (*types.Transaction, error) {
-	return _BillingManager.Contract.Initialize(&_BillingManager.TransactOpts, _registryAddr, _signerGetterAddress)
+// Solidity: function initialize(address _registryAddr, address _signerGetterAddress, (string,(address,uint256,uint256,bool,bool)) _nativeDepositAssetInfo) returns()
+func (_BillingManager *BillingManagerTransactorSession) Initialize(_registryAddr common.Address, _signerGetterAddress common.Address, _nativeDepositAssetInfo IBillingManagerDepositAssetInfo) (*types.Transaction, error) {
+	return _BillingManager.Contract.Initialize(&_BillingManager.TransactOpts, _registryAddr, _signerGetterAddress, _nativeDepositAssetInfo)
 }
 
-// LockExecutionFunds is a paid mutator transaction binding the contract method 0xf6586812.
+// LockExecutionFunds is a paid mutator transaction binding the contract method 0x5ec26c46.
 //
-// Solidity: function lockExecutionFunds(uint256 _workflowId, uint256 _executionLockedAmount) returns()
-func (_BillingManager *BillingManagerTransactor) LockExecutionFunds(opts *bind.TransactOpts, _workflowId *big.Int, _executionLockedAmount *big.Int) (*types.Transaction, error) {
-	return _BillingManager.contract.Transact(opts, "lockExecutionFunds", _workflowId, _executionLockedAmount)
+// Solidity: function lockExecutionFunds(string _depositAssetKey, uint256 _workflowId, uint256 _executionLockedAmount) returns()
+func (_BillingManager *BillingManagerTransactor) LockExecutionFunds(opts *bind.TransactOpts, _depositAssetKey string, _workflowId *big.Int, _executionLockedAmount *big.Int) (*types.Transaction, error) {
+	return _BillingManager.contract.Transact(opts, "lockExecutionFunds", _depositAssetKey, _workflowId, _executionLockedAmount)
 }
 
-// LockExecutionFunds is a paid mutator transaction binding the contract method 0xf6586812.
+// LockExecutionFunds is a paid mutator transaction binding the contract method 0x5ec26c46.
 //
-// Solidity: function lockExecutionFunds(uint256 _workflowId, uint256 _executionLockedAmount) returns()
-func (_BillingManager *BillingManagerSession) LockExecutionFunds(_workflowId *big.Int, _executionLockedAmount *big.Int) (*types.Transaction, error) {
-	return _BillingManager.Contract.LockExecutionFunds(&_BillingManager.TransactOpts, _workflowId, _executionLockedAmount)
+// Solidity: function lockExecutionFunds(string _depositAssetKey, uint256 _workflowId, uint256 _executionLockedAmount) returns()
+func (_BillingManager *BillingManagerSession) LockExecutionFunds(_depositAssetKey string, _workflowId *big.Int, _executionLockedAmount *big.Int) (*types.Transaction, error) {
+	return _BillingManager.Contract.LockExecutionFunds(&_BillingManager.TransactOpts, _depositAssetKey, _workflowId, _executionLockedAmount)
 }
 
-// LockExecutionFunds is a paid mutator transaction binding the contract method 0xf6586812.
+// LockExecutionFunds is a paid mutator transaction binding the contract method 0x5ec26c46.
 //
-// Solidity: function lockExecutionFunds(uint256 _workflowId, uint256 _executionLockedAmount) returns()
-func (_BillingManager *BillingManagerTransactorSession) LockExecutionFunds(_workflowId *big.Int, _executionLockedAmount *big.Int) (*types.Transaction, error) {
-	return _BillingManager.Contract.LockExecutionFunds(&_BillingManager.TransactOpts, _workflowId, _executionLockedAmount)
+// Solidity: function lockExecutionFunds(string _depositAssetKey, uint256 _workflowId, uint256 _executionLockedAmount) returns()
+func (_BillingManager *BillingManagerTransactorSession) LockExecutionFunds(_depositAssetKey string, _workflowId *big.Int, _executionLockedAmount *big.Int) (*types.Transaction, error) {
+	return _BillingManager.Contract.LockExecutionFunds(&_BillingManager.TransactOpts, _depositAssetKey, _workflowId, _executionLockedAmount)
+}
+
+// UpdateDepositAssetEnabledStatus is a paid mutator transaction binding the contract method 0xc172bfd7.
+//
+// Solidity: function updateDepositAssetEnabledStatus(string _depositAssetKey, bool _newEnabledStatus) returns()
+func (_BillingManager *BillingManagerTransactor) UpdateDepositAssetEnabledStatus(opts *bind.TransactOpts, _depositAssetKey string, _newEnabledStatus bool) (*types.Transaction, error) {
+	return _BillingManager.contract.Transact(opts, "updateDepositAssetEnabledStatus", _depositAssetKey, _newEnabledStatus)
+}
+
+// UpdateDepositAssetEnabledStatus is a paid mutator transaction binding the contract method 0xc172bfd7.
+//
+// Solidity: function updateDepositAssetEnabledStatus(string _depositAssetKey, bool _newEnabledStatus) returns()
+func (_BillingManager *BillingManagerSession) UpdateDepositAssetEnabledStatus(_depositAssetKey string, _newEnabledStatus bool) (*types.Transaction, error) {
+	return _BillingManager.Contract.UpdateDepositAssetEnabledStatus(&_BillingManager.TransactOpts, _depositAssetKey, _newEnabledStatus)
+}
+
+// UpdateDepositAssetEnabledStatus is a paid mutator transaction binding the contract method 0xc172bfd7.
+//
+// Solidity: function updateDepositAssetEnabledStatus(string _depositAssetKey, bool _newEnabledStatus) returns()
+func (_BillingManager *BillingManagerTransactorSession) UpdateDepositAssetEnabledStatus(_depositAssetKey string, _newEnabledStatus bool) (*types.Transaction, error) {
+	return _BillingManager.Contract.UpdateDepositAssetEnabledStatus(&_BillingManager.TransactOpts, _depositAssetKey, _newEnabledStatus)
+}
+
+// UpdateWorkflowExecutionDiscount is a paid mutator transaction binding the contract method 0xc66ae1e8.
+//
+// Solidity: function updateWorkflowExecutionDiscount(string _depositAssetKey, uint256 _newWorkflowExecutionDiscount) returns()
+func (_BillingManager *BillingManagerTransactor) UpdateWorkflowExecutionDiscount(opts *bind.TransactOpts, _depositAssetKey string, _newWorkflowExecutionDiscount *big.Int) (*types.Transaction, error) {
+	return _BillingManager.contract.Transact(opts, "updateWorkflowExecutionDiscount", _depositAssetKey, _newWorkflowExecutionDiscount)
+}
+
+// UpdateWorkflowExecutionDiscount is a paid mutator transaction binding the contract method 0xc66ae1e8.
+//
+// Solidity: function updateWorkflowExecutionDiscount(string _depositAssetKey, uint256 _newWorkflowExecutionDiscount) returns()
+func (_BillingManager *BillingManagerSession) UpdateWorkflowExecutionDiscount(_depositAssetKey string, _newWorkflowExecutionDiscount *big.Int) (*types.Transaction, error) {
+	return _BillingManager.Contract.UpdateWorkflowExecutionDiscount(&_BillingManager.TransactOpts, _depositAssetKey, _newWorkflowExecutionDiscount)
+}
+
+// UpdateWorkflowExecutionDiscount is a paid mutator transaction binding the contract method 0xc66ae1e8.
+//
+// Solidity: function updateWorkflowExecutionDiscount(string _depositAssetKey, uint256 _newWorkflowExecutionDiscount) returns()
+func (_BillingManager *BillingManagerTransactorSession) UpdateWorkflowExecutionDiscount(_depositAssetKey string, _newWorkflowExecutionDiscount *big.Int) (*types.Transaction, error) {
+	return _BillingManager.Contract.UpdateWorkflowExecutionDiscount(&_BillingManager.TransactOpts, _depositAssetKey, _newWorkflowExecutionDiscount)
 }
 
 // UpgradeTo is a paid mutator transaction binding the contract method 0x3659cfe6.
@@ -800,46 +1127,46 @@ func (_BillingManager *BillingManagerTransactorSession) UpgradeToAndCall(newImpl
 	return _BillingManager.Contract.UpgradeToAndCall(&_BillingManager.TransactOpts, newImplementation, data)
 }
 
-// WithdrawFunds is a paid mutator transaction binding the contract method 0x155dd5ee.
+// WithdrawFunds is a paid mutator transaction binding the contract method 0x9769b439.
 //
-// Solidity: function withdrawFunds(uint256 _amountToWithdraw) returns()
-func (_BillingManager *BillingManagerTransactor) WithdrawFunds(opts *bind.TransactOpts, _amountToWithdraw *big.Int) (*types.Transaction, error) {
-	return _BillingManager.contract.Transact(opts, "withdrawFunds", _amountToWithdraw)
+// Solidity: function withdrawFunds(string _depositAssetKey, uint256 _amountToWithdraw) returns()
+func (_BillingManager *BillingManagerTransactor) WithdrawFunds(opts *bind.TransactOpts, _depositAssetKey string, _amountToWithdraw *big.Int) (*types.Transaction, error) {
+	return _BillingManager.contract.Transact(opts, "withdrawFunds", _depositAssetKey, _amountToWithdraw)
 }
 
-// WithdrawFunds is a paid mutator transaction binding the contract method 0x155dd5ee.
+// WithdrawFunds is a paid mutator transaction binding the contract method 0x9769b439.
 //
-// Solidity: function withdrawFunds(uint256 _amountToWithdraw) returns()
-func (_BillingManager *BillingManagerSession) WithdrawFunds(_amountToWithdraw *big.Int) (*types.Transaction, error) {
-	return _BillingManager.Contract.WithdrawFunds(&_BillingManager.TransactOpts, _amountToWithdraw)
+// Solidity: function withdrawFunds(string _depositAssetKey, uint256 _amountToWithdraw) returns()
+func (_BillingManager *BillingManagerSession) WithdrawFunds(_depositAssetKey string, _amountToWithdraw *big.Int) (*types.Transaction, error) {
+	return _BillingManager.Contract.WithdrawFunds(&_BillingManager.TransactOpts, _depositAssetKey, _amountToWithdraw)
 }
 
-// WithdrawFunds is a paid mutator transaction binding the contract method 0x155dd5ee.
+// WithdrawFunds is a paid mutator transaction binding the contract method 0x9769b439.
 //
-// Solidity: function withdrawFunds(uint256 _amountToWithdraw) returns()
-func (_BillingManager *BillingManagerTransactorSession) WithdrawFunds(_amountToWithdraw *big.Int) (*types.Transaction, error) {
-	return _BillingManager.Contract.WithdrawFunds(&_BillingManager.TransactOpts, _amountToWithdraw)
+// Solidity: function withdrawFunds(string _depositAssetKey, uint256 _amountToWithdraw) returns()
+func (_BillingManager *BillingManagerTransactorSession) WithdrawFunds(_depositAssetKey string, _amountToWithdraw *big.Int) (*types.Transaction, error) {
+	return _BillingManager.Contract.WithdrawFunds(&_BillingManager.TransactOpts, _depositAssetKey, _amountToWithdraw)
 }
 
-// WithdrawNetworkRewards is a paid mutator transaction binding the contract method 0xf9b41fd5.
+// WithdrawNetworkRewards is a paid mutator transaction binding the contract method 0x16fb02dd.
 //
-// Solidity: function withdrawNetworkRewards() returns()
-func (_BillingManager *BillingManagerTransactor) WithdrawNetworkRewards(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _BillingManager.contract.Transact(opts, "withdrawNetworkRewards")
+// Solidity: function withdrawNetworkRewards(string _depositAssetKey) returns()
+func (_BillingManager *BillingManagerTransactor) WithdrawNetworkRewards(opts *bind.TransactOpts, _depositAssetKey string) (*types.Transaction, error) {
+	return _BillingManager.contract.Transact(opts, "withdrawNetworkRewards", _depositAssetKey)
 }
 
-// WithdrawNetworkRewards is a paid mutator transaction binding the contract method 0xf9b41fd5.
+// WithdrawNetworkRewards is a paid mutator transaction binding the contract method 0x16fb02dd.
 //
-// Solidity: function withdrawNetworkRewards() returns()
-func (_BillingManager *BillingManagerSession) WithdrawNetworkRewards() (*types.Transaction, error) {
-	return _BillingManager.Contract.WithdrawNetworkRewards(&_BillingManager.TransactOpts)
+// Solidity: function withdrawNetworkRewards(string _depositAssetKey) returns()
+func (_BillingManager *BillingManagerSession) WithdrawNetworkRewards(_depositAssetKey string) (*types.Transaction, error) {
+	return _BillingManager.Contract.WithdrawNetworkRewards(&_BillingManager.TransactOpts, _depositAssetKey)
 }
 
-// WithdrawNetworkRewards is a paid mutator transaction binding the contract method 0xf9b41fd5.
+// WithdrawNetworkRewards is a paid mutator transaction binding the contract method 0x16fb02dd.
 //
-// Solidity: function withdrawNetworkRewards() returns()
-func (_BillingManager *BillingManagerTransactorSession) WithdrawNetworkRewards() (*types.Transaction, error) {
-	return _BillingManager.Contract.WithdrawNetworkRewards(&_BillingManager.TransactOpts)
+// Solidity: function withdrawNetworkRewards(string _depositAssetKey) returns()
+func (_BillingManager *BillingManagerTransactorSession) WithdrawNetworkRewards(_depositAssetKey string) (*types.Transaction, error) {
+	return _BillingManager.Contract.WithdrawNetworkRewards(&_BillingManager.TransactOpts, _depositAssetKey)
 }
 
 // Receive is a paid mutator transaction binding the contract receive function.
@@ -998,9 +1325,9 @@ func (_BillingManager *BillingManagerFilterer) ParseAdminChanged(log types.Log) 
 	return event, nil
 }
 
-// BillingManagerBalanceFundedIterator is returned from FilterBalanceFunded and is used to iterate over the raw logs and unpacked data for BalanceFunded events raised by the BillingManager contract.
-type BillingManagerBalanceFundedIterator struct {
-	Event *BillingManagerBalanceFunded // Event containing the contract specifics and raw log
+// BillingManagerAssetDepositedIterator is returned from FilterAssetDeposited and is used to iterate over the raw logs and unpacked data for AssetDeposited events raised by the BillingManager contract.
+type BillingManagerAssetDepositedIterator struct {
+	Event *BillingManagerAssetDeposited // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -1014,7 +1341,7 @@ type BillingManagerBalanceFundedIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *BillingManagerBalanceFundedIterator) Next() bool {
+func (it *BillingManagerAssetDepositedIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -1023,7 +1350,7 @@ func (it *BillingManagerBalanceFundedIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(BillingManagerBalanceFunded)
+			it.Event = new(BillingManagerAssetDeposited)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -1038,7 +1365,7 @@ func (it *BillingManagerBalanceFundedIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(BillingManagerBalanceFunded)
+		it.Event = new(BillingManagerAssetDeposited)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -1054,53 +1381,54 @@ func (it *BillingManagerBalanceFundedIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *BillingManagerBalanceFundedIterator) Error() error {
+func (it *BillingManagerAssetDepositedIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *BillingManagerBalanceFundedIterator) Close() error {
+func (it *BillingManagerAssetDepositedIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// BillingManagerBalanceFunded represents a BalanceFunded event raised by the BillingManager contract.
-type BillingManagerBalanceFunded struct {
-	UserAddr           common.Address
-	UserCurrentBalance *big.Int
-	FundedAmount       *big.Int
-	Raw                types.Log // Blockchain specific contextual infos
+// BillingManagerAssetDeposited represents a AssetDeposited event raised by the BillingManager contract.
+type BillingManagerAssetDeposited struct {
+	DepositAssetKey  common.Hash
+	TokensSender     common.Address
+	DepositRecipient common.Address
+	DepositAmount    *big.Int
+	Raw              types.Log // Blockchain specific contextual infos
 }
 
-// FilterBalanceFunded is a free log retrieval operation binding the contract event 0x3be325f4f5fcedd7332727df6cd7ca2679dbd8e6a6332f45e0faeeb23b7d54a1.
+// FilterAssetDeposited is a free log retrieval operation binding the contract event 0xfbc2fad7e5ffeb083133f666db8691af5364707e2b5bf9d1f6f93834433aeca4.
 //
-// Solidity: event BalanceFunded(address indexed userAddr, uint256 userCurrentBalance, uint256 fundedAmount)
-func (_BillingManager *BillingManagerFilterer) FilterBalanceFunded(opts *bind.FilterOpts, userAddr []common.Address) (*BillingManagerBalanceFundedIterator, error) {
+// Solidity: event AssetDeposited(string indexed depositAssetKey, address tokensSender, address depositRecipient, uint256 depositAmount)
+func (_BillingManager *BillingManagerFilterer) FilterAssetDeposited(opts *bind.FilterOpts, depositAssetKey []string) (*BillingManagerAssetDepositedIterator, error) {
 
-	var userAddrRule []interface{}
-	for _, userAddrItem := range userAddr {
-		userAddrRule = append(userAddrRule, userAddrItem)
+	var depositAssetKeyRule []interface{}
+	for _, depositAssetKeyItem := range depositAssetKey {
+		depositAssetKeyRule = append(depositAssetKeyRule, depositAssetKeyItem)
 	}
 
-	logs, sub, err := _BillingManager.contract.FilterLogs(opts, "BalanceFunded", userAddrRule)
+	logs, sub, err := _BillingManager.contract.FilterLogs(opts, "AssetDeposited", depositAssetKeyRule)
 	if err != nil {
 		return nil, err
 	}
-	return &BillingManagerBalanceFundedIterator{contract: _BillingManager.contract, event: "BalanceFunded", logs: logs, sub: sub}, nil
+	return &BillingManagerAssetDepositedIterator{contract: _BillingManager.contract, event: "AssetDeposited", logs: logs, sub: sub}, nil
 }
 
-// WatchBalanceFunded is a free log subscription operation binding the contract event 0x3be325f4f5fcedd7332727df6cd7ca2679dbd8e6a6332f45e0faeeb23b7d54a1.
+// WatchAssetDeposited is a free log subscription operation binding the contract event 0xfbc2fad7e5ffeb083133f666db8691af5364707e2b5bf9d1f6f93834433aeca4.
 //
-// Solidity: event BalanceFunded(address indexed userAddr, uint256 userCurrentBalance, uint256 fundedAmount)
-func (_BillingManager *BillingManagerFilterer) WatchBalanceFunded(opts *bind.WatchOpts, sink chan<- *BillingManagerBalanceFunded, userAddr []common.Address) (event.Subscription, error) {
+// Solidity: event AssetDeposited(string indexed depositAssetKey, address tokensSender, address depositRecipient, uint256 depositAmount)
+func (_BillingManager *BillingManagerFilterer) WatchAssetDeposited(opts *bind.WatchOpts, sink chan<- *BillingManagerAssetDeposited, depositAssetKey []string) (event.Subscription, error) {
 
-	var userAddrRule []interface{}
-	for _, userAddrItem := range userAddr {
-		userAddrRule = append(userAddrRule, userAddrItem)
+	var depositAssetKeyRule []interface{}
+	for _, depositAssetKeyItem := range depositAssetKey {
+		depositAssetKeyRule = append(depositAssetKeyRule, depositAssetKeyItem)
 	}
 
-	logs, sub, err := _BillingManager.contract.WatchLogs(opts, "BalanceFunded", userAddrRule)
+	logs, sub, err := _BillingManager.contract.WatchLogs(opts, "AssetDeposited", depositAssetKeyRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1110,8 +1438,8 @@ func (_BillingManager *BillingManagerFilterer) WatchBalanceFunded(opts *bind.Wat
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(BillingManagerBalanceFunded)
-				if err := _BillingManager.contract.UnpackLog(event, "BalanceFunded", log); err != nil {
+				event := new(BillingManagerAssetDeposited)
+				if err := _BillingManager.contract.UnpackLog(event, "AssetDeposited", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1132,12 +1460,12 @@ func (_BillingManager *BillingManagerFilterer) WatchBalanceFunded(opts *bind.Wat
 	}), nil
 }
 
-// ParseBalanceFunded is a log parse operation binding the contract event 0x3be325f4f5fcedd7332727df6cd7ca2679dbd8e6a6332f45e0faeeb23b7d54a1.
+// ParseAssetDeposited is a log parse operation binding the contract event 0xfbc2fad7e5ffeb083133f666db8691af5364707e2b5bf9d1f6f93834433aeca4.
 //
-// Solidity: event BalanceFunded(address indexed userAddr, uint256 userCurrentBalance, uint256 fundedAmount)
-func (_BillingManager *BillingManagerFilterer) ParseBalanceFunded(log types.Log) (*BillingManagerBalanceFunded, error) {
-	event := new(BillingManagerBalanceFunded)
-	if err := _BillingManager.contract.UnpackLog(event, "BalanceFunded", log); err != nil {
+// Solidity: event AssetDeposited(string indexed depositAssetKey, address tokensSender, address depositRecipient, uint256 depositAmount)
+func (_BillingManager *BillingManagerFilterer) ParseAssetDeposited(log types.Log) (*BillingManagerAssetDeposited, error) {
+	event := new(BillingManagerAssetDeposited)
+	if err := _BillingManager.contract.UnpackLog(event, "AssetDeposited", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -1282,6 +1610,286 @@ func (_BillingManager *BillingManagerFilterer) WatchBeaconUpgraded(opts *bind.Wa
 func (_BillingManager *BillingManagerFilterer) ParseBeaconUpgraded(log types.Log) (*BillingManagerBeaconUpgraded, error) {
 	event := new(BillingManagerBeaconUpgraded)
 	if err := _BillingManager.contract.UnpackLog(event, "BeaconUpgraded", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// BillingManagerDepositAssetAddedIterator is returned from FilterDepositAssetAdded and is used to iterate over the raw logs and unpacked data for DepositAssetAdded events raised by the BillingManager contract.
+type BillingManagerDepositAssetAddedIterator struct {
+	Event *BillingManagerDepositAssetAdded // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *BillingManagerDepositAssetAddedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(BillingManagerDepositAssetAdded)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(BillingManagerDepositAssetAdded)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *BillingManagerDepositAssetAddedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *BillingManagerDepositAssetAddedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// BillingManagerDepositAssetAdded represents a DepositAssetAdded event raised by the BillingManager contract.
+type BillingManagerDepositAssetAdded struct {
+	DepositAssetKey  string
+	DepositAssetData IBillingManagerDepositAssetData
+	Raw              types.Log // Blockchain specific contextual infos
+}
+
+// FilterDepositAssetAdded is a free log retrieval operation binding the contract event 0x310a01f49fbf43988aa0ce4a44296f5fc9f1fe442769d2416f1965d6a1cd236e.
+//
+// Solidity: event DepositAssetAdded(string depositAssetKey, (address,uint256,uint256,bool,bool) depositAssetData)
+func (_BillingManager *BillingManagerFilterer) FilterDepositAssetAdded(opts *bind.FilterOpts) (*BillingManagerDepositAssetAddedIterator, error) {
+
+	logs, sub, err := _BillingManager.contract.FilterLogs(opts, "DepositAssetAdded")
+	if err != nil {
+		return nil, err
+	}
+	return &BillingManagerDepositAssetAddedIterator{contract: _BillingManager.contract, event: "DepositAssetAdded", logs: logs, sub: sub}, nil
+}
+
+// WatchDepositAssetAdded is a free log subscription operation binding the contract event 0x310a01f49fbf43988aa0ce4a44296f5fc9f1fe442769d2416f1965d6a1cd236e.
+//
+// Solidity: event DepositAssetAdded(string depositAssetKey, (address,uint256,uint256,bool,bool) depositAssetData)
+func (_BillingManager *BillingManagerFilterer) WatchDepositAssetAdded(opts *bind.WatchOpts, sink chan<- *BillingManagerDepositAssetAdded) (event.Subscription, error) {
+
+	logs, sub, err := _BillingManager.contract.WatchLogs(opts, "DepositAssetAdded")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(BillingManagerDepositAssetAdded)
+				if err := _BillingManager.contract.UnpackLog(event, "DepositAssetAdded", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseDepositAssetAdded is a log parse operation binding the contract event 0x310a01f49fbf43988aa0ce4a44296f5fc9f1fe442769d2416f1965d6a1cd236e.
+//
+// Solidity: event DepositAssetAdded(string depositAssetKey, (address,uint256,uint256,bool,bool) depositAssetData)
+func (_BillingManager *BillingManagerFilterer) ParseDepositAssetAdded(log types.Log) (*BillingManagerDepositAssetAdded, error) {
+	event := new(BillingManagerDepositAssetAdded)
+	if err := _BillingManager.contract.UnpackLog(event, "DepositAssetAdded", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// BillingManagerDepositAssetEnabledStatusUpdatedIterator is returned from FilterDepositAssetEnabledStatusUpdated and is used to iterate over the raw logs and unpacked data for DepositAssetEnabledStatusUpdated events raised by the BillingManager contract.
+type BillingManagerDepositAssetEnabledStatusUpdatedIterator struct {
+	Event *BillingManagerDepositAssetEnabledStatusUpdated // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *BillingManagerDepositAssetEnabledStatusUpdatedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(BillingManagerDepositAssetEnabledStatusUpdated)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(BillingManagerDepositAssetEnabledStatusUpdated)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *BillingManagerDepositAssetEnabledStatusUpdatedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *BillingManagerDepositAssetEnabledStatusUpdatedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// BillingManagerDepositAssetEnabledStatusUpdated represents a DepositAssetEnabledStatusUpdated event raised by the BillingManager contract.
+type BillingManagerDepositAssetEnabledStatusUpdated struct {
+	DepositAssetKey  common.Hash
+	NewEnabledStatus bool
+	Raw              types.Log // Blockchain specific contextual infos
+}
+
+// FilterDepositAssetEnabledStatusUpdated is a free log retrieval operation binding the contract event 0x838dfb07f2f9eda916131303b1c93fcdb2d1f0cfae1f651eee30c8bd44091356.
+//
+// Solidity: event DepositAssetEnabledStatusUpdated(string indexed depositAssetKey, bool newEnabledStatus)
+func (_BillingManager *BillingManagerFilterer) FilterDepositAssetEnabledStatusUpdated(opts *bind.FilterOpts, depositAssetKey []string) (*BillingManagerDepositAssetEnabledStatusUpdatedIterator, error) {
+
+	var depositAssetKeyRule []interface{}
+	for _, depositAssetKeyItem := range depositAssetKey {
+		depositAssetKeyRule = append(depositAssetKeyRule, depositAssetKeyItem)
+	}
+
+	logs, sub, err := _BillingManager.contract.FilterLogs(opts, "DepositAssetEnabledStatusUpdated", depositAssetKeyRule)
+	if err != nil {
+		return nil, err
+	}
+	return &BillingManagerDepositAssetEnabledStatusUpdatedIterator{contract: _BillingManager.contract, event: "DepositAssetEnabledStatusUpdated", logs: logs, sub: sub}, nil
+}
+
+// WatchDepositAssetEnabledStatusUpdated is a free log subscription operation binding the contract event 0x838dfb07f2f9eda916131303b1c93fcdb2d1f0cfae1f651eee30c8bd44091356.
+//
+// Solidity: event DepositAssetEnabledStatusUpdated(string indexed depositAssetKey, bool newEnabledStatus)
+func (_BillingManager *BillingManagerFilterer) WatchDepositAssetEnabledStatusUpdated(opts *bind.WatchOpts, sink chan<- *BillingManagerDepositAssetEnabledStatusUpdated, depositAssetKey []string) (event.Subscription, error) {
+
+	var depositAssetKeyRule []interface{}
+	for _, depositAssetKeyItem := range depositAssetKey {
+		depositAssetKeyRule = append(depositAssetKeyRule, depositAssetKeyItem)
+	}
+
+	logs, sub, err := _BillingManager.contract.WatchLogs(opts, "DepositAssetEnabledStatusUpdated", depositAssetKeyRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(BillingManagerDepositAssetEnabledStatusUpdated)
+				if err := _BillingManager.contract.UnpackLog(event, "DepositAssetEnabledStatusUpdated", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseDepositAssetEnabledStatusUpdated is a log parse operation binding the contract event 0x838dfb07f2f9eda916131303b1c93fcdb2d1f0cfae1f651eee30c8bd44091356.
+//
+// Solidity: event DepositAssetEnabledStatusUpdated(string indexed depositAssetKey, bool newEnabledStatus)
+func (_BillingManager *BillingManagerFilterer) ParseDepositAssetEnabledStatusUpdated(log types.Log) (*BillingManagerDepositAssetEnabledStatusUpdated, error) {
+	event := new(BillingManagerDepositAssetEnabledStatusUpdated)
+	if err := _BillingManager.contract.UnpackLog(event, "DepositAssetEnabledStatusUpdated", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -1492,6 +2100,7 @@ func (it *BillingManagerExecutionFundsLockedIterator) Close() error {
 
 // BillingManagerExecutionFundsLocked represents a ExecutionFundsLocked event raised by the BillingManager contract.
 type BillingManagerExecutionFundsLocked struct {
+	DepositAssetKey       common.Hash
 	WorkflowId            *big.Int
 	UserAddr              common.Address
 	WorkflowExecutionId   *big.Int
@@ -1499,11 +2108,15 @@ type BillingManagerExecutionFundsLocked struct {
 	Raw                   types.Log // Blockchain specific contextual infos
 }
 
-// FilterExecutionFundsLocked is a free log retrieval operation binding the contract event 0xc77a14be8053ff3df25436e566ff7bd5d0da84a96e23ced50e403617fab5e97d.
+// FilterExecutionFundsLocked is a free log retrieval operation binding the contract event 0x318669d1aaaf361c152eec849d7bf340dcac03acfb197842a8fd141df0a408fa.
 //
-// Solidity: event ExecutionFundsLocked(uint256 indexed workflowId, address indexed userAddr, uint256 workflowExecutionId, uint256 executionLockedAmount)
-func (_BillingManager *BillingManagerFilterer) FilterExecutionFundsLocked(opts *bind.FilterOpts, workflowId []*big.Int, userAddr []common.Address) (*BillingManagerExecutionFundsLockedIterator, error) {
+// Solidity: event ExecutionFundsLocked(string indexed depositAssetKey, uint256 indexed workflowId, address indexed userAddr, uint256 workflowExecutionId, uint256 executionLockedAmount)
+func (_BillingManager *BillingManagerFilterer) FilterExecutionFundsLocked(opts *bind.FilterOpts, depositAssetKey []string, workflowId []*big.Int, userAddr []common.Address) (*BillingManagerExecutionFundsLockedIterator, error) {
 
+	var depositAssetKeyRule []interface{}
+	for _, depositAssetKeyItem := range depositAssetKey {
+		depositAssetKeyRule = append(depositAssetKeyRule, depositAssetKeyItem)
+	}
 	var workflowIdRule []interface{}
 	for _, workflowIdItem := range workflowId {
 		workflowIdRule = append(workflowIdRule, workflowIdItem)
@@ -1513,18 +2126,22 @@ func (_BillingManager *BillingManagerFilterer) FilterExecutionFundsLocked(opts *
 		userAddrRule = append(userAddrRule, userAddrItem)
 	}
 
-	logs, sub, err := _BillingManager.contract.FilterLogs(opts, "ExecutionFundsLocked", workflowIdRule, userAddrRule)
+	logs, sub, err := _BillingManager.contract.FilterLogs(opts, "ExecutionFundsLocked", depositAssetKeyRule, workflowIdRule, userAddrRule)
 	if err != nil {
 		return nil, err
 	}
 	return &BillingManagerExecutionFundsLockedIterator{contract: _BillingManager.contract, event: "ExecutionFundsLocked", logs: logs, sub: sub}, nil
 }
 
-// WatchExecutionFundsLocked is a free log subscription operation binding the contract event 0xc77a14be8053ff3df25436e566ff7bd5d0da84a96e23ced50e403617fab5e97d.
+// WatchExecutionFundsLocked is a free log subscription operation binding the contract event 0x318669d1aaaf361c152eec849d7bf340dcac03acfb197842a8fd141df0a408fa.
 //
-// Solidity: event ExecutionFundsLocked(uint256 indexed workflowId, address indexed userAddr, uint256 workflowExecutionId, uint256 executionLockedAmount)
-func (_BillingManager *BillingManagerFilterer) WatchExecutionFundsLocked(opts *bind.WatchOpts, sink chan<- *BillingManagerExecutionFundsLocked, workflowId []*big.Int, userAddr []common.Address) (event.Subscription, error) {
+// Solidity: event ExecutionFundsLocked(string indexed depositAssetKey, uint256 indexed workflowId, address indexed userAddr, uint256 workflowExecutionId, uint256 executionLockedAmount)
+func (_BillingManager *BillingManagerFilterer) WatchExecutionFundsLocked(opts *bind.WatchOpts, sink chan<- *BillingManagerExecutionFundsLocked, depositAssetKey []string, workflowId []*big.Int, userAddr []common.Address) (event.Subscription, error) {
 
+	var depositAssetKeyRule []interface{}
+	for _, depositAssetKeyItem := range depositAssetKey {
+		depositAssetKeyRule = append(depositAssetKeyRule, depositAssetKeyItem)
+	}
 	var workflowIdRule []interface{}
 	for _, workflowIdItem := range workflowId {
 		workflowIdRule = append(workflowIdRule, workflowIdItem)
@@ -1534,7 +2151,7 @@ func (_BillingManager *BillingManagerFilterer) WatchExecutionFundsLocked(opts *b
 		userAddrRule = append(userAddrRule, userAddrItem)
 	}
 
-	logs, sub, err := _BillingManager.contract.WatchLogs(opts, "ExecutionFundsLocked", workflowIdRule, userAddrRule)
+	logs, sub, err := _BillingManager.contract.WatchLogs(opts, "ExecutionFundsLocked", depositAssetKeyRule, workflowIdRule, userAddrRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1566,9 +2183,9 @@ func (_BillingManager *BillingManagerFilterer) WatchExecutionFundsLocked(opts *b
 	}), nil
 }
 
-// ParseExecutionFundsLocked is a log parse operation binding the contract event 0xc77a14be8053ff3df25436e566ff7bd5d0da84a96e23ced50e403617fab5e97d.
+// ParseExecutionFundsLocked is a log parse operation binding the contract event 0x318669d1aaaf361c152eec849d7bf340dcac03acfb197842a8fd141df0a408fa.
 //
-// Solidity: event ExecutionFundsLocked(uint256 indexed workflowId, address indexed userAddr, uint256 workflowExecutionId, uint256 executionLockedAmount)
+// Solidity: event ExecutionFundsLocked(string indexed depositAssetKey, uint256 indexed workflowId, address indexed userAddr, uint256 workflowExecutionId, uint256 executionLockedAmount)
 func (_BillingManager *BillingManagerFilterer) ParseExecutionFundsLocked(log types.Log) (*BillingManagerExecutionFundsLocked, error) {
 	event := new(BillingManagerExecutionFundsLocked)
 	if err := _BillingManager.contract.UnpackLog(event, "ExecutionFundsLocked", log); err != nil {
@@ -2276,6 +2893,152 @@ func (_BillingManager *BillingManagerFilterer) WatchUserFundsWithdrawn(opts *bin
 func (_BillingManager *BillingManagerFilterer) ParseUserFundsWithdrawn(log types.Log) (*BillingManagerUserFundsWithdrawn, error) {
 	event := new(BillingManagerUserFundsWithdrawn)
 	if err := _BillingManager.contract.UnpackLog(event, "UserFundsWithdrawn", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// BillingManagerWorkflowExecutionDiscountUpdatedIterator is returned from FilterWorkflowExecutionDiscountUpdated and is used to iterate over the raw logs and unpacked data for WorkflowExecutionDiscountUpdated events raised by the BillingManager contract.
+type BillingManagerWorkflowExecutionDiscountUpdatedIterator struct {
+	Event *BillingManagerWorkflowExecutionDiscountUpdated // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *BillingManagerWorkflowExecutionDiscountUpdatedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(BillingManagerWorkflowExecutionDiscountUpdated)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(BillingManagerWorkflowExecutionDiscountUpdated)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *BillingManagerWorkflowExecutionDiscountUpdatedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *BillingManagerWorkflowExecutionDiscountUpdatedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// BillingManagerWorkflowExecutionDiscountUpdated represents a WorkflowExecutionDiscountUpdated event raised by the BillingManager contract.
+type BillingManagerWorkflowExecutionDiscountUpdated struct {
+	DepositAssetKey               common.Hash
+	NewWorkflowExecutionDiscount  *big.Int
+	PrevWorkflowExecutionDiscount *big.Int
+	Raw                           types.Log // Blockchain specific contextual infos
+}
+
+// FilterWorkflowExecutionDiscountUpdated is a free log retrieval operation binding the contract event 0x70c21b53e4a29c6a334ae8d8d80a885023e4749ee873d6594b3f6cbb66140b6b.
+//
+// Solidity: event WorkflowExecutionDiscountUpdated(string indexed depositAssetKey, uint256 newWorkflowExecutionDiscount, uint256 prevWorkflowExecutionDiscount)
+func (_BillingManager *BillingManagerFilterer) FilterWorkflowExecutionDiscountUpdated(opts *bind.FilterOpts, depositAssetKey []string) (*BillingManagerWorkflowExecutionDiscountUpdatedIterator, error) {
+
+	var depositAssetKeyRule []interface{}
+	for _, depositAssetKeyItem := range depositAssetKey {
+		depositAssetKeyRule = append(depositAssetKeyRule, depositAssetKeyItem)
+	}
+
+	logs, sub, err := _BillingManager.contract.FilterLogs(opts, "WorkflowExecutionDiscountUpdated", depositAssetKeyRule)
+	if err != nil {
+		return nil, err
+	}
+	return &BillingManagerWorkflowExecutionDiscountUpdatedIterator{contract: _BillingManager.contract, event: "WorkflowExecutionDiscountUpdated", logs: logs, sub: sub}, nil
+}
+
+// WatchWorkflowExecutionDiscountUpdated is a free log subscription operation binding the contract event 0x70c21b53e4a29c6a334ae8d8d80a885023e4749ee873d6594b3f6cbb66140b6b.
+//
+// Solidity: event WorkflowExecutionDiscountUpdated(string indexed depositAssetKey, uint256 newWorkflowExecutionDiscount, uint256 prevWorkflowExecutionDiscount)
+func (_BillingManager *BillingManagerFilterer) WatchWorkflowExecutionDiscountUpdated(opts *bind.WatchOpts, sink chan<- *BillingManagerWorkflowExecutionDiscountUpdated, depositAssetKey []string) (event.Subscription, error) {
+
+	var depositAssetKeyRule []interface{}
+	for _, depositAssetKeyItem := range depositAssetKey {
+		depositAssetKeyRule = append(depositAssetKeyRule, depositAssetKeyItem)
+	}
+
+	logs, sub, err := _BillingManager.contract.WatchLogs(opts, "WorkflowExecutionDiscountUpdated", depositAssetKeyRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(BillingManagerWorkflowExecutionDiscountUpdated)
+				if err := _BillingManager.contract.UnpackLog(event, "WorkflowExecutionDiscountUpdated", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseWorkflowExecutionDiscountUpdated is a log parse operation binding the contract event 0x70c21b53e4a29c6a334ae8d8d80a885023e4749ee873d6594b3f6cbb66140b6b.
+//
+// Solidity: event WorkflowExecutionDiscountUpdated(string indexed depositAssetKey, uint256 newWorkflowExecutionDiscount, uint256 prevWorkflowExecutionDiscount)
+func (_BillingManager *BillingManagerFilterer) ParseWorkflowExecutionDiscountUpdated(log types.Log) (*BillingManagerWorkflowExecutionDiscountUpdated, error) {
+	event := new(BillingManagerWorkflowExecutionDiscountUpdated)
+	if err := _BillingManager.contract.UnpackLog(event, "WorkflowExecutionDiscountUpdated", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log

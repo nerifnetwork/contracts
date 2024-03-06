@@ -36,6 +36,7 @@
     "copy-types": "cpy 'typechain/**/*.d.ts' 'dist/typechain/'"
   },
   "devDependencies": {
+    "@metamask/eth-sig-util": "^7.0.1",
     "@nomicfoundation/hardhat-chai-matchers": "^1.0.6",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
     "@nomiclabs/hardhat-ethers": "^2.0.5",
@@ -60,6 +61,7 @@
     "eslint-plugin-prettier": "^3.4.1",
     "eslint-plugin-promise": "^5.2.0",
     "ethereum-waffle": "^3.4.4",
+    "ethereumjs-util": "^7.1.5",
     "ethers": "^5.6.2",
     "hardhat": "^2.11.0",
     "hardhat-contract-sizer": "^2.10.0",
