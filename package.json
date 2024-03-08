@@ -16,7 +16,7 @@
   },
   "scripts": {
     "build": "tsc --build tsconfig.json",
-    "compile": "hardhat compile",
+    "compile": "hardhat compile --force",
     "test": "hardhat test",
     "node": "hardhat node",
     "coverage": "npx hardhat coverage --solcoverjs ./.solcover.ts",

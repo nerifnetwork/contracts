@@ -39,7 +39,7 @@ contract RewardDistributionPool is Initializable, ContractKeys, SignerOwnable {
 
         _updateLastRewardPoints();
 
-        providedStake = _stakingContract().getTotalStake();
+        providedStake = _stakingContract().totalStake();
         totalRewardPoints += (amount * BASE_DIVISOR) / providedStake;
         collectedRewards += amount;
     }

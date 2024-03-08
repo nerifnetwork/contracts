@@ -1,5 +1,4 @@
 import "@nomicfoundation/hardhat-chai-matchers";
-import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-solhint";
 import "@solarity/hardhat-gobind";
 import "@solarity/hardhat-migrate";
@@ -68,8 +67,8 @@ const testnets = {
     accounts,
     gasMultiplier: 1.2,
   },
-  goerli: {
-    url: `https://goerli.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
+  sepolia: {
+    url: `https://sepolia.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
     accounts,
     gasMultiplier: 1.2,
   },
