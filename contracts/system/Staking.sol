@@ -26,9 +26,9 @@ contract Staking is IStaking, ContractKeys, SignerOwnable, Initializable {
     ContractRegistry public contractRegistry;
     IERC20 public stakeToken;
 
-    uint256 public minimalStake;
-    uint256 public withdrawalPeriod;
-    uint256 public totalStake;
+    uint256 public override minimalStake;
+    uint256 public override withdrawalPeriod;
+    uint256 public override totalStake;
 
     EnumerableSet.AddressSet internal _validators;
 
@@ -69,24 +69,24 @@ contract Staking is IStaking, ContractKeys, SignerOwnable, Initializable {
         _setWithdrawalPeriod(_withdrawalPeriod);
     }
 
-    function setMinimalStake(uint256 _minimalStake) external onlySigner {
+    function setMinimalStake(uint256 _minimalStake) external override onlySigner {
         _setMinimalStake(_minimalStake);
     }
 
-    function setWithdrawalPeriod(uint256 _withdrawalPeriod) external onlySigner {
+    function setWithdrawalPeriod(uint256 _withdrawalPeriod) external override onlySigner {
         _setWithdrawalPeriod(_withdrawalPeriod);
     }
 
-    function addRewardsToStake(address _validator, uint256 _amount) external onlyRewardDistributionPool {
+    function addRewardsToStake(address _validator, uint256 _amount) external override onlyRewardDistributionPool {
         _validatorsData[_validator].stake += _amount;
         totalStake += _amount;
     }
 
-    function slash(address _validator) external onlySlashingVoting {
+    function slash(address _validator) external override onlySlashingVoting {
         _updateValidatorStatus(_validator, ValidatorStatus.SLASHED);
     }
 
-    function announceWithdrawal(uint256 _amount) external onlyNotSlashed {
+    function announceWithdrawal(uint256 _amount) external override onlyNotSlashed {
         require(_amount > 0, "Staking: amount must be greater than zero");
         require(_amount <= _validatorsData[msg.sender].stake, "Staking: amount must be <= to stake");
 
@@ -97,8 +97,8 @@ contract Staking is IStaking, ContractKeys, SignerOwnable, Initializable {
         }
     }
 
-    function revokeWithdrawal() external onlyNotSlashed {
-        require(_withdrawalAnnouncements[msg.sender].amount > 0, "Staking: not announced");
+    function revokeWithdrawal() external override onlyNotSlashed {
+        require(hasWithdrawalAnnouncement(msg.sender), "Staking: user does not have withdrawal announcement");
 
         uint256 amount = _withdrawalAnnouncements[msg.sender].amount;
 
@@ -109,15 +109,14 @@ contract Staking is IStaking, ContractKeys, SignerOwnable, Initializable {
         }
     }
 
-    function withdraw() external onlyNotSlashed {
+    function withdraw() external override onlyNotSlashed {
+        require(hasWithdrawalAnnouncement(msg.sender), "Staking: user does not have withdrawal announcement");
         require(
             _withdrawalAnnouncements[msg.sender].time + withdrawalPeriod <= block.timestamp,
             "Staking: withdrawal period not passed"
         );
 
         uint256 withdrawalAmount = _withdrawalAnnouncements[msg.sender].amount;
-
-        require(withdrawalAmount <= _validatorsData[msg.sender].stake, "Staking: amount must be <= to validator stake");
 
         _validatorsData[msg.sender].stake -= withdrawalAmount;
         totalStake -= withdrawalAmount;
@@ -129,7 +128,7 @@ contract Staking is IStaking, ContractKeys, SignerOwnable, Initializable {
         emit TokensWithdrawn(msg.sender, withdrawalAmount);
     }
 
-    function stake(uint256 _stakeAmount) external onlyNotSlashed {
+    function stake(uint256 _stakeAmount) external override onlyNotSlashed {
         _stake(msg.sender, msg.sender, _stakeAmount);
     }
 
@@ -139,7 +138,7 @@ contract Staking is IStaking, ContractKeys, SignerOwnable, Initializable {
         uint8 _v,
         bytes32 _r,
         bytes32 _s
-    ) external onlyNotSlashed {
+    ) external override onlyNotSlashed {
         IERC20Permit(address(stakeToken)).permit(
             msg.sender,
             address(this),
@@ -153,18 +152,18 @@ contract Staking is IStaking, ContractKeys, SignerOwnable, Initializable {
         _stake(msg.sender, msg.sender, _stakeAmount);
     }
 
-    function getValidators() external view returns (address[] memory) {
+    function getValidators() external view override returns (address[] memory) {
         return _validators.values();
     }
 
-    function getValidatorsCount() external view returns (uint256) {
+    function getValidatorsCount() external view override returns (uint256) {
         return _validators.length();
     }
 
     function getValidatorsInfo(
         uint256 _offset,
         uint256 _limit
-    ) external view returns (ValidatorInfo[] memory _validatorsInfoArr) {
+    ) external view override returns (ValidatorInfo[] memory _validatorsInfoArr) {
         uint256 to = Paginator.getTo(_validators.length(), _offset, _limit);
 
         _validatorsInfoArr = new ValidatorInfo[](to - _offset);
@@ -179,16 +178,30 @@ contract Staking is IStaking, ContractKeys, SignerOwnable, Initializable {
         }
     }
 
-    function getStake(address _validator) external view returns (uint256) {
+    function getStake(address _validator) external view override returns (uint256) {
         return _validatorsData[_validator].stake;
     }
 
-    function isValidatorActive(address _validator) public view returns (bool) {
-        return _validatorsData[_validator].status == ValidatorStatus.ACTIVE;
+    function getWithdrawalAnnouncement(
+        address _userAddr
+    ) external view override returns (WithdrawalAnnouncement memory) {
+        return _withdrawalAnnouncements[_userAddr];
     }
 
-    function isValidatorSlashed(address _validator) public view returns (bool) {
-        return _validatorsData[_validator].status == ValidatorStatus.SLASHED;
+    function isValidatorActive(address _validator) public view override returns (bool) {
+        return getValidatorStatus(_validator) == ValidatorStatus.ACTIVE;
+    }
+
+    function isValidatorSlashed(address _validator) public view override returns (bool) {
+        return getValidatorStatus(_validator) == ValidatorStatus.SLASHED;
+    }
+
+    function getValidatorStatus(address _validator) public view override returns (ValidatorStatus) {
+        return _validatorsData[_validator].status;
+    }
+
+    function hasWithdrawalAnnouncement(address _userAddr) public view override returns (bool) {
+        return _withdrawalAnnouncements[_userAddr].time > 0;
     }
 
     function _setMinimalStake(uint256 _minimalStake) internal {
