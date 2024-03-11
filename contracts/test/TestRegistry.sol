@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import "../interfaces/IGateway.sol";
+import "../interfaces/operational/IGateway.sol";
 
 import "../operational/Registry.sol";
 

@@ -9,10 +9,10 @@ import "@solarity/solidity-lib/libs/arrays/Paginator.sol";
 import "@solarity/solidity-lib/libs/data-structures/StringSet.sol";
 
 import "../interfaces/SignerOwnable.sol";
-import "../interfaces/IGateway.sol";
-import "../interfaces/IGatewayFactory.sol";
-import "../interfaces/IBillingManager.sol";
-import "../interfaces/IRegistry.sol";
+import "../interfaces/operational/IGateway.sol";
+import "../interfaces/operational/IGatewayFactory.sol";
+import "../interfaces/operational/IBillingManager.sol";
+import "../interfaces/operational/IRegistry.sol";
 
 contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
     using EnumerableSet for EnumerableSet.AddressSet;
