@@ -22,6 +22,10 @@ interface IBillingManager {
         COMPLETED
     }
 
+    enum NetworkWithdrawReasons {
+        GATEWAY_DEPLOY
+    }
+
     /**
      * @dev Struct containing data related to the deposit asset
      * @param tokenAddr The address of the token for the deposit asset
@@ -141,17 +145,18 @@ interface IBillingManager {
 
     /**
      * @notice Event emitted when funds are withdrawn from a user's balance
+     * @param depositAssetKey The unique key identifying the deposit asset
      * @param userAddr The address of the user
      * @param withdrawnAmount The amount withdrawn from the user's balance
      */
-    event UserFundsWithdrawn(address indexed userAddr, uint256 withdrawnAmount);
+    event UserFundsWithdrawn(string indexed depositAssetKey, address indexed userAddr, uint256 withdrawnAmount);
 
     /**
      * @notice Event emitted when network rewards are withdrawn
      * @param recipientAddr The address of the recipient
      * @param rewardsAmount The amount of rewards withdrawn
      */
-    event RewardsWithdrawn(address indexed recipientAddr, uint256 rewardsAmount);
+    event RewardsWithdrawn(string indexed depositAssetKey, address indexed recipientAddr, uint256 rewardsAmount);
 
     /**
      * @notice Event emitted when funds are locked for a workflow execution
@@ -185,6 +190,13 @@ interface IBillingManager {
         uint256 workflowExecutionId,
         uint256 executionLockedAmount,
         uint256 executionAmount
+    );
+
+    event NetworkWithdrawCompleted(
+        string indexed depositAssetKey,
+        address indexed userAddr,
+        NetworkWithdrawReasons indexed withdrawReason,
+        uint256 amountToWithdraw
     );
 
     /**

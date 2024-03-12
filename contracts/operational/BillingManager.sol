@@ -76,7 +76,7 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
     function updateWorkflowExecutionDiscount(
         string calldata _depositAssetKey,
         uint256 _newWorkflowExecutionDiscount
-    ) external override onlyExistingDepositAsset(_depositAssetKey) onlySigner {
+    ) external override onlySigner onlyExistingDepositAsset(_depositAssetKey) {
         uint256 currentWorkflowExecutionDiscount = _depositAssetsData[_depositAssetKey].workflowExecutionDiscount;
 
         _depositAssetsData[_depositAssetKey].workflowExecutionDiscount = _newWorkflowExecutionDiscount;
@@ -91,7 +91,7 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
     function updateDepositAssetEnabledStatus(
         string calldata _depositAssetKey,
         bool _newEnabledStatus
-    ) external override onlyExistingDepositAsset(_depositAssetKey) onlySigner {
+    ) external override onlySigner onlyExistingDepositAsset(_depositAssetKey) {
         require(
             _depositAssetsData[_depositAssetKey].isEnabled != _newEnabledStatus,
             "BillingManager: Invalid new enabled status"
@@ -100,6 +100,21 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
         _depositAssetsData[_depositAssetKey].isEnabled = _newEnabledStatus;
 
         emit DepositAssetEnabledStatusUpdated(_depositAssetKey, _newEnabledStatus);
+    }
+
+    function networkWithdraw(
+        string calldata _depositAssetKey,
+        address _userAddr,
+        uint256 _amountToWithdraw,
+        NetworkWithdrawReasons _withdrawReason
+    ) external onlySigner onlyExistingDepositAsset(_depositAssetKey) {
+        _onlyEnoughAvailableFunds(_depositAssetKey, _userAddr, _amountToWithdraw);
+
+        _updateUserDepositData(_depositAssetKey, _userAddr, _amountToWithdraw, false);
+
+        _depositAssetsData[_depositAssetKey].networkRewards += _amountToWithdraw;
+
+        emit NetworkWithdrawCompleted(_depositAssetKey, _userAddr, _withdrawReason, _amountToWithdraw);
     }
 
     function lockExecutionFunds(
@@ -111,10 +126,7 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
 
         address workflowOwner = registry.getWorkflowOwner(_workflowId);
 
-        require(
-            getUserAvailableFunds(workflowOwner, _depositAssetKey) >= _executionLockedAmount,
-            "BillingManager: Not enough available funds to lock"
-        );
+        _onlyEnoughAvailableFunds(_depositAssetKey, workflowOwner, _executionLockedAmount);
 
         uint256 currentWorkflowExecutionId = nextWorkflowExecutionId++;
 
@@ -168,9 +180,10 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
         workflowExecutionInfo.status = WorkflowExecutionStatus.COMPLETED;
         workflowExecutionInfo.executionAmount = _executionAmount;
 
-        userDepositData.userDepositedAmount -= _executionAmount;
         userDepositData.userLockedAmount -= executionLockedAmount;
         userDepositData.pendingWorkflowExecutionIds.remove(_workflowExecutionId);
+
+        _updateUserDepositData(depositAssetKey, workflowExecutionInfo.workflowOwner, _executionAmount, false);
 
         _depositAssetsData[depositAssetKey].networkRewards += _executionAmount;
 
@@ -228,25 +241,19 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
         string memory _depositAssetKey,
         uint256 _amountToWithdraw
     ) external override onlyExistingDepositAsset(_depositAssetKey) {
-        require(_amountToWithdraw > 0, "BillingManager: Zero amount to withdraw");
-        require(
-            getUserAvailableFunds(msg.sender, _depositAssetKey) >= _amountToWithdraw,
-            "BillingManager: Not enough available funds to withdraw"
-        );
+        _onlyEnoughAvailableFunds(_depositAssetKey, msg.sender, _amountToWithdraw);
 
-        UserDepositData storage userDepositData = _usersData[msg.sender].userDepositsData[_depositAssetKey];
+        _withdrawUserFunds(_depositAssetKey, msg.sender, _amountToWithdraw);
 
-        uint256 newUserFundsAmount = userDepositData.userDepositedAmount - _amountToWithdraw;
+        emit UserFundsWithdrawn(_depositAssetKey, msg.sender, _amountToWithdraw);
+    }
 
-        userDepositData.userDepositedAmount = newUserFundsAmount;
+    function withdrawAllFunds(string memory _depositAssetKey) external onlyExistingDepositAsset(_depositAssetKey) {
+        uint256 availableAmount = getUserAvailableFunds(msg.sender, _depositAssetKey);
 
-        if (newUserFundsAmount == 0) {
-            _existingUsers.remove(msg.sender);
-        }
+        _withdrawUserFunds(_depositAssetKey, msg.sender, availableAmount);
 
-        _sendFunds(_depositAssetKey, msg.sender, _amountToWithdraw);
-
-        emit UserFundsWithdrawn(msg.sender, _amountToWithdraw);
+        emit UserFundsWithdrawn(_depositAssetKey, msg.sender, availableAmount);
     }
 
     function withdrawNetworkRewards(
@@ -266,7 +273,7 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
 
         _sendFunds(_depositAssetKey, signerAddr, amountToWithdraw);
 
-        emit RewardsWithdrawn(signerAddr, amountToWithdraw);
+        emit RewardsWithdrawn(_depositAssetKey, signerAddr, amountToWithdraw);
     }
 
     function getTotalUsersCount() external view override returns (uint256) {
@@ -417,14 +424,43 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
             );
         }
 
-        UserData storage userData = _usersData[_recipientAddr];
-
-        userData.userDepositsData[_depositAssetKey].userDepositedAmount += _depositAmount;
-        userData.depositAssetKeys.add(_depositAssetKey);
-
-        _existingUsers.add(_recipientAddr);
+        _updateUserDepositData(_depositAssetKey, _recipientAddr, _depositAmount, true);
 
         emit AssetDeposited(_depositAssetKey, _tokensSenderAddr, _recipientAddr, _depositAmount);
+    }
+
+    function _withdrawUserFunds(string memory _depositAssetKey, address _userAddr, uint256 _amountToWithdraw) internal {
+        _updateUserDepositData(_depositAssetKey, _userAddr, _amountToWithdraw, false);
+
+        _sendFunds(_depositAssetKey, _userAddr, _amountToWithdraw);
+    }
+
+    function _updateUserDepositData(
+        string memory _depositAssetKey,
+        address _userAddr,
+        uint256 _amountToUpdate,
+        bool _isAdding
+    ) internal {
+        require(_amountToUpdate > 0, "BillingManager: Zero amount to update");
+
+        UserData storage userData = _usersData[_userAddr];
+
+        if (_isAdding) {
+            userData.userDepositsData[_depositAssetKey].userDepositedAmount += _amountToUpdate;
+            userData.depositAssetKeys.add(_depositAssetKey);
+
+            _existingUsers.add(_userAddr);
+        } else {
+            UserDepositData storage userDepositData = userData.userDepositsData[_depositAssetKey];
+
+            uint256 newUserFundsAmount = userDepositData.userDepositedAmount - _amountToUpdate;
+
+            userDepositData.userDepositedAmount = newUserFundsAmount;
+
+            if (newUserFundsAmount == 0) {
+                _existingUsers.remove(_userAddr);
+            }
+        }
     }
 
     function _sendFunds(string memory _depositAssetKey, address _recipientAddr, uint256 _amountToSend) internal {
@@ -441,5 +477,16 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
 
     function _onlyEnabledDepositAsset(string memory _depositAssetKey) internal view {
         require(isDepositAssetEnabled(_depositAssetKey), "BillingManager: Deposit asset is disabled");
+    }
+
+    function _onlyEnoughAvailableFunds(
+        string memory _depositAssetKey,
+        address _userAddr,
+        uint256 _neededAmount
+    ) internal view {
+        require(
+            getUserAvailableFunds(_userAddr, _depositAssetKey) >= _neededAmount,
+            "BillingManager: Not enough available funds"
+        );
     }
 }
