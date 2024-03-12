@@ -22,6 +22,10 @@ interface IBillingManager {
         COMPLETED
     }
 
+    /**
+     * @notice Enum defining reasons for network withdrawals
+     * @param GATEWAY_DEPLOY Indicates the withdrawal is for gateway deployment purposes
+     */
     enum NetworkWithdrawReasons {
         GATEWAY_DEPLOY
     }
@@ -192,6 +196,13 @@ interface IBillingManager {
         uint256 executionAmount
     );
 
+    /**
+     * @notice Emitted when a network withdrawal is completed
+     * @param depositAssetKey The unique key identifying the deposit asset
+     * @param userAddr The address of the user from whom the tokens were withdrawn
+     * @param withdrawReason The reason for the withdrawal
+     * @param amountToWithdraw The amount of tokens withdrawn
+     */
     event NetworkWithdrawCompleted(
         string indexed depositAssetKey,
         address indexed userAddr,
@@ -221,6 +232,20 @@ interface IBillingManager {
      * @param _newEnabledStatus The new enabled status to be set
      */
     function updateDepositAssetEnabledStatus(string memory _depositAssetKey, bool _newEnabledStatus) external;
+
+    /**
+     * @notice Allows the network to withdraw tokens on behalf of a user for a specific reason
+     * @param _depositAssetKey The unique key identifying the deposit asset
+     * @param _userAddr The address of the user from whom the tokens will be withdrawn
+     * @param _amountToWithdraw The amount of tokens to be withdrawn
+     * @param _withdrawReason The reason for the withdrawal, indicating the purpose or context of the withdrawal
+     */
+    function networkWithdraw(
+        string calldata _depositAssetKey,
+        address _userAddr,
+        uint256 _amountToWithdraw,
+        NetworkWithdrawReasons _withdrawReason
+    ) external;
 
     /**
      * @notice Locks funds for a workflow execution
@@ -272,12 +297,20 @@ interface IBillingManager {
 
     /**
      * @notice Withdraws funds from the user's balance
+     * @param _depositAssetKey The unique key identifying the deposit asset
      * @param _amountToWithdraw The amount to be withdrawn
      */
     function withdrawFunds(string memory _depositAssetKey, uint256 _amountToWithdraw) external;
 
     /**
+     * @notice Withdraws all available funds from the user's balance
+     * @param _depositAssetKey The unique key identifying the deposit asset
+     */
+    function withdrawAllFunds(string memory _depositAssetKey) external;
+
+    /**
      * @notice Withdraws network rewards
+     * @param _depositAssetKey The unique key identifying the deposit asset
      */
     function withdrawNetworkRewards(string memory _depositAssetKey) external;
 

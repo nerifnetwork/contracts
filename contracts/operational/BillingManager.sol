@@ -107,7 +107,7 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
         address _userAddr,
         uint256 _amountToWithdraw,
         NetworkWithdrawReasons _withdrawReason
-    ) external onlySigner onlyExistingDepositAsset(_depositAssetKey) {
+    ) external override onlySigner onlyExistingDepositAsset(_depositAssetKey) {
         _onlyEnoughAvailableFunds(_depositAssetKey, _userAddr, _amountToWithdraw);
 
         _updateUserDepositData(_depositAssetKey, _userAddr, _amountToWithdraw, false);
