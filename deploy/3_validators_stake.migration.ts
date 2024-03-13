@@ -16,7 +16,7 @@ export = async (deployer: Deployer) => {
     for (let i = 0; i < config.stakingKeys.length; i++) {
       const signer = new ethers.Wallet(config.stakingKeys[i], ethers.provider);
 
-      await token.connect(signer).approve(signer.address, minimalStake);
+      await token.connect(signer).approve(staking.address, minimalStake);
       await token.connect(signer).mint(signer.address, minimalStake);
       await staking.connect(signer).stake(minimalStake);
       console.log(`Staked ${minimalStake} from the ${signer.address} address`);

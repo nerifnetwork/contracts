@@ -9,4 +9,5 @@ abstract contract ContractKeys {
     string public constant SUPPORTED_TOKENS_KEY = "supported-tokens";
     string public constant SLASHING_VOTING_KEY = "slashing-voting";
     string public constant REWARD_DISTRIBUTION_POOL_KEY = "reward-distribution-pool";
+    string public constant TOKENS_VESTING_KEY = "tokens-vesting";
 }
