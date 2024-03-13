@@ -34,6 +34,7 @@ describe('BillingManager', () => {
   const OWNER_PK: string = 'ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
 
   const defaultWorkflowId: number = 13;
+  const defaultWithdrawReason = 0;
   const tokensAmount = wei('1000');
 
   const nativeDepositAssetKey: string = 'NATIVE';
@@ -772,7 +773,7 @@ describe('BillingManager', () => {
     });
 
     it('should get exception if user does not have available funds to lock', async () => {
-      const reason = 'BillingManager: Not enough available funds to lock';
+      const reason = 'BillingManager: Not enough available funds';
 
       await expect(
         billingManager.connect(SIGNER).lockExecutionFunds(nerifAssetKey, defaultWorkflowId, tokensLockAmount)
@@ -936,7 +937,9 @@ describe('BillingManager', () => {
     it('should correctly withdraw ERC20 tokens with specific amount', async () => {
       const tx = await billingManager.withdrawFunds(nerifAssetKey, withdrawAmount);
 
-      await expect(tx).emit(billingManager, 'UserFundsWithdrawn').withArgs(OWNER.address, withdrawAmount);
+      await expect(tx)
+        .emit(billingManager, 'UserFundsWithdrawn')
+        .withArgs(nerifAssetKey, OWNER.address, withdrawAmount);
 
       expect(await nerifToken.balanceOf(OWNER.address)).to.be.eq(
         tokensAmount.sub(depositTokensAmount).add(withdrawAmount)
@@ -958,7 +961,9 @@ describe('BillingManager', () => {
 
       const tx = await billingManager.withdrawFunds(nerifAssetKey, availableFunds);
 
-      await expect(tx).emit(billingManager, 'UserFundsWithdrawn').withArgs(OWNER.address, availableFunds);
+      await expect(tx)
+        .emit(billingManager, 'UserFundsWithdrawn')
+        .withArgs(nerifAssetKey, OWNER.address, availableFunds);
 
       expect(await nerifToken.balanceOf(OWNER.address)).to.be.eq(
         tokensAmount.sub(depositTokensAmount).add(availableFunds)
@@ -991,7 +996,7 @@ describe('BillingManager', () => {
     });
 
     it('should get exception if try to withdraw more than the available', async () => {
-      const reason = 'BillingManager: Not enough available funds to withdraw';
+      const reason = 'BillingManager: Not enough available funds';
 
       await expect(billingManager.withdrawFunds(nerifAssetKey, withdrawAmount.mul(6))).to.be.revertedWith(reason);
     });
@@ -1003,9 +1008,61 @@ describe('BillingManager', () => {
     });
 
     it('should get exception if try to withdraw zero amount', async () => {
-      const reason = 'BillingManager: Zero amount to withdraw';
+      const reason = 'BillingManager: Zero amount to update';
 
       await expect(billingManager.withdrawFunds(nerifAssetKey, 0)).to.be.revertedWith(reason);
+    });
+  });
+
+  describe('withdrawAllFunds', () => {
+    const depositTokensAmount = wei('200');
+    const tokensLockAmount = wei('50');
+    const nerifAssetKey: string = 'NERIF';
+    let nerifAssetData: IBillingManager.DepositAssetDataStruct;
+
+    beforeEach('setup', async () => {
+      nerifAssetData = {
+        tokenAddr: nerifToken.address,
+        workflowExecutionDiscount: 10,
+        networkRewards: 0,
+        isPermitable: true,
+        isEnabled: true,
+      };
+
+      await billingManager.connect(SIGNER).addDepositAssets([
+        {
+          depositAssetKey: nerifAssetKey,
+          depositAssetData: nerifAssetData,
+        },
+      ]);
+
+      await nerifToken.approve(billingManager.address, tokensAmount);
+      await billingManager.deposit(nerifAssetKey, OWNER.address, depositTokensAmount);
+      await billingManager.connect(SIGNER).lockExecutionFunds(nerifAssetKey, defaultWorkflowId, tokensLockAmount);
+    });
+
+    it('should correctly withdraw all available funds', async () => {
+      const expectedAvailableAmount = depositTokensAmount.sub(tokensLockAmount);
+
+      const tx = await billingManager.withdrawAllFunds(nerifAssetKey);
+
+      await expect(tx)
+        .emit(billingManager, 'UserFundsWithdrawn')
+        .withArgs(nerifAssetKey, OWNER.address, expectedAvailableAmount);
+
+      expect(await billingManager.getUserAvailableFunds(OWNER.address, nerifAssetKey)).to.be.eq(0);
+    });
+
+    it('should get exception if the deposit asset key does not exist', async () => {
+      const reason = 'BillingManager: Deposit asset does not exist';
+
+      await expect(billingManager.withdrawAllFunds('SOME_KEY')).to.be.revertedWith(reason);
+    });
+
+    it('should get exception if try to withdraw zero amount', async () => {
+      const reason = 'BillingManager: Zero amount to update';
+
+      await expect(billingManager.connect(FIRST).withdrawAllFunds(nerifAssetKey)).to.be.revertedWith(reason);
     });
   });
 
@@ -1043,7 +1100,9 @@ describe('BillingManager', () => {
     it('should correctly withdraw network rewards', async () => {
       const tx = await billingManager.withdrawNetworkRewards(nerifAssetKey);
 
-      await expect(tx).emit(billingManager, 'RewardsWithdrawn').withArgs(SIGNER.address, tokensExecutionAmount);
+      await expect(tx)
+        .emit(billingManager, 'RewardsWithdrawn')
+        .withArgs(nerifAssetKey, SIGNER.address, tokensExecutionAmount);
 
       expect(await nerifToken.balanceOf(billingManager.address)).to.be.eq(
         depositTokensAmount.sub(tokensExecutionAmount)
@@ -1070,6 +1129,79 @@ describe('BillingManager', () => {
       const reason = 'BillingManager: Deposit asset does not exist';
 
       await expect(billingManager.withdrawNetworkRewards('SOME_KEY')).to.be.revertedWith(reason);
+    });
+  });
+
+  describe('networkWithdraw', () => {
+    const depositTokensAmount = wei('200');
+    const tokensLockAmount = wei('50');
+    const withdrawAmount = wei('75');
+    const nerifAssetKey: string = 'NERIF';
+
+    let nerifAssetData: IBillingManager.DepositAssetDataStruct;
+
+    beforeEach('setup', async () => {
+      nerifAssetData = {
+        tokenAddr: nerifToken.address,
+        workflowExecutionDiscount: 10,
+        networkRewards: 0,
+        isPermitable: true,
+        isEnabled: true,
+      };
+
+      await billingManager.connect(SIGNER).addDepositAssets([
+        {
+          depositAssetKey: nerifAssetKey,
+          depositAssetData: nerifAssetData,
+        },
+      ]);
+
+      await nerifToken.approve(billingManager.address, tokensAmount);
+      await billingManager.deposit(nerifAssetKey, OWNER.address, depositTokensAmount);
+      await billingManager.connect(SIGNER).lockExecutionFunds(nerifAssetKey, defaultWorkflowId, tokensLockAmount);
+    });
+
+    it('should correctly withdraw user available tokens', async () => {
+      const tx = await billingManager
+        .connect(SIGNER)
+        .networkWithdraw(nerifAssetKey, OWNER.address, withdrawAmount, defaultWithdrawReason);
+
+      await expect(tx)
+        .emit(billingManager, 'NetworkWithdrawCompleted')
+        .withArgs(nerifAssetKey, OWNER.address, defaultWithdrawReason, withdrawAmount);
+
+      const userDepositInfo = await billingManager.getUserDepositInfo(OWNER.address, nerifAssetKey);
+
+      expect(userDepositInfo.userDepositedAmount).to.be.eq(depositTokensAmount.sub(withdrawAmount));
+      expect(await billingManager.getUserAvailableFunds(OWNER.address, nerifAssetKey)).to.be.eq(
+        depositTokensAmount.sub(tokensLockAmount).sub(withdrawAmount)
+      );
+
+      expect(await billingManager.getNetworkRewards(nerifAssetKey)).to.be.eq(withdrawAmount);
+    });
+
+    it('should get exception if not a signer try to call this function', async () => {
+      const reason = 'SignerOwnable: only signer';
+
+      await expect(
+        billingManager.networkWithdraw(nerifAssetKey, OWNER.address, 10, defaultWithdrawReason)
+      ).to.be.revertedWith(reason);
+    });
+
+    it('should get exception if the deposit asset key does not exist', async () => {
+      const reason = 'BillingManager: Deposit asset does not exist';
+
+      await expect(
+        billingManager.connect(SIGNER).networkWithdraw('SOME_KEY', OWNER.address, 10, defaultWithdrawReason)
+      ).to.be.revertedWith(reason);
+    });
+
+    it('should get exception if try to withdraw zero amount', async () => {
+      const reason = 'BillingManager: Zero amount to update';
+
+      await expect(
+        billingManager.connect(SIGNER).networkWithdraw(nerifAssetKey, OWNER.address, 0, defaultWithdrawReason)
+      ).to.be.revertedWith(reason);
     });
   });
 

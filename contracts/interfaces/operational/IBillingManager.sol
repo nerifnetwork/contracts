@@ -23,6 +23,14 @@ interface IBillingManager {
     }
 
     /**
+     * @notice Enum defining reasons for network withdrawals
+     * @param GATEWAY_DEPLOY Indicates the withdrawal is for gateway deployment purposes
+     */
+    enum NetworkWithdrawReasons {
+        GATEWAY_DEPLOY
+    }
+
+    /**
      * @dev Struct containing data related to the deposit asset
      * @param tokenAddr The address of the token for the deposit asset
      * @param workflowExecutionDiscount The discount applied for workflow execution
@@ -141,17 +149,18 @@ interface IBillingManager {
 
     /**
      * @notice Event emitted when funds are withdrawn from a user's balance
+     * @param depositAssetKey The unique key identifying the deposit asset
      * @param userAddr The address of the user
      * @param withdrawnAmount The amount withdrawn from the user's balance
      */
-    event UserFundsWithdrawn(address indexed userAddr, uint256 withdrawnAmount);
+    event UserFundsWithdrawn(string indexed depositAssetKey, address indexed userAddr, uint256 withdrawnAmount);
 
     /**
      * @notice Event emitted when network rewards are withdrawn
      * @param recipientAddr The address of the recipient
      * @param rewardsAmount The amount of rewards withdrawn
      */
-    event RewardsWithdrawn(address indexed recipientAddr, uint256 rewardsAmount);
+    event RewardsWithdrawn(string indexed depositAssetKey, address indexed recipientAddr, uint256 rewardsAmount);
 
     /**
      * @notice Event emitted when funds are locked for a workflow execution
@@ -188,6 +197,20 @@ interface IBillingManager {
     );
 
     /**
+     * @notice Emitted when a network withdrawal is completed
+     * @param depositAssetKey The unique key identifying the deposit asset
+     * @param userAddr The address of the user from whom the tokens were withdrawn
+     * @param withdrawReason The reason for the withdrawal
+     * @param amountToWithdraw The amount of tokens withdrawn
+     */
+    event NetworkWithdrawCompleted(
+        string indexed depositAssetKey,
+        address indexed userAddr,
+        NetworkWithdrawReasons indexed withdrawReason,
+        uint256 amountToWithdraw
+    );
+
+    /**
      * @notice Adds multiple deposit assets with their corresponding information
      * @param _depositAssetInfoArr An array containing DepositAssetInfo structs for the deposit assets to be added
      */
@@ -209,6 +232,20 @@ interface IBillingManager {
      * @param _newEnabledStatus The new enabled status to be set
      */
     function updateDepositAssetEnabledStatus(string memory _depositAssetKey, bool _newEnabledStatus) external;
+
+    /**
+     * @notice Allows the network to withdraw tokens on behalf of a user for a specific reason
+     * @param _depositAssetKey The unique key identifying the deposit asset
+     * @param _userAddr The address of the user from whom the tokens will be withdrawn
+     * @param _amountToWithdraw The amount of tokens to be withdrawn
+     * @param _withdrawReason The reason for the withdrawal, indicating the purpose or context of the withdrawal
+     */
+    function networkWithdraw(
+        string calldata _depositAssetKey,
+        address _userAddr,
+        uint256 _amountToWithdraw,
+        NetworkWithdrawReasons _withdrawReason
+    ) external;
 
     /**
      * @notice Locks funds for a workflow execution
@@ -260,12 +297,20 @@ interface IBillingManager {
 
     /**
      * @notice Withdraws funds from the user's balance
+     * @param _depositAssetKey The unique key identifying the deposit asset
      * @param _amountToWithdraw The amount to be withdrawn
      */
     function withdrawFunds(string memory _depositAssetKey, uint256 _amountToWithdraw) external;
 
     /**
+     * @notice Withdraws all available funds from the user's balance
+     * @param _depositAssetKey The unique key identifying the deposit asset
+     */
+    function withdrawAllFunds(string memory _depositAssetKey) external;
+
+    /**
      * @notice Withdraws network rewards
+     * @param _depositAssetKey The unique key identifying the deposit asset
      */
     function withdrawNetworkRewards(string memory _depositAssetKey) external;
 
