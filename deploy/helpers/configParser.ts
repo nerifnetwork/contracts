@@ -28,6 +28,7 @@ export type OperationalContractsInitParams = {
 };
 
 export type StakingInitParams = {
+  stakeTokenAddr: string;
   minimalStake: BigNumber;
   withdrawalPeriod: BigNumber;
 };
@@ -107,6 +108,7 @@ function validateOperationalContractsInitParams(
 }
 
 function validateStakingInitParams(stakingInitParams: StakingInitParams) {
+  nonUndefinedField(stakingInitParams.stakeTokenAddr, 'stakeTokenAddr');
   nonEmptyField(stakingInitParams.minimalStake, 'minimalStake');
   nonEmptyField(stakingInitParams.withdrawalPeriod, 'withdrawalPeriod');
 }
@@ -135,7 +137,7 @@ function nonUndefinedField(fieldValue: any, fieldName: string) {
   }
 }
 
-function isEmptyField(fieldValue: any) {
+export function isEmptyField(fieldValue: any) {
   return isUndefined(fieldValue) || fieldValue == '';
 }
 

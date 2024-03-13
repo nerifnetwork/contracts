@@ -2,47 +2,41 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
+import "@openzeppelin/contracts/interfaces/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+import "@solarity/solidity-lib/libs/arrays/Paginator.sol";
+
 import "../interfaces/SignerOwnable.sol";
-import "../common/AddressStorage.sol";
+import "../interfaces/system/IStaking.sol";
+
 import "../common/ContractRegistry.sol";
+
 import "./DKG.sol";
 import "./ContractKeys.sol";
 import "./SlashingVoting.sol";
 import "./RewardDistributionPool.sol";
 
-// Staking is the staking contract mechanism.
-contract Staking is ContractKeys, SignerOwnable, Initializable {
-    enum ValidatorStatus {
-        INACTIVE,
-        ACTIVE,
-        SLASHED
-    }
+contract Staking is IStaking, ContractKeys, SignerOwnable, Initializable {
+    using EnumerableSet for EnumerableSet.AddressSet;
+    using SafeERC20 for IERC20;
 
-    struct ValidatorInfo {
-        address validator;
-        uint256 stake;
-        ValidatorStatus status;
-    }
-
-    struct WithdrawalAnnouncement {
-        uint256 amount;
-        uint256 time;
-    }
-
-    uint256 public minimalStake;
-    uint256 public withdrawalPeriod;
-    uint256 public totalStake;
-    mapping(address => ValidatorInfo) public stakes;
-    mapping(address => WithdrawalAnnouncement) public withdrawalAnnouncements;
     ContractRegistry public contractRegistry;
-    AddressStorage public addressStorage;
+    IERC20 public stakeToken;
 
-    event MinimalStakeUpdated(uint256 minimalStake);
-    event WithdrawalPeriodUpdated(uint256 withdrawalPeriod);
-    event ContractRegistryUpdated(address contractRegistry);
+    uint256 public override minimalStake;
+    uint256 public override withdrawalPeriod;
+    uint256 public override totalStake;
+
+    EnumerableSet.AddressSet internal _validators;
+
+    mapping(address => ValidatorData) internal _validatorsData;
+    mapping(address => WithdrawalAnnouncement) internal _withdrawalAnnouncements;
 
     modifier onlyNotSlashed() {
-        require(stakes[msg.sender].status != ValidatorStatus.SLASHED, "Staking: validator is slashed");
+        require(!isValidatorSlashed(msg.sender), "Staking: validator is slashed");
         _;
     }
 
@@ -59,157 +53,211 @@ contract Staking is ContractKeys, SignerOwnable, Initializable {
         _;
     }
 
-    // solhint-disable-next-line no-empty-blocks
-    receive() external payable {}
-
     function initialize(
         address _signerGetterAddress,
-        uint256 _minimalStake,
-        uint256 _withdrawalPeriod,
         address _contractRegistry,
-        address _validatorStorage
+        address _stakeToken,
+        uint256 _minimalStake,
+        uint256 _withdrawalPeriod
     ) external initializer {
-        _setSignerGetter(_signerGetterAddress);
-        setMinimalStake(_minimalStake);
-        setWithdrawalPeriod(_withdrawalPeriod);
         contractRegistry = ContractRegistry(_contractRegistry);
-        addressStorage = AddressStorage(_validatorStorage);
+        stakeToken = IERC20(_stakeToken);
+
+        _setSignerGetter(_signerGetterAddress);
+
+        _setMinimalStake(_minimalStake);
+        _setWithdrawalPeriod(_withdrawalPeriod);
     }
 
-    function addRewardsToStake(address _validator, uint256 _amount) external onlyRewardDistributionPool {
-        stakes[_validator].stake += _amount;
+    function setMinimalStake(uint256 _minimalStake) external override onlySigner {
+        _setMinimalStake(_minimalStake);
+    }
+
+    function setWithdrawalPeriod(uint256 _withdrawalPeriod) external override onlySigner {
+        _setWithdrawalPeriod(_withdrawalPeriod);
+    }
+
+    function addRewardsToStake(address _validator, uint256 _amount) external override onlyRewardDistributionPool {
+        _validatorsData[_validator].stake += _amount;
         totalStake += _amount;
     }
 
-    function isValidatorActive(address _validator) external view returns (bool) {
-        return (stakes[_validator].status == ValidatorStatus.ACTIVE);
+    function slash(address _validator) external override onlySlashingVoting {
+        _updateValidatorStatus(_validator, ValidatorStatus.SLASHED);
     }
 
-    function isValidatorSlashed(address _validator) external view returns (bool) {
-        return stakes[_validator].status == ValidatorStatus.SLASHED;
-    }
+    function announceWithdrawal(uint256 _amount) external override onlyNotSlashed {
+        require(_amount > 0, "Staking: amount must be greater than zero");
+        require(_amount <= _validatorsData[msg.sender].stake, "Staking: amount must be <= to stake");
 
-    function setMinimalStake(uint256 _minimalStake) public onlySigner {
-        minimalStake = _minimalStake;
-        emit MinimalStakeUpdated(_minimalStake);
-    }
+        _withdrawalAnnouncements[msg.sender] = WithdrawalAnnouncement(_amount, block.timestamp);
 
-    function setWithdrawalPeriod(uint256 _withdrawalPeriod) public onlySigner {
-        withdrawalPeriod = _withdrawalPeriod;
-        emit WithdrawalPeriodUpdated(_withdrawalPeriod);
-    }
-
-    function slash(address _validator) public onlySlashingVoting {
-        stakes[_validator].status = ValidatorStatus.SLASHED;
-        _removeValidator(_validator);
-    }
-
-    function announceWithdrawal(uint256 _amount) public onlyNotSlashed {
-        require(_amount <= stakes[msg.sender].stake, "Staking: amount must be <= to stake");
-        withdrawalAnnouncements[msg.sender].amount = _amount;
-        // solhint-disable-next-line not-rely-on-time
-        withdrawalAnnouncements[msg.sender].time = block.timestamp;
-
-        if (stakes[msg.sender].stake - _amount < minimalStake && addressStorage.contains(msg.sender)) {
-            stakes[msg.sender].status = ValidatorStatus.INACTIVE;
-            _removeValidator(msg.sender);
+        if (_validatorsData[msg.sender].stake - _amount < minimalStake && _validators.contains(msg.sender)) {
+            _updateValidatorStatus(msg.sender, ValidatorStatus.INACTIVE);
         }
     }
 
-    function revokeWithdrawal() public onlyNotSlashed {
-        require(withdrawalAnnouncements[msg.sender].amount > 0, "Staking: not announced");
+    function revokeWithdrawal() external override onlyNotSlashed {
+        require(hasWithdrawalAnnouncement(msg.sender), "Staking: user does not have withdrawal announcement");
 
-        uint256 amount = withdrawalAnnouncements[msg.sender].amount;
+        uint256 amount = _withdrawalAnnouncements[msg.sender].amount;
 
-        withdrawalAnnouncements[msg.sender].amount = 0;
-        withdrawalAnnouncements[msg.sender].time = 0;
+        delete _withdrawalAnnouncements[msg.sender];
 
-        if (
-            stakes[msg.sender].status == ValidatorStatus.INACTIVE && amount + stakes[msg.sender].stake >= minimalStake
-        ) {
-            stakes[msg.sender].validator = msg.sender;
-            stakes[msg.sender].status = ValidatorStatus.ACTIVE;
-            _addValidator(msg.sender);
+        if (_validatorsData[msg.sender].stake + amount >= minimalStake && !_validators.contains(msg.sender)) {
+            _updateValidatorStatus(msg.sender, ValidatorStatus.ACTIVE);
         }
     }
 
-    function withdraw() public onlyNotSlashed {
-        require(withdrawalAnnouncements[msg.sender].amount > 0, "Staking: amount must be greater than zero");
+    function withdraw() external override onlyNotSlashed {
+        require(hasWithdrawalAnnouncement(msg.sender), "Staking: user does not have withdrawal announcement");
         require(
-            // solhint-disable-next-line not-rely-on-time
-            withdrawalAnnouncements[msg.sender].time + withdrawalPeriod <= block.timestamp,
+            _withdrawalAnnouncements[msg.sender].time + withdrawalPeriod <= block.timestamp,
             "Staking: withdrawal period not passed"
         );
 
-        uint256 withdrawalAmount = withdrawalAnnouncements[msg.sender].amount;
+        uint256 withdrawalAmount = _withdrawalAnnouncements[msg.sender].amount;
 
-        require(withdrawalAmount <= stakes[msg.sender].stake, "Staking: amount must be <= to validator stake");
-
-        stakes[msg.sender].stake -= withdrawalAmount;
+        _validatorsData[msg.sender].stake -= withdrawalAmount;
         totalStake -= withdrawalAmount;
 
-        withdrawalAnnouncements[msg.sender].amount = 0;
-        withdrawalAnnouncements[msg.sender].time = 0;
+        delete _withdrawalAnnouncements[msg.sender];
 
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool success, ) = msg.sender.call{value: withdrawalAmount, gas: 21000}("");
-        require(success, "Staking: transfer failed");
+        stakeToken.safeTransfer(msg.sender, withdrawalAmount);
+
+        emit TokensWithdrawn(msg.sender, withdrawalAmount);
     }
 
-    function stake() public payable onlyNotSlashed {
-        require(msg.value > 0, "Staking: amount must be greater than zero");
+    function stake(uint256 _stakeAmount) external override onlyNotSlashed {
+        _stake(msg.sender, msg.sender, _stakeAmount);
+    }
 
-        if (
-            stakes[msg.sender].status == ValidatorStatus.INACTIVE &&
-            msg.value + stakes[msg.sender].stake >= minimalStake
-        ) {
-            stakes[msg.sender].validator = msg.sender;
-            stakes[msg.sender].status = ValidatorStatus.ACTIVE;
-            _addValidator(msg.sender);
+    function stakeWithPermit(
+        uint256 _stakeAmount,
+        uint256 _sigExpirationTime,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
+    ) external override onlyNotSlashed {
+        IERC20Permit(address(stakeToken)).permit(
+            msg.sender,
+            address(this),
+            _stakeAmount,
+            _sigExpirationTime,
+            _v,
+            _r,
+            _s
+        );
+
+        _stake(msg.sender, msg.sender, _stakeAmount);
+    }
+
+    function getValidators() external view override returns (address[] memory) {
+        return _validators.values();
+    }
+
+    function getValidatorsCount() external view override returns (uint256) {
+        return _validators.length();
+    }
+
+    function getValidatorsInfo(
+        uint256 _offset,
+        uint256 _limit
+    ) external view override returns (ValidatorInfo[] memory _validatorsInfoArr) {
+        uint256 to = Paginator.getTo(_validators.length(), _offset, _limit);
+
+        _validatorsInfoArr = new ValidatorInfo[](to - _offset);
+
+        for (uint256 i = _offset; i < to; i++) {
+            address currentValidatorAddr = _validators.at(i);
+
+            _validatorsInfoArr[i - _offset] = ValidatorInfo(
+                currentValidatorAddr,
+                _validatorsData[currentValidatorAddr]
+            );
+        }
+    }
+
+    function getStake(address _validator) external view override returns (uint256) {
+        return _validatorsData[_validator].stake;
+    }
+
+    function getWithdrawalAnnouncement(
+        address _userAddr
+    ) external view override returns (WithdrawalAnnouncement memory) {
+        return _withdrawalAnnouncements[_userAddr];
+    }
+
+    function isValidatorActive(address _validator) public view override returns (bool) {
+        return getValidatorStatus(_validator) == ValidatorStatus.ACTIVE;
+    }
+
+    function isValidatorSlashed(address _validator) public view override returns (bool) {
+        return getValidatorStatus(_validator) == ValidatorStatus.SLASHED;
+    }
+
+    function getValidatorStatus(address _validator) public view override returns (ValidatorStatus) {
+        return _validatorsData[_validator].status;
+    }
+
+    function hasWithdrawalAnnouncement(address _userAddr) public view override returns (bool) {
+        return _withdrawalAnnouncements[_userAddr].time > 0;
+    }
+
+    function _setMinimalStake(uint256 _minimalStake) internal {
+        minimalStake = _minimalStake;
+
+        emit MinimalStakeUpdated(_minimalStake);
+    }
+
+    function _setWithdrawalPeriod(uint256 _withdrawalPeriod) internal {
+        withdrawalPeriod = _withdrawalPeriod;
+
+        emit WithdrawalPeriodUpdated(_withdrawalPeriod);
+    }
+
+    function _updateValidatorStatus(address _validatorToUpdate, ValidatorStatus _newStatus) internal {
+        bool success;
+
+        if (_newStatus == ValidatorStatus.INACTIVE || _newStatus == ValidatorStatus.SLASHED) {
+            success = _validators.remove(_validatorToUpdate);
+        } else {
+            success = _validators.add(_validatorToUpdate);
         }
 
-        stakes[msg.sender].stake += msg.value;
-        totalStake += msg.value;
+        require(success, "Staking: Failed to update validator status");
+
+        _validatorsData[_validatorToUpdate].status = _newStatus;
+
+        _dkgContract().updateGeneration();
     }
 
-    function getValidators() public view returns (address[] memory) {
-        return addressStorage.getAddresses();
+    function _updateValidators(address _validatorToUpdate, bool _isAdding) internal {
+        bool success = _isAdding ? _validators.add(_validatorToUpdate) : _validators.remove(_validatorToUpdate);
+
+        require(success, "Staking: Invalid validator address to update");
+
+        _dkgContract().updateGeneration();
     }
 
-    function getValidatorsCount() public view returns (uint256) {
-        return addressStorage.size();
-    }
+    function _stake(address _tokenSenderAddr, address _stakeRecipientAddr, uint256 _stakeAmount) internal {
+        require(_stakeAmount > 0, "Staking: Zero stake amount");
+        require(stakeToken.balanceOf(_tokenSenderAddr) >= _stakeAmount, "Staking: Not enough tokens to stake");
 
-    function listValidators(uint256 _offset, uint256 _limit) public view returns (ValidatorInfo[] memory) {
-        address[] memory validators = getValidators();
-        ValidatorInfo[] memory result = new ValidatorInfo[](_limit);
-        for (uint256 i = _offset; i < _offset + _limit; i++) {
-            result[i - _offset] = stakes[validators[i]];
+        ValidatorData storage validatorData = _validatorsData[_stakeRecipientAddr];
+
+        if (validatorData.status == ValidatorStatus.INACTIVE && validatorData.stake + _stakeAmount >= minimalStake) {
+            validatorData.status = ValidatorStatus.ACTIVE;
+
+            _updateValidators(msg.sender, true);
         }
 
-        return result;
-    }
+        stakeToken.safeTransferFrom(_tokenSenderAddr, address(this), _stakeAmount);
 
-    function getStake(address _validator) public view returns (uint256) {
-        return stakes[_validator].stake;
-    }
+        validatorData.stake += _stakeAmount;
+        totalStake += _stakeAmount;
 
-    function getTotalStake() public view returns (uint256) {
-        return totalStake;
-    }
-
-    function _addValidator(address _validator) private {
-        DKG dkg = _dkgContract();
-
-        addressStorage.mustAdd(_validator);
-        dkg.updateGeneration();
-    }
-
-    function _removeValidator(address _validator) private {
-        DKG dkg = _dkgContract();
-
-        addressStorage.mustRemove(_validator);
-        dkg.updateGeneration();
+        emit TokensStaked(_tokenSenderAddr, _stakeRecipientAddr, _stakeAmount);
     }
 
     function _dkgContract() private view returns (DKG) {

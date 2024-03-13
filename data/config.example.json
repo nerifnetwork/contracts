@@ -3,6 +3,7 @@
   "systemContractsInitParams": {
     "dkgDeadlinePeriod": "1000",
     "stakingInitParams": {
+      "stakeTokenAddr": "",
       "minimalStake": "1000000000000000000",
       "withdrawalPeriod": "3600"
     },

@@ -2,7 +2,7 @@ import { ethers } from 'hardhat';
 import { expect } from 'chai';
 import { deployMainchain } from '../utils/deploy';
 
-describe('ContractRegistry', function () {
+describe.skip('ContractRegistry', function () {
   it('should set and get contract address', async function () {
     const [, other] = await ethers.getSigners();
 

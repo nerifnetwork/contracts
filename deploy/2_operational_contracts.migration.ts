@@ -2,10 +2,12 @@ import { Deployer, Reporter } from '@solarity/hardhat-migrate';
 
 import {
   BillingManager__factory,
+  DKG__factory,
   ERC1967Proxy__factory,
   GatewayFactory__factory,
   Gateway__factory,
   Registry__factory,
+  SignerStorage,
   SignerStorage__factory,
 } from '../generated-types/ethers';
 import { parseConfig } from './helpers/configParser';
@@ -28,10 +30,21 @@ export = async (deployer: Deployer) => {
   const registry = await deployer.deployed(Registry__factory);
 
   const gatewayFactory = await deployer.deploy(GatewayFactory__factory);
-  const signerStorage = await deployer.deploy(SignerStorage__factory);
 
-  if (config.operationalContractsInitParams.signer) {
+  let signerStorage: SignerStorage;
+
+  if (config.isMainChain) {
+    const dkgAddress = (await deployer.deployed(DKG__factory)).address;
+
+    signerStorage = await deployer.deployed(SignerStorage__factory, dkgAddress);
+
+    await deployer.save(SignerStorage__factory, dkgAddress);
+  } else if (config.operationalContractsInitParams.signer) {
+    signerStorage = await deployer.deploy(SignerStorage__factory);
+
     await signerStorage.initialize(config.operationalContractsInitParams.signer);
+  } else {
+    throw new Error("Undefined signer address");
   }
 
   await billingManager.initialize(registry.address, signerStorage.address, {
