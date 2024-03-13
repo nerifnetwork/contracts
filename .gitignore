@@ -17,3 +17,5 @@ generated-types
 
 /sidechainconfig.yaml
 /deployed-contracts
+data/testnet
+data/mainnet
