@@ -21,6 +21,7 @@ describe('TokensVesting', () => {
   const nerifTokenName = 'Nerif Token';
   const nerifTokenSymbol = 'NRF';
 
+  const tokensAmount = wei('1000');
   const defaultPeriodDuration = wei('3600', 0);
 
   before(async () => {
@@ -37,7 +38,7 @@ describe('TokensVesting', () => {
     signerStorage = await SignerStorageFactory.deploy();
 
     await tokensVesting.initialize(signerStorage.address, contractsRegistry.address);
-    await nerifToken.initialize(contractsRegistry.address, nerifTokenName, nerifTokenSymbol);
+    await nerifToken.initialize(contractsRegistry.address, tokensAmount, nerifTokenName, nerifTokenSymbol);
     await signerStorage.initialize(SIGNER.address);
     await contractsRegistry.initialize(signerStorage.address);
 

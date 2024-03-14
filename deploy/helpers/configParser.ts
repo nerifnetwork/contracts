@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { BigNumber } from 'ethers';
+import { BigNumber, BigNumberish } from 'ethers';
 
 import * as dotenv from 'dotenv';
 import { ethers } from 'hardhat';
@@ -11,6 +11,9 @@ export type Config = {
   systemContractsInitParams?: SystemContractsInitParams;
   operationalContractsInitParams: OperationalContractsInitParams;
 
+  schedules: ScheduleData[];
+  vestings: VestingData[];
+
   stakingKeys: string[];
 };
 
@@ -19,6 +22,7 @@ export type SystemContractsInitParams = {
 
   stakingInitParams: StakingInitParams;
   slashingVotingInitParams: SlashingVotingInitParams;
+  nerifTokenInitParams: NerifTokenInitParams;
 };
 
 export type OperationalContractsInitParams = {
@@ -28,7 +32,6 @@ export type OperationalContractsInitParams = {
 };
 
 export type StakingInitParams = {
-  stakeTokenAddr: string;
   minimalStake: BigNumber;
   withdrawalPeriod: BigNumber;
 };
@@ -43,6 +46,26 @@ export type NativeDepositAssetData = {
   nativeDepositAssetKey: string;
   workflowExecutionDiscount: BigNumber;
   isEnabled: boolean;
+};
+
+export type ScheduleData = {
+  secondsInPeriod: BigNumberish;
+  durationInPeriods: BigNumberish;
+  cliffInPeriods: BigNumberish;
+};
+
+export type VestingData = {
+  vestingToken: string;
+  beneficiary: string;
+  vestingStartTime: BigNumberish;
+  vestingAmount: BigNumberish;
+  scheduleId: BigNumberish;
+};
+
+export type NerifTokenInitParams = {
+  tokenName: string;
+  tokenSymbol: string;
+  tokenInitAmount: BigNumberish;
 };
 
 export function parseConfig(configPath: string = ''): Config {
@@ -63,6 +86,11 @@ export function parseConfig(configPath: string = ''): Config {
   validateOperationalContractsInitParams(config.isMainChain, config.operationalContractsInitParams);
 
   nonUndefinedField(config.stakingKeys, 'stakingKeys');
+  nonUndefinedField(config.schedules, 'schedules');
+  nonUndefinedField(config.vestings, 'vestings');
+
+  config.schedules.forEach((el) => validateScheduleData(el));
+  config.vestings.forEach((el) => validateVestingData(el));
 
   return config;
 }
@@ -87,6 +115,7 @@ function validateSystemContractsInitParams(systemContractsInitParams: SystemCont
 
   validateStakingInitParams(systemContractsInitParams.stakingInitParams);
   validateSlashingVotingInitParams(systemContractsInitParams.slashingVotingInitParams);
+  validateNerifTokenInitParams(systemContractsInitParams.nerifTokenInitParams);
 }
 
 function validateOperationalContractsInitParams(
@@ -108,7 +137,6 @@ function validateOperationalContractsInitParams(
 }
 
 function validateStakingInitParams(stakingInitParams: StakingInitParams) {
-  nonUndefinedField(stakingInitParams.stakeTokenAddr, 'stakeTokenAddr');
   nonEmptyField(stakingInitParams.minimalStake, 'minimalStake');
   nonEmptyField(stakingInitParams.withdrawalPeriod, 'withdrawalPeriod');
 }
@@ -119,10 +147,36 @@ function validateSlashingVotingInitParams(slashingVotingInitParams: SlashingVoti
   nonEmptyField(slashingVotingInitParams.slashingEpochs, 'slashingEpochs');
 }
 
+function validateNerifTokenInitParams(nerifTokenInitParams: NerifTokenInitParams) {
+  nonEmptyField(nerifTokenInitParams.tokenName, 'tokenName');
+  nonEmptyField(nerifTokenInitParams.tokenSymbol, 'tokenSymbol');
+  nonEmptyField(nerifTokenInitParams.tokenInitAmount, 'tokenInitAmount');
+}
+
 function validateNativeDepositAssetData(nativeDepositAssetData: NativeDepositAssetData) {
   nonEmptyField(nativeDepositAssetData.nativeDepositAssetKey, 'nativeDepositAssetKey');
   nonEmptyField(nativeDepositAssetData.workflowExecutionDiscount, 'workflowExecutionDiscount');
   nonEmptyField(nativeDepositAssetData.isEnabled, 'isEnabled');
+}
+
+function validateScheduleData(scheduleData: ScheduleData) {
+  nonEmptyField(scheduleData.secondsInPeriod, 'secondsInPeriod');
+  nonEmptyField(scheduleData.durationInPeriods, 'durationInPeriods');
+  nonEmptyField(scheduleData.cliffInPeriods, 'cliffInPeriods');
+}
+
+function validateVestingData(vestingData: VestingData) {
+  nonZeroAddr(vestingData.beneficiary, 'beneficiary');
+  nonUndefinedField(vestingData.vestingToken, 'vestingToken');
+  nonEmptyField(vestingData.scheduleId, 'scheduleId');
+  nonEmptyField(vestingData.vestingAmount, 'vestingAmount');
+  nonEmptyField(vestingData.vestingStartTime, 'vestingStartTime');
+}
+
+function nonZeroAddr(fieldValue: any, fieldName: string) {
+  if (isZeroAddr(fieldValue)) {
+    throw new Error(`Invalid ${fieldName} address in config`);
+  }
 }
 
 function nonEmptyField(fieldValue: any, fieldName: string) {
@@ -137,10 +191,14 @@ function nonUndefinedField(fieldValue: any, fieldName: string) {
   }
 }
 
+export function isZeroAddr(fieldValue: any) {
+  return isEmptyField(fieldValue) || fieldValue == ethers.constants.AddressZero;
+}
+
 export function isEmptyField(fieldValue: any) {
   return isUndefined(fieldValue) || fieldValue == '';
 }
 
-function isUndefined(fieldValue: any) {
+export function isUndefined(fieldValue: any) {
   return fieldValue === undefined;
 }

@@ -15,11 +15,18 @@ contract NerifToken is IMintableToken, ERC20PermitUpgradeable, ContractKeys {
         _;
     }
 
-    function initialize(address _contractsRegistry, string memory _name, string memory _symbol) external initializer {
+    function initialize(
+        address _contractsRegistry,
+        uint256 _initTokensAmount,
+        string memory _name,
+        string memory _symbol
+    ) external initializer {
         __ERC20_init(_name, _symbol);
         __ERC20Permit_init(_name);
 
         contractsRegistry = ContractRegistry(_contractsRegistry);
+
+        _mint(msg.sender, _initTokensAmount);
     }
 
     function mint(address _recipient, uint256 _tokensAmount) external override onlyTokensVesting {

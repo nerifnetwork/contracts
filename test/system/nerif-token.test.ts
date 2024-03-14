@@ -66,7 +66,7 @@ describe('NerifToken', () => {
     contractsRegistry = await ContractsRegistryFactory.deploy();
     signerStorage = await SignerStorageFactory.deploy();
 
-    await nerifToken.initialize(contractsRegistry.address, nerifTokenName, nerifTokenSymbol);
+    await nerifToken.initialize(contractsRegistry.address, tokensAmount, nerifTokenName, nerifTokenSymbol);
     await signerStorage.initialize(SIGNER.address);
     await contractsRegistry.initialize(signerStorage.address);
 
@@ -82,6 +82,7 @@ describe('NerifToken', () => {
   describe('creation', () => {
     it('should set correct data after init', async () => {
       expect(await nerifToken.contractsRegistry()).to.be.eq(contractsRegistry.address);
+      expect(await nerifToken.balanceOf(OWNER.address)).to.be.eq(tokensAmount);
       expect(await nerifToken.name()).to.be.eq(nerifTokenName);
       expect(await nerifToken.symbol()).to.be.eq(nerifTokenSymbol);
     });
@@ -90,7 +91,7 @@ describe('NerifToken', () => {
       const reason = 'Initializable: contract is already initialized';
 
       await expect(
-        nerifToken.initialize(contractsRegistry.address, nerifTokenName, nerifTokenSymbol)
+        nerifToken.initialize(contractsRegistry.address, tokensAmount, nerifTokenName, nerifTokenSymbol)
       ).to.be.revertedWith(reason);
     });
   });

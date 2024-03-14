@@ -3,7 +3,6 @@
   "systemContractsInitParams": {
     "dkgDeadlinePeriod": "1000",
     "stakingInitParams": {
-      "stakeTokenAddr": "",
       "minimalStake": "1000000000000000000",
       "withdrawalPeriod": "3600"
     },
@@ -11,6 +10,11 @@
       "epochPeriod": "1000",
       "slashingThresold": "10",
       "slashingEpochs": "3"
+    },
+    "nerifTokenInitParams": {
+      "tokenName": "Nerif Token",
+      "tokenSymbol": "NRF",
+      "tokenInitAmount": "1000000000000000000"
     }
   },
   "operationalContractsInitParams": {
@@ -22,5 +26,21 @@
       "isEnabled": true
     }
   },
+  "schedules": [
+    {
+      "secondsInPeriod": "3600",
+      "durationInPeriods": "24",
+      "cliffInPeriods": "4"
+    }
+  ],
+  "vestings": [
+    {
+      "vestingToken": "",
+      "beneficiary": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "scheduleId": "1",
+      "vestingStartTime": "1000",
+      "vestingAmount": "10000000000000000000000"
+    }
+  ],
   "stakingKeys": []
 }
