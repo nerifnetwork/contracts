@@ -25,9 +25,13 @@ interface IBillingManager {
     /**
      * @notice Enum defining reasons for network withdrawals
      * @param GATEWAY_DEPLOY Indicates the withdrawal is for gateway deployment purposes
+     * @param WORKFLOW_ACTIVATION Indicates the workflow activation purposes
+     * @param WORKFLOW_CANCELLATION Indicates the workflow cancellation purposes
      */
     enum NetworkWithdrawReasons {
-        GATEWAY_DEPLOY
+        GATEWAY_DEPLOY,
+        WORKFLOW_ACTIVATION,
+        WORKFLOW_CANCELLATION
     }
 
     /**
