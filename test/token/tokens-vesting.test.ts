@@ -37,7 +37,7 @@ describe('TokensVesting', () => {
     contractsRegistry = await ContractsRegistryFactory.deploy();
     signerStorage = await SignerStorageFactory.deploy();
 
-    await tokensVesting.initialize(signerStorage.address, contractsRegistry.address);
+    await tokensVesting.initialize();
     await nerifToken.initialize(contractsRegistry.address, tokensAmount, nerifTokenName, nerifTokenSymbol);
     await signerStorage.initialize(SIGNER.address);
     await contractsRegistry.initialize(signerStorage.address);
@@ -51,16 +51,13 @@ describe('TokensVesting', () => {
 
   describe('creation', () => {
     it('should set correct data after init', async () => {
-      expect(await tokensVesting.contractsRegistry()).to.be.eq(contractsRegistry.address);
-      expect(await tokensVesting.signerGetter()).to.be.eq(signerStorage.address);
+      expect(await tokensVesting.owner()).to.be.eq(OWNER.address);
     });
 
     it('should get exception if try to call init function twice', async () => {
       const reason = 'Initializable: contract is already initialized';
 
-      await expect(tokensVesting.initialize(signerStorage.address, contractsRegistry.address)).to.be.revertedWith(
-        reason
-      );
+      await expect(tokensVesting.connect(FIRST).initialize()).to.be.revertedWith(reason);
     });
   });
 
@@ -78,7 +75,7 @@ describe('TokensVesting', () => {
     it('should correctly create schedule', async () => {
       const expectedScheduleId = 1;
 
-      const tx = await tokensVesting.connect(SIGNER).createSchedule(baseSchedule);
+      const tx = await tokensVesting.createSchedule(baseSchedule);
 
       await expect(tx).to.emit(tokensVesting, 'ScheduleCreated').withArgs(expectedScheduleId);
 
@@ -93,7 +90,7 @@ describe('TokensVesting', () => {
       const expectedScheduleId1 = 1;
       const expectedScheduleId2 = 2;
 
-      await tokensVesting.connect(SIGNER).createSchedule(baseSchedule);
+      await tokensVesting.createSchedule(baseSchedule);
 
       let storedScheduleData = (await tokensVesting.getSchedule(expectedScheduleId1)).scheduleData;
 
@@ -104,7 +101,7 @@ describe('TokensVesting', () => {
       baseSchedule.durationInPeriods = 48;
       baseSchedule.cliffInPeriods = 2;
 
-      await tokensVesting.connect(SIGNER).createSchedule(baseSchedule);
+      await tokensVesting.createSchedule(baseSchedule);
 
       storedScheduleData = (await tokensVesting.getSchedule(expectedScheduleId2)).scheduleData;
 
@@ -114,9 +111,10 @@ describe('TokensVesting', () => {
     });
 
     it('should get exception if not a signer try to call this function', async () => {
-      const reason = 'SignerOwnable: only signer';
+      const reason = 'Ownable: caller is not the owner';
 
-      await expect(tokensVesting.createSchedule(baseSchedule)).to.be.revertedWith(reason);
+      await expect(tokensVesting.connect(FIRST).createSchedule(baseSchedule)).to.be.revertedWith(reason);
+      await expect(tokensVesting.connect(SIGNER).createSchedule(baseSchedule)).to.be.revertedWith(reason);
     });
   });
 
@@ -136,7 +134,7 @@ describe('TokensVesting', () => {
         cliffInPeriods: 1,
       };
 
-      await tokensVesting.connect(SIGNER).createSchedule(baseSchedule);
+      await tokensVesting.createSchedule(baseSchedule);
       await setTime(currentTime.toNumber());
 
       vestingData = {
@@ -152,7 +150,7 @@ describe('TokensVesting', () => {
     it('should correctly create vesting', async () => {
       const expectedVestingId = 1;
 
-      const tx = await tokensVesting.connect(SIGNER).createVesting(vestingData);
+      const tx = await tokensVesting.createVesting(vestingData);
 
       await expect(tx)
         .to.emit(tokensVesting, 'VestingCreated')
@@ -170,7 +168,7 @@ describe('TokensVesting', () => {
       const expectedVestingId1 = 1;
       const expectedVestingId2 = 2;
 
-      await tokensVesting.connect(SIGNER).createVesting(vestingData);
+      await tokensVesting.createVesting(vestingData);
 
       let vestingInfo = await tokensVesting.getVesting(expectedVestingId1);
 
@@ -182,7 +180,7 @@ describe('TokensVesting', () => {
       vestingData.beneficiary = OWNER.address;
       vestingData.vestingAmount = baseTokensAmount.mul(2);
 
-      await tokensVesting.connect(SIGNER).createVesting(vestingData);
+      await tokensVesting.createVesting(vestingData);
 
       vestingInfo = await tokensVesting.getVesting(expectedVestingId2);
 
@@ -193,9 +191,9 @@ describe('TokensVesting', () => {
     });
 
     it('should get exception if not a signer try to call this function', async () => {
-      const reason = 'SignerOwnable: only signer';
+      const reason = 'Ownable: caller is not the owner';
 
-      await expect(tokensVesting.createVesting(vestingData)).to.be.revertedWith(reason);
+      await expect(tokensVesting.connect(FIRST).createVesting(vestingData)).to.be.revertedWith(reason);
     });
   });
 
@@ -216,7 +214,7 @@ describe('TokensVesting', () => {
         cliffInPeriods: 4,
       };
 
-      await tokensVesting.connect(SIGNER).createSchedule(baseSchedule);
+      await tokensVesting.createSchedule(baseSchedule);
       await setTime(currentTime.toNumber());
 
       vestingData = {
@@ -228,7 +226,7 @@ describe('TokensVesting', () => {
         vestingAmount: baseTokensAmount,
       };
 
-      await tokensVesting.connect(SIGNER).createVesting(vestingData);
+      await tokensVesting.createVesting(vestingData);
     });
 
     it('should correctly count withdrawable tokens amount', async () => {
@@ -236,9 +234,9 @@ describe('TokensVesting', () => {
 
       expect(await tokensVesting.getWithdrawableAmount(baseVestingId)).to.be.eq(0);
 
-      let periodsToMove = 5;
+      let periodsToMove = 4;
 
-      await setTime(baseStartTime.add(defaultPeriodDuration.mul(periodsToMove)).toNumber());
+      await setTime(baseStartTime.add(defaultPeriodDuration.mul(periodsToMove).add(1)).toNumber());
 
       expect(await tokensVesting.getWithdrawableAmount(baseVestingId)).to.be.closeTo(
         expectedAmountPerPeriod.mul(periodsToMove),

@@ -85,6 +85,7 @@ describe('NerifToken', () => {
       expect(await nerifToken.balanceOf(OWNER.address)).to.be.eq(tokensAmount);
       expect(await nerifToken.name()).to.be.eq(nerifTokenName);
       expect(await nerifToken.symbol()).to.be.eq(nerifTokenSymbol);
+      expect(await nerifToken.owner()).to.be.eq(OWNER.address);
     });
 
     it('should get exception if try to call init function twice', async () => {
@@ -96,17 +97,33 @@ describe('NerifToken', () => {
     });
   });
 
-  describe('mint', () => {
-    it('should correctly mint tokens', async () => {
-      const tx = await nerifToken.connect(VESTING_CONTRACT).mint(OWNER.address, tokensAmount);
+  describe('vestingMint', () => {
+    it('should correctly mint tokens from the vesting', async () => {
+      const tx = await nerifToken.connect(VESTING_CONTRACT).vestingMint(FIRST.address, tokensAmount);
 
-      await expect(tx).to.changeTokenBalance(nerifToken, OWNER, tokensAmount);
+      await expect(tx).to.changeTokenBalance(nerifToken, FIRST, tokensAmount);
+      expect(await nerifToken.balanceOf(FIRST.address)).to.be.eq(tokensAmount);
     });
 
     it('should get exception if not a vesting contract try to call this function', async () => {
       const reason = 'NerifToken: Not a tokens vesting';
 
-      await expect(nerifToken.mint(OWNER.address, tokensAmount)).to.be.revertedWith(reason);
+      await expect(nerifToken.vestingMint(OWNER.address, tokensAmount)).to.be.revertedWith(reason);
+    });
+  });
+
+  describe('ownerMint', () => {
+    it('should correctly mint tokens from the owner address', async () => {
+      const tx = await nerifToken.ownerMint(FIRST.address, tokensAmount);
+
+      await expect(tx).to.changeTokenBalance(nerifToken, FIRST, tokensAmount);
+      expect(await nerifToken.balanceOf(FIRST.address)).to.be.eq(tokensAmount);
+    });
+
+    it('should get exception if not a contract owner try to call this function', async () => {
+      const reason = 'Ownable: caller is not the owner';
+
+      await expect(nerifToken.connect(FIRST).ownerMint(FIRST.address, tokensAmount)).to.be.revertedWith(reason);
     });
   });
 
