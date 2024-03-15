@@ -11,8 +11,7 @@ export type Config = {
   systemContractsInitParams?: SystemContractsInitParams;
   operationalContractsInitParams: OperationalContractsInitParams;
 
-  schedules: ScheduleData[];
-  vestings: VestingData[];
+  systemTokenData?: SystemTokenData;
 
   stakingKeys: string[];
 };
@@ -31,7 +30,14 @@ export type OperationalContractsInitParams = {
   signer?: string;
 };
 
+export type SystemTokenData = {
+  nerifTokenInitParams: NerifTokenInitParams;
+  schedules: ScheduleData[];
+  vestings: VestingData[];
+};
+
 export type StakingInitParams = {
+  stakingTokenAddr: string;
   minimalStake: BigNumber;
   withdrawalPeriod: BigNumber;
 };
@@ -77,7 +83,7 @@ export function parseConfig(configPath: string = ''): Config {
 
   if (config.isMainChain) {
     if (config.systemContractsInitParams) {
-      validateSystemContractsInitParams(config.systemContractsInitParams);
+      validateSystemContractsInitParams(config.systemContractsInitParams, !isUndefined(config.systemTokenData));
     } else {
       throw new Error(`Undefined systemContractsInitParams config field`);
     }
@@ -85,12 +91,11 @@ export function parseConfig(configPath: string = ''): Config {
 
   validateOperationalContractsInitParams(config.isMainChain, config.operationalContractsInitParams);
 
-  nonUndefinedField(config.stakingKeys, 'stakingKeys');
-  nonUndefinedField(config.schedules, 'schedules');
-  nonUndefinedField(config.vestings, 'vestings');
+  if (config.systemTokenData) {
+    validateSystemTokenData(config.systemTokenData);
+  }
 
-  config.schedules.forEach((el) => validateScheduleData(el));
-  config.vestings.forEach((el) => validateVestingData(el));
+  nonUndefinedField(config.stakingKeys, 'stakingKeys');
 
   return config;
 }
@@ -110,12 +115,14 @@ function getConfigPath(configPath: string): string {
   return defaultPath;
 }
 
-function validateSystemContractsInitParams(systemContractsInitParams: SystemContractsInitParams) {
+function validateSystemContractsInitParams(
+  systemContractsInitParams: SystemContractsInitParams,
+  isTokenDataExists: boolean
+) {
   nonEmptyField(systemContractsInitParams.dkgDeadlinePeriod, 'dkgDeadlinePeriod');
 
-  validateStakingInitParams(systemContractsInitParams.stakingInitParams);
+  validateStakingInitParams(systemContractsInitParams.stakingInitParams, isTokenDataExists);
   validateSlashingVotingInitParams(systemContractsInitParams.slashingVotingInitParams);
-  validateNerifTokenInitParams(systemContractsInitParams.nerifTokenInitParams);
 }
 
 function validateOperationalContractsInitParams(
@@ -136,9 +143,24 @@ function validateOperationalContractsInitParams(
   }
 }
 
-function validateStakingInitParams(stakingInitParams: StakingInitParams) {
+function validateSystemTokenData(systemTokenData: SystemTokenData) {
+  nonUndefinedField(systemTokenData.schedules, 'schedules');
+  nonUndefinedField(systemTokenData.vestings, 'vestings');
+  nonUndefinedField(systemTokenData.nerifTokenInitParams, 'nerifTokenInitParams');
+
+  validateNerifTokenInitParams(systemTokenData.nerifTokenInitParams);
+
+  systemTokenData.schedules.forEach((el) => validateScheduleData(el));
+  systemTokenData.vestings.forEach((el) => validateVestingData(el));
+}
+
+function validateStakingInitParams(stakingInitParams: StakingInitParams, isTokenDataExists: boolean) {
   nonEmptyField(stakingInitParams.minimalStake, 'minimalStake');
   nonEmptyField(stakingInitParams.withdrawalPeriod, 'withdrawalPeriod');
+
+  if (!isTokenDataExists) {
+    nonZeroAddr(stakingInitParams.stakingTokenAddr, 'stakingTokenAddr');
+  }
 }
 
 function validateSlashingVotingInitParams(slashingVotingInitParams: SlashingVotingInitParams) {

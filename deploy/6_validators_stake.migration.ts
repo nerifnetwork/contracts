@@ -17,6 +17,7 @@ export = async (deployer: Deployer) => {
     for (let i = 0; i < config.stakingKeys.length; i++) {
       const signer = new ethers.Wallet(config.stakingKeys[i], ethers.provider);
 
+      await nerifToken.ownerMint(signer.address, minimalStake);
       await nerifToken.connect(signer).approve(staking.address, minimalStake);
       await staking.connect(signer).stake(minimalStake);
 
