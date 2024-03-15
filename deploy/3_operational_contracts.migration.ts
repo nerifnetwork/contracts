@@ -15,12 +15,16 @@ import { parseConfig } from './helpers/configParser';
 export = async (deployer: Deployer) => {
   const config = parseConfig();
 
-  const billingManagerImpl = await deployer.deploy(BillingManager__factory, {name: "BillingManagerImpl"});
-  const registryImpl = await deployer.deploy(Registry__factory, {name: "RegistryImpl"});
-  await deployer.deploy(Gateway__factory, {name: "GatewayImpl"});
+  const billingManagerImpl = await deployer.deploy(BillingManager__factory, { name: 'BillingManagerImpl' });
+  const registryImpl = await deployer.deploy(Registry__factory, { name: 'RegistryImpl' });
+  await deployer.deploy(Gateway__factory, { name: 'GatewayImpl' });
 
-  const billingManagerProxy = await deployer.deploy(ERC1967Proxy__factory, [billingManagerImpl.address, "0x"], {name: "BillingManagerProxy"});
-  const registryProxy = await deployer.deploy(ERC1967Proxy__factory, [registryImpl.address, "0x"], {name: "RegistryProxy"});
+  const billingManagerProxy = await deployer.deploy(ERC1967Proxy__factory, [billingManagerImpl.address, '0x'], {
+    name: 'BillingManagerProxy',
+  });
+  const registryProxy = await deployer.deploy(ERC1967Proxy__factory, [registryImpl.address, '0x'], {
+    name: 'RegistryProxy',
+  });
 
   await deployer.save(BillingManager__factory, billingManagerProxy.address);
   await deployer.save(Registry__factory, registryProxy.address);
@@ -40,6 +44,6 @@ export = async (deployer: Deployer) => {
 
     await signerStorage.initialize(config.operationalContractsInitParams.signer);
   } else {
-    throw new Error("Undefined signer address");
+    throw new Error('Undefined signer address');
   }
 };

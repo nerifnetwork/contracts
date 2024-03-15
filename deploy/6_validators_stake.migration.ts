@@ -1,7 +1,7 @@
 import { Deployer } from '@solarity/hardhat-migrate';
 import { ethers } from 'hardhat';
 
-import {Staking__factory, NerifToken__factory} from '../generated-types/ethers';
+import { Staking__factory, NerifToken__factory } from '../generated-types/ethers';
 import { parseConfig } from './helpers/configParser';
 
 export = async (deployer: Deployer) => {

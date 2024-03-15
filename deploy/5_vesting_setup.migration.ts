@@ -16,13 +16,15 @@ export = async (deployer: Deployer) => {
         durationInPeriods: config.systemTokenData.schedules[i].durationInPeriods,
         secondsInPeriod: config.systemTokenData.schedules[i].secondsInPeriod,
       });
-      
+
       console.log(`Created chedule with ID - ${await tokensVesting.scheduleId()}`);
     }
 
     for (let i = 0; i < config.systemTokenData.vestings.length; i++) {
       await tokensVesting.createVesting({
-        vestingToken: isZeroAddr(config.systemTokenData.vestings[i].vestingToken) ? nerifToken.address : config.systemTokenData.vestings[i].vestingToken,
+        vestingToken: isZeroAddr(config.systemTokenData.vestings[i].vestingToken)
+          ? nerifToken.address
+          : config.systemTokenData.vestings[i].vestingToken,
         beneficiary: config.systemTokenData.vestings[i].beneficiary,
         scheduleId: config.systemTokenData.vestings[i].scheduleId,
         vestingAmount: config.systemTokenData.vestings[i].vestingAmount,

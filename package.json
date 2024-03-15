@@ -31,7 +31,7 @@
     "eslint": "eslint -c .eslintrc.js scripts/**/* test/**/* deploy/**/*",
     "eslint:fix": "eslint -c .eslintrc.js scripts/**/* test/**/* --fix",
     "prettier": "prettier --check scripts/**/* test/**/* contracts/**/*",
-    "prettier:fix": "prettier --write scripts/**/* test/**/* contracts/**/* deploy/**/*",
+    "prettier:fix": "prettier --write scripts/**/* test/**/* contracts/* deploy/*",
     "prepare": "husky install",
     "copy-types": "cpy 'typechain/**/*.d.ts' 'dist/typechain/'"
   },
