@@ -57,7 +57,7 @@ const mainnets = {
 }
 
 const testnets = {
-  mumbai: {
+  polygonMumbai: {
     url: `https://polygon-mumbai.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
     accounts,
     gasMultiplier: 1.2,

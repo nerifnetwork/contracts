@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { BigNumber } from 'ethers';
+import { BigNumber, BigNumberish } from 'ethers';
 
 import * as dotenv from 'dotenv';
 import { ethers } from 'hardhat';
@@ -11,6 +11,8 @@ export type Config = {
   systemContractsInitParams?: SystemContractsInitParams;
   operationalContractsInitParams: OperationalContractsInitParams;
 
+  systemTokenData?: SystemTokenData;
+
   stakingKeys: string[];
 };
 
@@ -19,6 +21,7 @@ export type SystemContractsInitParams = {
 
   stakingInitParams: StakingInitParams;
   slashingVotingInitParams: SlashingVotingInitParams;
+  nerifTokenInitParams: NerifTokenInitParams;
 };
 
 export type OperationalContractsInitParams = {
@@ -27,8 +30,14 @@ export type OperationalContractsInitParams = {
   signer?: string;
 };
 
+export type SystemTokenData = {
+  nerifTokenInitParams: NerifTokenInitParams;
+  schedules: ScheduleData[];
+  vestings: VestingData[];
+};
+
 export type StakingInitParams = {
-  stakeTokenAddr: string;
+  stakingTokenAddr: string;
   minimalStake: BigNumber;
   withdrawalPeriod: BigNumber;
 };
@@ -45,6 +54,26 @@ export type NativeDepositAssetData = {
   isEnabled: boolean;
 };
 
+export type ScheduleData = {
+  secondsInPeriod: BigNumberish;
+  durationInPeriods: BigNumberish;
+  cliffInPeriods: BigNumberish;
+};
+
+export type VestingData = {
+  vestingToken: string;
+  beneficiary: string;
+  vestingStartTime: BigNumberish;
+  vestingAmount: BigNumberish;
+  scheduleId: BigNumberish;
+};
+
+export type NerifTokenInitParams = {
+  tokenName: string;
+  tokenSymbol: string;
+  tokenInitAmount: BigNumberish;
+};
+
 export function parseConfig(configPath: string = ''): Config {
   configPath = getConfigPath(configPath);
 
@@ -54,13 +83,17 @@ export function parseConfig(configPath: string = ''): Config {
 
   if (config.isMainChain) {
     if (config.systemContractsInitParams) {
-      validateSystemContractsInitParams(config.systemContractsInitParams);
+      validateSystemContractsInitParams(config.systemContractsInitParams, !isUndefined(config.systemTokenData));
     } else {
       throw new Error(`Undefined systemContractsInitParams config field`);
     }
   }
 
   validateOperationalContractsInitParams(config.isMainChain, config.operationalContractsInitParams);
+
+  if (config.systemTokenData) {
+    validateSystemTokenData(config.systemTokenData);
+  }
 
   nonUndefinedField(config.stakingKeys, 'stakingKeys');
 
@@ -82,10 +115,13 @@ function getConfigPath(configPath: string): string {
   return defaultPath;
 }
 
-function validateSystemContractsInitParams(systemContractsInitParams: SystemContractsInitParams) {
+function validateSystemContractsInitParams(
+  systemContractsInitParams: SystemContractsInitParams,
+  isTokenDataExists: boolean
+) {
   nonEmptyField(systemContractsInitParams.dkgDeadlinePeriod, 'dkgDeadlinePeriod');
 
-  validateStakingInitParams(systemContractsInitParams.stakingInitParams);
+  validateStakingInitParams(systemContractsInitParams.stakingInitParams, isTokenDataExists);
   validateSlashingVotingInitParams(systemContractsInitParams.slashingVotingInitParams);
 }
 
@@ -107,10 +143,24 @@ function validateOperationalContractsInitParams(
   }
 }
 
-function validateStakingInitParams(stakingInitParams: StakingInitParams) {
-  nonUndefinedField(stakingInitParams.stakeTokenAddr, 'stakeTokenAddr');
+function validateSystemTokenData(systemTokenData: SystemTokenData) {
+  nonUndefinedField(systemTokenData.schedules, 'schedules');
+  nonUndefinedField(systemTokenData.vestings, 'vestings');
+  nonUndefinedField(systemTokenData.nerifTokenInitParams, 'nerifTokenInitParams');
+
+  validateNerifTokenInitParams(systemTokenData.nerifTokenInitParams);
+
+  systemTokenData.schedules.forEach((el) => validateScheduleData(el));
+  systemTokenData.vestings.forEach((el) => validateVestingData(el));
+}
+
+function validateStakingInitParams(stakingInitParams: StakingInitParams, isTokenDataExists: boolean) {
   nonEmptyField(stakingInitParams.minimalStake, 'minimalStake');
   nonEmptyField(stakingInitParams.withdrawalPeriod, 'withdrawalPeriod');
+
+  if (!isTokenDataExists) {
+    nonZeroAddr(stakingInitParams.stakingTokenAddr, 'stakingTokenAddr');
+  }
 }
 
 function validateSlashingVotingInitParams(slashingVotingInitParams: SlashingVotingInitParams) {
@@ -119,10 +169,36 @@ function validateSlashingVotingInitParams(slashingVotingInitParams: SlashingVoti
   nonEmptyField(slashingVotingInitParams.slashingEpochs, 'slashingEpochs');
 }
 
+function validateNerifTokenInitParams(nerifTokenInitParams: NerifTokenInitParams) {
+  nonEmptyField(nerifTokenInitParams.tokenName, 'tokenName');
+  nonEmptyField(nerifTokenInitParams.tokenSymbol, 'tokenSymbol');
+  nonEmptyField(nerifTokenInitParams.tokenInitAmount, 'tokenInitAmount');
+}
+
 function validateNativeDepositAssetData(nativeDepositAssetData: NativeDepositAssetData) {
   nonEmptyField(nativeDepositAssetData.nativeDepositAssetKey, 'nativeDepositAssetKey');
   nonEmptyField(nativeDepositAssetData.workflowExecutionDiscount, 'workflowExecutionDiscount');
   nonEmptyField(nativeDepositAssetData.isEnabled, 'isEnabled');
+}
+
+function validateScheduleData(scheduleData: ScheduleData) {
+  nonEmptyField(scheduleData.secondsInPeriod, 'secondsInPeriod');
+  nonEmptyField(scheduleData.durationInPeriods, 'durationInPeriods');
+  nonEmptyField(scheduleData.cliffInPeriods, 'cliffInPeriods');
+}
+
+function validateVestingData(vestingData: VestingData) {
+  nonZeroAddr(vestingData.beneficiary, 'beneficiary');
+  nonUndefinedField(vestingData.vestingToken, 'vestingToken');
+  nonEmptyField(vestingData.scheduleId, 'scheduleId');
+  nonEmptyField(vestingData.vestingAmount, 'vestingAmount');
+  nonEmptyField(vestingData.vestingStartTime, 'vestingStartTime');
+}
+
+function nonZeroAddr(fieldValue: any, fieldName: string) {
+  if (isZeroAddr(fieldValue)) {
+    throw new Error(`Invalid ${fieldName} address in config`);
+  }
 }
 
 function nonEmptyField(fieldValue: any, fieldName: string) {
@@ -137,10 +213,14 @@ function nonUndefinedField(fieldValue: any, fieldName: string) {
   }
 }
 
+export function isZeroAddr(fieldValue: any) {
+  return isEmptyField(fieldValue) || fieldValue == ethers.constants.AddressZero;
+}
+
 export function isEmptyField(fieldValue: any) {
   return isUndefined(fieldValue) || fieldValue == '';
 }
 
-function isUndefined(fieldValue: any) {
+export function isUndefined(fieldValue: any) {
   return fieldValue === undefined;
 }

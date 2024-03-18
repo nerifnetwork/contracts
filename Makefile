@@ -10,7 +10,7 @@ init:
 
 .PHONY: deploy-testnets
 deploy-testnets:
-	DEPLOY_CONFIG_PATH='./data/testnet/config.mumbai.json' npm run deploy mumbai
+	DEPLOY_CONFIG_PATH='./data/testnet/config.mumbai.json' npm run deploy polygonMumbai
 	DEPLOY_CONFIG_PATH='./data/testnet/config.polygonZkEVMTestnet.json' npm run deploy polygonZkEVMTestnet
 	DEPLOY_CONFIG_PATH='./data/testnet/config.goerli.json' npm run deploy goerli
 	DEPLOY_CONFIG_PATH='./data/testnet/config.bscTestnet.json' npm run deploy bscTestnet
