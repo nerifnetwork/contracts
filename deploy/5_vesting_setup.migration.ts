@@ -17,7 +17,7 @@ export = async (deployer: Deployer) => {
         secondsInPeriod: config.systemTokenData.schedules[i].secondsInPeriod,
       });
 
-      console.log(`Created chedule with ID - ${await tokensVesting.scheduleId()}`);
+      console.log(`Created schedule with ID - ${await tokensVesting.scheduleId()}`);
     }
 
     for (let i = 0; i < config.systemTokenData.vestings.length; i++) {
