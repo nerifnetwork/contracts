@@ -2,23 +2,7 @@
 pragma solidity ^0.8.18;
 
 interface IContractsRegistry {
-    function injectDependencies(string calldata _name) external;
-
-    function injectDependenciesWithData(string calldata _name, bytes calldata _data) external;
-
-    function upgradeContract(string calldata _name, address _newImplementation) external;
-
-    function upgradeContractAndCall(string calldata _name, address _newImplementation, bytes calldata _data) external;
-
-    function addContract(string calldata _name, address _contractAddress) external;
-
-    function addProxyContract(string calldata _name, address _contractAddress) external;
-
-    function addProxyContractAndCall(string calldata _name, address _contractAddress, bytes calldata _data) external;
-
-    function justAddProxyContract(string calldata _name, address _contractAddress) external;
-
-    function removeContract(string calldata _name) external;
+    function setIsMainChain(bool _newValue) external;
 
     function isMainChain() external view returns (bool);
 

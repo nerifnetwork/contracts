@@ -3,12 +3,12 @@ pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-import "@solarity/solidity-lib/contracts-registry/AbstractContractsRegistry.sol";
+import "@solarity/solidity-lib/contracts-registry/presets/OwnableContractsRegistry.sol";
 
-import "../interfaces/SignerOwnable.sol";
 import "../interfaces/core/IContractsRegistry.sol";
+import "../interfaces/ISignerAddress.sol";
 
-contract ContractsRegistry is IContractsRegistry, AbstractContractsRegistry, SignerOwnable, UUPSUpgradeable {
+contract ContractsRegistry is IContractsRegistry, OwnableContractsRegistry, UUPSUpgradeable {
     string public constant DKG_NAME = "DKG";
     string public constant STAKING_NAME = "STAKING";
     string public constant SLASHING_VOTING_NAME = "SLASHING_VOTING";
@@ -21,61 +21,18 @@ contract ContractsRegistry is IContractsRegistry, AbstractContractsRegistry, Sig
     string public constant NERIF_TOKEN_NAME = "NERIF_TOKEN";
     string public constant TOKENS_VESTING_NAME = "TOKENS_VESTING";
 
+    string public constant SIGNER_GETTER_NAME = "SIGNER_GETTER";
+
     bool public override isMainChain;
 
-    function initialize(address _signerGetterAddress, bool _isMainChain) external initializer {
-        __ContractsRegistry_init();
-
-        _setSignerGetter(_signerGetterAddress);
-        isMainChain = _isMainChain;
+    function setIsMainChain(bool _newValue) external onlyOwner {
+        isMainChain = _newValue;
     }
 
-    function injectDependencies(string calldata _name) external override onlySigner {
-        _injectDependencies(_name);
-    }
-
-    function injectDependenciesWithData(string calldata _name, bytes calldata _data) external override onlySigner {
-        _injectDependenciesWithData(_name, _data);
-    }
-
-    function upgradeContract(string calldata _name, address _newImplementation) external override onlySigner {
-        _upgradeContract(_name, _newImplementation);
-    }
-
-    function upgradeContractAndCall(
-        string calldata _name,
-        address _newImplementation,
-        bytes calldata _data
-    ) external override onlySigner {
-        _upgradeContractAndCall(_name, _newImplementation, _data);
-    }
-
-    function addContract(string calldata _name, address _contractAddress) external override onlySigner {
-        _addContract(_name, _contractAddress);
-    }
-
-    function addProxyContract(string calldata _name, address _contractAddress) external override onlySigner {
-        _addProxyContract(_name, _contractAddress);
-    }
-
-    function addProxyContractAndCall(
-        string calldata _name,
-        address _contractAddress,
-        bytes calldata _data
-    ) external override onlySigner {
-        _addProxyContractAndCall(_name, _contractAddress, _data);
-    }
-
-    function justAddProxyContract(string calldata _name, address _contractAddress) external override onlySigner {
-        _justAddProxyContract(_name, _contractAddress);
-    }
-
-    function removeContract(string calldata _name) external override onlySigner {
-        _removeContract(_name);
-    }
-
-    function getSigner() external view override returns (address) {
-        return signerGetter.getSignerAddress();
+    function getSigner() external view override returns (address _signer) {
+        if (hasContract(SIGNER_GETTER_NAME)) {
+            _signer = ISignerAddress(getContract(SIGNER_GETTER_NAME)).getSignerAddress();
+        }
     }
 
     function getDKGContract() external view override returns (address) {
@@ -114,5 +71,5 @@ contract ContractsRegistry is IContractsRegistry, AbstractContractsRegistry, Sig
         return getContract(TOKENS_VESTING_NAME);
     }
 
-    function _authorizeUpgrade(address) internal override onlySigner {}
+    function _authorizeUpgrade(address) internal override onlyOwner {}
 }

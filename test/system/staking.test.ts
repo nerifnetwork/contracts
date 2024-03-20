@@ -2,15 +2,7 @@ import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { Reverter } from '../helpers/reverter';
-import {
-  ContractRegistry,
-  DKG,
-  RewardDistributionPool,
-  SignerStorage,
-  Staking,
-  TestERC20,
-  TestSlashingVoting,
-} from '../../generated-types/ethers';
+import { ContractsRegistry, DKG, NerifToken, Staking, TestSlashingVoting } from '../../generated-types/ethers';
 import { wei } from '../helpers/utils';
 import { setNextBlockTime, setTime } from '../helpers/block-helper';
 
@@ -22,15 +14,12 @@ describe('Staking', () => {
   let OWNER: SignerWithAddress;
   let FIRST: SignerWithAddress;
   let SECOND: SignerWithAddress;
-  let SIGNER: SignerWithAddress;
 
+  let contractsRegistry: ContractsRegistry;
   let staking: Staking;
   let dkg: DKG;
-  let rewardsDistributionPool: RewardDistributionPool;
-  let contractsRegistry: ContractRegistry;
   let slashingVoting: TestSlashingVoting;
-  let signerStorage: SignerStorage;
-  let stakeToken: TestERC20;
+  let nerifToken: NerifToken;
 
   const OWNER_PK: string = 'ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
 
@@ -68,41 +57,60 @@ describe('Staking', () => {
   }
 
   before(async () => {
-    [OWNER, FIRST, SECOND, SIGNER] = await ethers.getSigners();
+    [OWNER, FIRST, SECOND] = await ethers.getSigners();
 
+    const ERC1967ProxyFactory = await ethers.getContractFactory('ERC1967Proxy');
+    const ContractsRegistryFactory = await ethers.getContractFactory('ContractsRegistry');
     const StakingFactory = await ethers.getContractFactory('Staking');
     const DKGFactory = await ethers.getContractFactory('DKG');
     const RewardDistributionPoolFactory = await ethers.getContractFactory('RewardDistributionPool');
-    const ContractsRegistryFactory = await ethers.getContractFactory('ContractRegistry');
-    const SignerStorageFactory = await ethers.getContractFactory('SignerStorage');
-    const TestERC20Factory = await ethers.getContractFactory('TestERC20');
+    const TokensVestingFactory = await ethers.getContractFactory('TokensVesting');
+    const NerifTokenFactory = await ethers.getContractFactory('NerifToken');
     const TestSlashingVotingFactory = await ethers.getContractFactory('TestSlashingVoting');
 
-    staking = await StakingFactory.deploy();
-    dkg = await DKGFactory.deploy();
-    rewardsDistributionPool = await RewardDistributionPoolFactory.deploy();
-    contractsRegistry = await ContractsRegistryFactory.deploy();
-    slashingVoting = await TestSlashingVotingFactory.deploy();
-    signerStorage = await SignerStorageFactory.deploy();
-    stakeToken = await TestERC20Factory.deploy('Stake Token', 'ST', tokensAmount);
+    const contractsRegistryImpl = await ContractsRegistryFactory.deploy();
+    const contractsRegistryProxy = await ERC1967ProxyFactory.deploy(contractsRegistryImpl.address, '0x');
 
-    await staking.initialize(
-      signerStorage.address,
-      contractsRegistry.address,
-      stakeToken.address,
-      defMinimalStake,
-      defWithdrawalPeriod
+    const stakingImpl = await StakingFactory.deploy();
+    const dkgImpl = await DKGFactory.deploy();
+    const rewardsDistributionPoolImpl = await RewardDistributionPoolFactory.deploy();
+    const slashingVotingImpl = await TestSlashingVotingFactory.deploy();
+    const nerifTokenImpl = await NerifTokenFactory.deploy();
+
+    const tokensVesting = await TokensVestingFactory.deploy();
+
+    contractsRegistry = ContractsRegistryFactory.attach(contractsRegistryProxy.address);
+
+    await contractsRegistry.__OwnableContractsRegistry_init();
+
+    await contractsRegistry.addProxyContract(await contractsRegistry.DKG_NAME(), dkgImpl.address);
+    await contractsRegistry.addProxyContract(await contractsRegistry.STAKING_NAME(), stakingImpl.address);
+    await contractsRegistry.addProxyContract(
+      await contractsRegistry.REWARDS_DISTRIBUTION_POOL_NAME(),
+      rewardsDistributionPoolImpl.address
     );
-    await signerStorage.initialize(SIGNER.address);
-    await dkg.initialize(contractsRegistry.address, deadlinePeriod);
-    await contractsRegistry.initialize(signerStorage.address);
+    await contractsRegistry.addProxyContract(
+      await contractsRegistry.SLASHING_VOTING_NAME(),
+      slashingVotingImpl.address
+    );
+    await contractsRegistry.addProxyContract(await contractsRegistry.NERIF_TOKEN_NAME(), nerifTokenImpl.address);
 
-    await contractsRegistry.connect(SIGNER).setContract(await dkg.SLASHING_VOTING_KEY(), slashingVoting.address);
-    await contractsRegistry.connect(SIGNER).setContract(await dkg.DKG_KEY(), dkg.address);
-    await contractsRegistry.connect(SIGNER).setContract(await staking.STAKING_KEY(), staking.address);
-    await contractsRegistry
-      .connect(SIGNER)
-      .setContract(await rewardsDistributionPool.REWARD_DISTRIBUTION_POOL_KEY(), rewardsDistributionPool.address);
+    staking = StakingFactory.attach(await contractsRegistry.getStakingContract());
+    dkg = DKGFactory.attach(await contractsRegistry.getDKGContract());
+    slashingVoting = TestSlashingVotingFactory.attach(await contractsRegistry.getSlashingVotingContract());
+    nerifToken = NerifTokenFactory.attach(await contractsRegistry.getNerifTokenContract());
+
+    await contractsRegistry.addContract(await contractsRegistry.TOKENS_VESTING_NAME(), tokensVesting.address);
+    await contractsRegistry.addContract(await contractsRegistry.SIGNER_GETTER_NAME(), dkg.address);
+
+    await nerifToken.initialize(tokensAmount, 'NERIF', 'NERIF');
+    await staking.initialize(nerifToken.address, defMinimalStake, defWithdrawalPeriod);
+    await dkg.initialize(deadlinePeriod);
+
+    await contractsRegistry.injectDependencies(await contractsRegistry.DKG_NAME());
+    await contractsRegistry.injectDependencies(await contractsRegistry.STAKING_NAME());
+    await contractsRegistry.injectDependencies(await contractsRegistry.REWARDS_DISTRIBUTION_POOL_NAME());
+    await contractsRegistry.injectDependencies(await contractsRegistry.NERIF_TOKEN_NAME());
 
     await reverter.snapshot();
   });
@@ -111,9 +119,7 @@ describe('Staking', () => {
 
   describe('creation', () => {
     it('should set correct data after init', async () => {
-      expect(await staking.contractRegistry()).to.be.eq(contractsRegistry.address);
-      expect(await staking.stakeToken()).to.be.eq(stakeToken.address);
-      expect(await staking.signerGetter()).to.be.eq(signerStorage.address);
+      expect(await staking.stakeToken()).to.be.eq(nerifToken.address);
 
       expect(await staking.minimalStake()).to.be.eq(defMinimalStake);
       expect(await staking.withdrawalPeriod()).to.be.eq(defWithdrawalPeriod);
@@ -122,15 +128,9 @@ describe('Staking', () => {
     it('should get exception if try to call init function twice', async () => {
       const reason = 'Initializable: contract is already initialized';
 
-      await expect(
-        staking.initialize(
-          signerStorage.address,
-          contractsRegistry.address,
-          stakeToken.address,
-          defMinimalStake,
-          defWithdrawalPeriod
-        )
-      ).to.be.revertedWith(reason);
+      await expect(staking.initialize(nerifToken.address, defMinimalStake, defWithdrawalPeriod)).to.be.revertedWith(
+        reason
+      );
     });
   });
 
@@ -138,7 +138,7 @@ describe('Staking', () => {
     const newMinimalStake = wei('50');
 
     it('should correctly set new minimal stake amount', async () => {
-      const tx = await staking.connect(SIGNER).setMinimalStake(newMinimalStake);
+      const tx = await staking.setMinimalStake(newMinimalStake);
 
       await expect(tx).to.emit(staking, 'MinimalStakeUpdated').withArgs(newMinimalStake);
 
@@ -146,9 +146,9 @@ describe('Staking', () => {
     });
 
     it('should get exception if not a signer try to call this function', async () => {
-      const reason = 'SignerOwnable: only signer';
+      const reason = 'Staking: Not a signer';
 
-      await expect(staking.setMinimalStake(newMinimalStake)).to.be.revertedWith(reason);
+      await expect(staking.connect(FIRST).setMinimalStake(newMinimalStake)).to.be.revertedWith(reason);
     });
   });
 
@@ -156,7 +156,7 @@ describe('Staking', () => {
     const newWithdrawalPeriod = wei('36000', 1);
 
     it('should correctly set new withdrawal period', async () => {
-      const tx = await staking.connect(SIGNER).setWithdrawalPeriod(newWithdrawalPeriod);
+      const tx = await staking.setWithdrawalPeriod(newWithdrawalPeriod);
 
       await expect(tx).to.emit(staking, 'WithdrawalPeriodUpdated').withArgs(newWithdrawalPeriod);
 
@@ -164,9 +164,9 @@ describe('Staking', () => {
     });
 
     it('should get exception if not a signer try to call this function', async () => {
-      const reason = 'SignerOwnable: only signer';
+      const reason = 'Staking: Not a signer';
 
-      await expect(staking.setWithdrawalPeriod(newWithdrawalPeriod)).to.be.revertedWith(reason);
+      await expect(staking.connect(FIRST).setWithdrawalPeriod(newWithdrawalPeriod)).to.be.revertedWith(reason);
     });
   });
 
@@ -174,7 +174,7 @@ describe('Staking', () => {
     const stakeAmount = wei('200');
 
     beforeEach('setup', async () => {
-      await stakeToken.approve(staking.address, stakeAmount);
+      await nerifToken.approve(staking.address, stakeAmount);
       await staking.stake(stakeAmount);
 
       expect(await staking.getStake(OWNER.address)).to.be.eq(stakeAmount);
@@ -210,7 +210,7 @@ describe('Staking', () => {
     const announceTime = wei('100000', 1);
 
     beforeEach('setup', async () => {
-      await stakeToken.approve(staking.address, stakeAmount);
+      await nerifToken.approve(staking.address, stakeAmount);
       await staking.stake(stakeAmount);
     });
 
@@ -290,7 +290,7 @@ describe('Staking', () => {
     const announceTime = wei('100000', 1);
 
     beforeEach('setup', async () => {
-      await stakeToken.approve(staking.address, stakeAmount);
+      await nerifToken.approve(staking.address, stakeAmount);
       await staking.stake(stakeAmount);
 
       await setNextBlockTime(announceTime.toNumber());
@@ -346,7 +346,7 @@ describe('Staking', () => {
     const announceTime = wei('100000', 1);
 
     beforeEach('setup', async () => {
-      await stakeToken.approve(staking.address, stakeAmount);
+      await nerifToken.approve(staking.address, stakeAmount);
       await staking.stake(stakeAmount);
 
       await setNextBlockTime(announceTime.toNumber());
@@ -369,8 +369,8 @@ describe('Staking', () => {
       expect(await staking.totalStake()).to.be.eq(stakeAmount.sub(announceAmount));
       expect(await staking.getStake(OWNER.address)).to.be.eq(stakeAmount.sub(announceAmount));
 
-      expect(await stakeToken.balanceOf(OWNER.address)).to.be.eq(tokensAmount.sub(stakeAmount).add(announceAmount));
-      expect(await stakeToken.balanceOf(staking.address)).to.be.eq(stakeAmount.sub(announceAmount));
+      expect(await nerifToken.balanceOf(OWNER.address)).to.be.eq(tokensAmount.sub(stakeAmount).add(announceAmount));
+      expect(await nerifToken.balanceOf(staking.address)).to.be.eq(stakeAmount.sub(announceAmount));
     });
 
     it('should get exception if try to withdraw without announcement', async () => {
@@ -398,7 +398,7 @@ describe('Staking', () => {
     const stakeAmount = wei('150');
 
     beforeEach('setup', async () => {
-      await stakeToken.approve(staking.address, tokensAmount);
+      await nerifToken.approve(staking.address, tokensAmount);
     });
 
     it('should correctly stake tokens and add address to the validators list', async () => {
@@ -411,8 +411,8 @@ describe('Staking', () => {
       expect(await staking.totalStake()).to.be.eq(stakeAmount);
       expect(await staking.getStake(OWNER.address)).to.be.eq(stakeAmount);
 
-      expect(await stakeToken.balanceOf(OWNER.address)).to.be.eq(tokensAmount.sub(stakeAmount));
-      expect(await stakeToken.balanceOf(staking.address)).to.be.eq(stakeAmount);
+      expect(await nerifToken.balanceOf(OWNER.address)).to.be.eq(tokensAmount.sub(stakeAmount));
+      expect(await nerifToken.balanceOf(staking.address)).to.be.eq(stakeAmount);
 
       await staking.stake(stakeAmount);
 
@@ -473,8 +473,8 @@ describe('Staking', () => {
 
     it('should correctly stake tokens with permit', async () => {
       const sig = createPermitSig(
-        await stakeToken.name(),
-        stakeToken.address,
+        await nerifToken.name(),
+        nerifToken.address,
         deadline.toString(),
         stakeAmount.toString()
       );
@@ -492,14 +492,14 @@ describe('Staking', () => {
     it('should get exception if the slashed validator try to stake tokens', async () => {
       const reason = 'Staking: validator is slashed';
 
-      await stakeToken.approve(staking.address, stakeAmount);
+      await nerifToken.approve(staking.address, stakeAmount);
       await staking.stake(stakeAmount);
 
       await slashingVoting.slash(staking.address, OWNER.address);
 
       const sig = createPermitSig(
-        await stakeToken.name(),
-        stakeToken.address,
+        await nerifToken.name(),
+        nerifToken.address,
         deadline.toString(),
         stakeAmount.toString()
       );
@@ -516,8 +516,8 @@ describe('Staking', () => {
       const expectedValidatorsStatuses = [1, 1, 1];
 
       for (let i = 0; i < expectedValidatorsArr.length; i++) {
-        await stakeToken.mint(expectedValidatorsArr[i].address, stakeAmount.mul(i + 1));
-        await stakeToken.connect(expectedValidatorsArr[i]).approve(staking.address, stakeAmount.mul(i + 1));
+        await nerifToken.ownerMint(expectedValidatorsArr[i].address, stakeAmount.mul(i + 1));
+        await nerifToken.connect(expectedValidatorsArr[i]).approve(staking.address, stakeAmount.mul(i + 1));
         await staking.connect(expectedValidatorsArr[i]).stake(stakeAmount.mul(i + 1));
       }
 

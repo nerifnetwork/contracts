@@ -2,7 +2,7 @@ import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { Reverter } from '../helpers/reverter';
-import { ContractRegistry, NerifToken, SignerStorage, TokensVesting, Vesting } from '../../generated-types/ethers';
+import { ContractsRegistry, NerifToken, SignerStorage, TokensVesting, Vesting } from '../../generated-types/ethers';
 import { wei } from '../helpers/utils';
 import { setTime } from '../helpers/block-helper';
 
@@ -13,9 +13,9 @@ describe('TokensVesting', () => {
   let FIRST: SignerWithAddress;
   let SIGNER: SignerWithAddress;
 
+  let contractsRegistry: ContractsRegistry;
   let tokensVesting: TokensVesting;
   let nerifToken: NerifToken;
-  let contractsRegistry: ContractRegistry;
   let signerStorage: SignerStorage;
 
   const nerifTokenName = 'Nerif Token';
@@ -27,22 +27,35 @@ describe('TokensVesting', () => {
   before(async () => {
     [OWNER, FIRST, SIGNER] = await ethers.getSigners();
 
+    const ERC1967ProxyFactory = await ethers.getContractFactory('ERC1967Proxy');
+    const ContractsRegistryFactory = await ethers.getContractFactory('ContractsRegistry');
     const TokensVestingFactory = await ethers.getContractFactory('TokensVesting');
     const NerifTokenFactory = await ethers.getContractFactory('NerifToken');
-    const ContractsRegistryFactory = await ethers.getContractFactory('ContractRegistry');
     const SignerStorageFactory = await ethers.getContractFactory('SignerStorage');
 
+    const contractsRegistryImpl = await ContractsRegistryFactory.deploy();
+    const contractsRegistryProxy = await ERC1967ProxyFactory.deploy(contractsRegistryImpl.address, '0x');
+
+    const nerifTokenImpl = await NerifTokenFactory.deploy();
+
     tokensVesting = await TokensVestingFactory.deploy();
-    nerifToken = await NerifTokenFactory.deploy();
-    contractsRegistry = await ContractsRegistryFactory.deploy();
     signerStorage = await SignerStorageFactory.deploy();
 
-    await tokensVesting.initialize();
-    await nerifToken.initialize(contractsRegistry.address, tokensAmount, nerifTokenName, nerifTokenSymbol);
-    await signerStorage.initialize(SIGNER.address);
-    await contractsRegistry.initialize(signerStorage.address);
+    contractsRegistry = ContractsRegistryFactory.attach(contractsRegistryProxy.address);
 
-    await contractsRegistry.connect(SIGNER).setContract(await nerifToken.TOKENS_VESTING_KEY(), tokensVesting.address);
+    await contractsRegistry.__OwnableContractsRegistry_init();
+
+    await contractsRegistry.addProxyContract(await contractsRegistry.NERIF_TOKEN_NAME(), nerifTokenImpl.address);
+
+    await contractsRegistry.addContract(await contractsRegistry.TOKENS_VESTING_NAME(), tokensVesting.address);
+
+    nerifToken = NerifTokenFactory.attach(await contractsRegistry.getNerifTokenContract());
+
+    await nerifToken.initialize(tokensAmount, nerifTokenName, nerifTokenSymbol);
+    await tokensVesting.initialize();
+    await signerStorage.initialize(SIGNER.address);
+
+    await contractsRegistry.injectDependencies(await contractsRegistry.NERIF_TOKEN_NAME());
 
     await reverter.snapshot();
   });

@@ -11,6 +11,7 @@ import {
   SignerStorage,
   TestTarget,
   IBillingManager,
+  ContractsRegistry,
 } from '../../generated-types/ethers';
 import { BigNumberish } from 'ethers';
 
@@ -21,15 +22,16 @@ describe('Registry', () => {
   let FIRST: SignerWithAddress;
   let SIGNER: SignerWithAddress;
 
+  let contractsRegistry: ContractsRegistry;
+
   let signerStorage: SignerStorage;
   let registry: Registry;
   let billingManager: BillingManager;
   let gatewayFactory: GatewayFactory;
-  let sideChainRegistry: Registry;
-  let sideChainBillingManager: BillingManager;
-  let sideChainGatewayFactory: GatewayFactory;
   let gatewayImpl: Gateway;
   let testTarget: TestTarget;
+
+  const tokensAmount = wei('10000');
 
   const nativeDepositAssetKey: string = 'NATIVE';
   const nativeDepositAssetData: IBillingManager.DepositAssetDataStruct = {
@@ -48,49 +50,64 @@ describe('Registry', () => {
     [OWNER, FIRST, SIGNER] = await ethers.getSigners();
 
     const ERC1967ProxyFactory = await ethers.getContractFactory('ERC1967Proxy');
+    const ContractsRegistryFactory = await ethers.getContractFactory('ContractsRegistry');
     const RegistryFactory = await ethers.getContractFactory('Registry');
     const BillingManagerFactory = await ethers.getContractFactory('BillingManager');
     const SignerStorageFactory = await ethers.getContractFactory('SignerStorage');
     const GatewayFactoryFactory = await ethers.getContractFactory('GatewayFactory');
     const GatewayImplFactory = await ethers.getContractFactory('Gateway');
+    const NerifTokenFactory = await ethers.getContractFactory('NerifToken');
+    const TokensVestingFactory = await ethers.getContractFactory('TokensVesting');
     const TestTargetFactory = await ethers.getContractFactory('TestTarget');
 
+    const contractsRegistryImpl = await ContractsRegistryFactory.deploy();
+    const contractsRegistryProxy = await ERC1967ProxyFactory.deploy(contractsRegistryImpl.address, '0x');
+
     const registryImpl = await RegistryFactory.deploy();
-    const registryProxy = await ERC1967ProxyFactory.deploy(registryImpl.address, '0x');
-    registry = RegistryFactory.attach(registryProxy.address);
+    const billingManagerImpl = await BillingManagerFactory.deploy();
+    const nerifTokenImpl = await NerifTokenFactory.deploy();
 
+    const tokensVesting = await TokensVestingFactory.deploy();
     signerStorage = await SignerStorageFactory.deploy();
-    billingManager = await BillingManagerFactory.deploy();
-
     gatewayFactory = await GatewayFactoryFactory.deploy();
     gatewayImpl = await GatewayImplFactory.deploy();
 
-    sideChainRegistry = await RegistryFactory.deploy();
-    sideChainGatewayFactory = await GatewayFactoryFactory.deploy();
-    sideChainBillingManager = await BillingManagerFactory.deploy();
-
     testTarget = await TestTargetFactory.deploy();
 
+    contractsRegistry = ContractsRegistryFactory.attach(contractsRegistryProxy.address);
+
+    await contractsRegistry.__OwnableContractsRegistry_init();
+
+    await contractsRegistry.addProxyContract(await contractsRegistry.REGISTRY_NAME(), registryImpl.address);
+    await contractsRegistry.addProxyContract(
+      await contractsRegistry.BILLING_MANAGER_NAME(),
+      billingManagerImpl.address
+    );
+    await contractsRegistry.addProxyContract(await contractsRegistry.NERIF_TOKEN_NAME(), nerifTokenImpl.address);
+
+    await contractsRegistry.addContract(await contractsRegistry.GATEWAY_FACTORY_NAME(), gatewayFactory.address);
+    await contractsRegistry.addContract(await contractsRegistry.TOKENS_VESTING_NAME(), tokensVesting.address);
+    await contractsRegistry.addContract(await contractsRegistry.SIGNER_GETTER_NAME(), signerStorage.address);
+
+    registry = RegistryFactory.attach(await contractsRegistry.getRegistryContract());
+    billingManager = BillingManagerFactory.attach(await contractsRegistry.getBillingManagerContract());
+    const nerifToken = NerifTokenFactory.attach(await contractsRegistry.getNerifTokenContract());
+
     await signerStorage.initialize(SIGNER.address);
-    await registry.initialize(true, signerStorage.address, gatewayFactory.address, billingManager.address, 0);
-    await billingManager.initialize(registry.address, signerStorage.address, {
+    await registry.initialize(0);
+    await billingManager.initialize({
       depositAssetKey: nativeDepositAssetKey,
       depositAssetData: nativeDepositAssetData,
     });
     await gatewayFactory.initialize(registry.address, gatewayImpl.address);
+    await nerifToken.initialize(tokensAmount, 'NERIF', 'NERIF');
+    await tokensVesting.initialize();
 
-    await sideChainRegistry.initialize(
-      false,
-      signerStorage.address,
-      sideChainGatewayFactory.address,
-      sideChainBillingManager.address,
-      0
-    );
-    await sideChainBillingManager.initialize(sideChainRegistry.address, signerStorage.address, {
-      depositAssetKey: nativeDepositAssetKey,
-      depositAssetData: nativeDepositAssetData,
-    });
-    await sideChainGatewayFactory.initialize(sideChainRegistry.address, gatewayImpl.address);
+    await contractsRegistry.injectDependencies(await contractsRegistry.REGISTRY_NAME());
+    await contractsRegistry.injectDependencies(await contractsRegistry.BILLING_MANAGER_NAME());
+    await contractsRegistry.injectDependencies(await contractsRegistry.NERIF_TOKEN_NAME());
+
+    await contractsRegistry.setIsMainChain(true);
 
     await reverter.snapshot();
   });
@@ -99,21 +116,13 @@ describe('Registry', () => {
 
   describe('creation', () => {
     it('should set correct data after initialize', async () => {
-      expect(await registry.isMainChain()).to.be.eq(true);
-
       expect(await registry.maxWorkflowsPerAccount()).to.be.eq(0);
-
-      expect(await registry.gatewayFactory()).to.be.eq(gatewayFactory.address);
-      expect(await registry.billingManager()).to.be.eq(billingManager.address);
-      expect(await registry.signerGetter()).to.be.eq(signerStorage.address);
     });
 
     it('should get exception if try to call init function twice', async () => {
       const reason = 'Initializable: contract is already initialized';
 
-      await expect(
-        registry.initialize(true, signerStorage.address, gatewayFactory.address, billingManager.address, 0)
-      ).to.be.revertedWith(reason);
+      await expect(registry.initialize(0)).to.be.revertedWith(reason);
     });
   });
 
@@ -127,15 +136,9 @@ describe('Registry', () => {
 
       const newRegistryImpl = await TestRegistryFactory.deploy();
 
-      await testRegistry.connect(SIGNER).upgradeTo(newRegistryImpl.address);
+      await contractsRegistry.upgradeContract(await contractsRegistry.REGISTRY_NAME(), newRegistryImpl.address);
 
       expect(await testRegistry.version()).to.be.eq('v2.0.0');
-    });
-
-    it('should get exception if not a signer try to call upgareTo function', async () => {
-      const reason = 'SignerOwnable: only signer';
-
-      await expect(registry.upgradeTo(ethers.constants.AddressZero)).to.be.revertedWith(reason);
     });
   });
 
@@ -149,23 +152,9 @@ describe('Registry', () => {
     });
 
     it('should get exception if not a signer try to call this function', async () => {
-      const reason = 'SignerOwnable: only signer';
+      const reason = 'Registry: Not a signer';
 
       await expect(registry.setMaxWorkflowsPerAccount(1)).to.be.revertedWith(reason);
-    });
-  });
-
-  describe('setGatewayFactory', () => {
-    it('should correctly update gateway factory address', async () => {
-      await registry.connect(SIGNER).setGatewayFactory(FIRST.address);
-
-      expect(await registry.gatewayFactory()).to.be.eq(FIRST.address);
-    });
-
-    it('should get exception if not a signer try to call this function', async () => {
-      const reason = 'SignerOwnable: only signer';
-
-      await expect(registry.setGatewayFactory(OWNER.address)).to.be.revertedWith(reason);
     });
   });
 
@@ -197,22 +186,16 @@ describe('Registry', () => {
     const workflowId = 10;
     const spentAmount = wei('0.1');
 
-    let newRegistry: Registry;
     let BILLING_MANAGER: SignerWithAddress;
 
     beforeEach('setup', async () => {
       BILLING_MANAGER = (await ethers.getSigners())[4];
 
-      const RegistryFactory = await ethers.getContractFactory('Registry');
-      const GatewayFactoryFactory = await ethers.getContractFactory('GatewayFactory');
+      await contractsRegistry.addContract(await contractsRegistry.BILLING_MANAGER_NAME(), BILLING_MANAGER.address);
 
-      newRegistry = await RegistryFactory.deploy();
-      const newGatewayFactory = await GatewayFactoryFactory.deploy();
+      await contractsRegistry.injectDependencies(await contractsRegistry.REGISTRY_NAME());
 
-      await newRegistry.initialize(true, signerStorage.address, newGatewayFactory.address, BILLING_MANAGER.address, 0);
-      await newGatewayFactory.initialize(newRegistry.address, gatewayImpl.address);
-
-      await newRegistry.registerWorkflows([
+      await registry.registerWorkflows([
         {
           id: workflowId,
           workflowOwner: OWNER.address,
@@ -224,11 +207,9 @@ describe('Registry', () => {
     });
 
     it('should correctly update workflow total spent', async () => {
-      await newRegistry
-        .connect(BILLING_MANAGER)
-        .updateWorkflowTotalSpent(nativeDepositAssetKey, workflowId, spentAmount);
+      await registry.connect(BILLING_MANAGER).updateWorkflowTotalSpent(nativeDepositAssetKey, workflowId, spentAmount);
 
-      const workflowInfo = await newRegistry.getWorkflowInfo(workflowId);
+      const workflowInfo = await registry.getWorkflowInfo(workflowId);
 
       expect(workflowInfo.depositAssetsInfo[0].depositAssetTotalSpent).to.be.eq(spentAmount);
     });
@@ -237,7 +218,7 @@ describe('Registry', () => {
       const reason = 'Registry: sender is not a billing manager';
 
       await expect(
-        newRegistry.updateWorkflowTotalSpent(nativeDepositAssetKey, workflowId, spentAmount)
+        registry.updateWorkflowTotalSpent(nativeDepositAssetKey, workflowId, spentAmount)
       ).to.be.revertedWith(reason);
     });
 
@@ -245,7 +226,7 @@ describe('Registry', () => {
       const reason = 'Registry: workflow does not exist';
 
       await expect(
-        newRegistry.connect(BILLING_MANAGER).updateWorkflowTotalSpent(nativeDepositAssetKey, 0, spentAmount)
+        registry.connect(BILLING_MANAGER).updateWorkflowTotalSpent(nativeDepositAssetKey, 0, spentAmount)
       ).to.be.revertedWith(reason);
     });
   });
@@ -276,7 +257,9 @@ describe('Registry', () => {
     it('should get exception if try to call this function not on a main chain', async () => {
       const reason = 'Registry: not a main chain';
 
-      await expect(sideChainRegistry.pauseWorkflows([workflowId])).to.be.revertedWith(reason);
+      await contractsRegistry.setIsMainChain(false);
+
+      await expect(registry.pauseWorkflows([workflowId])).to.be.revertedWith(reason);
     });
 
     it('should get exception if the sender is not the workflow owner', async () => {
@@ -322,7 +305,9 @@ describe('Registry', () => {
     it('should get exception if try to call this function not on a main chain', async () => {
       const reason = 'Registry: not a main chain';
 
-      await expect(sideChainRegistry.resumeWorkflows([workflowId])).to.be.revertedWith(reason);
+      await contractsRegistry.setIsMainChain(false);
+
+      await expect(registry.resumeWorkflows([workflowId])).to.be.revertedWith(reason);
     });
 
     it('should get exception if the sender is not the workflow owner', async () => {
@@ -372,7 +357,7 @@ describe('Registry', () => {
     });
 
     it('should get exception if not a signer call this function', async () => {
-      const reason = 'SignerOwnable: only signer';
+      const reason = 'Registry: Not a signer';
 
       await expect(
         registry.perform(workflowId, workflowExecutionId, gasAmount, getSetNumberCalldata(10), testTarget.address)
@@ -483,9 +468,11 @@ describe('Registry', () => {
     });
 
     it('should correctly register new workflow on the side chain', async () => {
+      await contractsRegistry.setIsMainChain(false);
+
       const someHash = ethers.utils.solidityKeccak256(['string'], ['some string']);
 
-      const tx = await sideChainRegistry.connect(SIGNER).registerWorkflows([
+      const tx = await registry.connect(SIGNER).registerWorkflows([
         {
           id: workflowId,
           workflowOwner: OWNER.address,
@@ -495,16 +482,16 @@ describe('Registry', () => {
         },
       ]);
 
-      await expect(tx).to.emit(sideChainRegistry, 'WorkflowRegistered').withArgs(OWNER.address, workflowId, someHash);
+      await expect(tx).to.emit(registry, 'WorkflowRegistered').withArgs(OWNER.address, workflowId, someHash);
 
-      const workflow = await sideChainRegistry.getWorkflowInfo(workflowId);
+      const workflow = await registry.getWorkflowInfo(workflowId);
 
       expect(workflow.baseInfo.status).to.be.eq(2);
       expect(workflow.baseInfo.id).to.be.eq(workflowId);
       expect(workflow.baseInfo.owner).to.be.eq(OWNER.address);
-      expect(await sideChainRegistry.workflowsPerAddress(OWNER.address)).to.be.eq(1);
+      expect(await registry.workflowsPerAddress(OWNER.address)).to.be.eq(1);
 
-      await sideChainRegistry.connect(SIGNER).registerWorkflows([
+      await registry.connect(SIGNER).registerWorkflows([
         {
           id: workflowId + 1,
           workflowOwner: OWNER.address,
@@ -514,7 +501,7 @@ describe('Registry', () => {
         },
       ]);
 
-      expect(await sideChainRegistry.workflowsPerAddress(OWNER.address)).to.be.eq(2);
+      expect(await registry.workflowsPerAddress(OWNER.address)).to.be.eq(2);
     });
 
     it('should correctly register workflows and deploy new gateway contract', async () => {
@@ -551,6 +538,8 @@ describe('Registry', () => {
     });
 
     it('should get exception if the sender is not the specified addr or signer', async () => {
+      await contractsRegistry.setIsMainChain(false);
+
       const reason = 'Registry: not a sender or signer';
 
       await expect(
@@ -566,7 +555,7 @@ describe('Registry', () => {
       ).to.be.revertedWith(reason);
 
       await expect(
-        sideChainRegistry.registerWorkflows([
+        registry.registerWorkflows([
           {
             id: workflowId,
             workflowOwner: OWNER.address,
@@ -659,16 +648,6 @@ describe('Registry', () => {
           deployGateway: true,
         },
       ]);
-
-      await sideChainRegistry.connect(SIGNER).registerWorkflows([
-        {
-          id: workflowId + 1,
-          workflowOwner: FIRST.address,
-          hash: '0x',
-          requireGateway: true,
-          deployGateway: true,
-        },
-      ]);
     });
 
     it('should correctly activate workflow', async () => {
@@ -683,13 +662,25 @@ describe('Registry', () => {
     });
 
     it('should get exception if try to call this function not on the mainchain', async () => {
+      await contractsRegistry.setIsMainChain(false);
+
+      await registry.connect(SIGNER).registerWorkflows([
+        {
+          id: workflowId + 1,
+          workflowOwner: FIRST.address,
+          hash: '0x',
+          requireGateway: true,
+          deployGateway: true,
+        },
+      ]);
+
       const reason = 'Registry: not a main chain';
 
-      await expect(sideChainRegistry.connect(SIGNER).activateWorkflows([workflowId])).to.be.revertedWith(reason);
+      await expect(registry.connect(SIGNER).activateWorkflows([workflowId])).to.be.revertedWith(reason);
     });
 
     it('should get exception if not a signer try to call this function', async () => {
-      const reason = 'SignerOwnable: only signer';
+      const reason = 'Registry: Not a signer';
 
       await expect(registry.activateWorkflows([workflowId])).to.be.revertedWith(reason);
     });
@@ -720,16 +711,6 @@ describe('Registry', () => {
           deployGateway: true,
         },
       ]);
-
-      await sideChainRegistry.connect(SIGNER).registerWorkflows([
-        {
-          id: workflowId + 1,
-          workflowOwner: FIRST.address,
-          hash: '0x',
-          requireGateway: true,
-          deployGateway: true,
-        },
-      ]);
     });
 
     it('should correctly cancel workflow', async () => {
@@ -746,13 +727,25 @@ describe('Registry', () => {
 
       expect(await registry.workflowsPerAddress(OWNER.address)).to.be.eq(0);
 
-      tx = await sideChainRegistry.connect(SIGNER).cancelWorkflows([workflowId + 1]);
+      await contractsRegistry.setIsMainChain(false);
+
+      await registry.connect(SIGNER).registerWorkflows([
+        {
+          id: workflowId + 1,
+          workflowOwner: FIRST.address,
+          hash: '0x',
+          requireGateway: true,
+          deployGateway: true,
+        },
+      ]);
+
+      tx = await registry.connect(SIGNER).cancelWorkflows([workflowId + 1]);
 
       await expect(tx)
-        .to.emit(sideChainRegistry, 'WorkflowStatusChanged')
+        .to.emit(registry, 'WorkflowStatusChanged')
         .withArgs(workflowId + 1, 4);
 
-      workflow = await sideChainRegistry.getWorkflowInfo(workflowId + 1);
+      workflow = await registry.getWorkflowInfo(workflowId + 1);
 
       expect(workflow.baseInfo.status).to.be.eq(4);
       expect(workflow.baseInfo.id).to.be.eq(workflowId + 1);
@@ -771,7 +764,19 @@ describe('Registry', () => {
 
       await expect(registry.connect(FIRST).cancelWorkflows([workflowId])).to.be.revertedWith(reason);
 
-      await expect(sideChainRegistry.connect(FIRST).cancelWorkflows([workflowId + 1])).to.be.revertedWith(reason);
+      await contractsRegistry.setIsMainChain(false);
+
+      await registry.connect(SIGNER).registerWorkflows([
+        {
+          id: workflowId + 1,
+          workflowOwner: FIRST.address,
+          hash: '0x',
+          requireGateway: true,
+          deployGateway: true,
+        },
+      ]);
+
+      await expect(registry.connect(FIRST).cancelWorkflows([workflowId + 1])).to.be.revertedWith(reason);
     });
 
     it('should get exception if the workflow status is CANCELED', async () => {
