@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "../interfaces/SignerOwnable.sol";
-import "../common/ContractRegistry.sol";
-import "../common/Globals.sol";
-import "./Staking.sol";
-import "./ContractKeys.sol";
+import "@solarity/solidity-lib/contracts-registry/AbstractDependant.sol";
 
-contract RewardDistributionPool is Initializable, ContractKeys, SignerOwnable {
+import "../interfaces/core/IContractsRegistry.sol";
+
+import "./Staking.sol";
+import "../common/Globals.sol";
+
+contract RewardDistributionPool is AbstractDependant {
     struct RewardPosition {
         uint256 balance;
         uint256 lastRewardPoints;
     }
 
-    ContractRegistry public contractRegistry;
+    Staking internal _staking;
 
     uint256 public collectedRewards;
     uint256 public totalRewardPoints;
@@ -27,35 +27,37 @@ contract RewardDistributionPool is Initializable, ContractKeys, SignerOwnable {
     // solhint-disable-next-line no-empty-blocks
     receive() external payable {}
 
-    function initialize(address _contractRegistry, address _signerGetterAddress) external initializer {
-        _setSignerGetter(_signerGetterAddress);
-        contractRegistry = ContractRegistry(_contractRegistry);
+    function setDependencies(address _contractsRegistryAddr, bytes memory) public override dependant {
+        IContractsRegistry contractsRegistry = IContractsRegistry(_contractsRegistryAddr);
+
+        _staking = Staking(contractsRegistry.getStakingContract());
     }
 
-    function distributeRewards() public {
+    // solhint-disable-next-line ordering
+    function distributeRewards() external {
         uint256 amount = address(this).balance;
 
         require(amount > 0, "RewardDistributionPool: amount must be greater than 0");
 
         _updateLastRewardPoints();
 
-        providedStake = _stakingContract().totalStake();
+        providedStake = _staking.totalStake();
         totalRewardPoints += (amount * BASE_DIVISOR) / providedStake;
         collectedRewards += amount;
     }
 
-    function collectRewards() public {
+    function collectRewards() external {
         claimRewards();
         _sendRewards(msg.sender);
     }
 
-    function reinvestRewards() public {
+    function reinvestRewards() external {
         claimRewards();
 
         uint256 reward = rewardPositions[msg.sender].balance;
 
-        _sendRewards(address(_stakingContract()));
-        _stakingContract().addRewardsToStake(msg.sender, reward);
+        _sendRewards(address(_staking));
+        _staking.addRewardsToStake(msg.sender, reward);
     }
 
     function claimRewards() public {
@@ -70,11 +72,12 @@ contract RewardDistributionPool is Initializable, ContractKeys, SignerOwnable {
     function rewardsOwing() public view returns (uint256) {
         uint256 newRewardPoints = totalRewardPoints - rewardPositions[msg.sender].lastRewardPoints;
 
-        return (_stakingContract().getStake(msg.sender) * newRewardPoints) / BASE_DIVISOR;
+        return (_staking.getStake(msg.sender) * newRewardPoints) / BASE_DIVISOR;
     }
 
     function _updateLastRewardPoints() private {
-        address[] memory validators = _stakingContract().getValidators();
+        address[] memory validators = _staking.getValidators();
+
         for (uint256 i = 0; i < validators.length; i++) {
             rewardPositions[validators[i]].lastRewardPoints = totalRewardPoints;
         }
@@ -92,10 +95,6 @@ contract RewardDistributionPool is Initializable, ContractKeys, SignerOwnable {
         require(success, "RewardDistributionPool: transfer failed");
 
         emit CollectRewards(msg.sender, reward);
-    }
-
-    function _stakingContract() private view returns (Staking) {
-        return Staking(payable(contractRegistry.getContract(STAKING_KEY)));
     }
 
     function _createPath(address _from, address _to) private pure returns (address[] memory) {

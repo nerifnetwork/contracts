@@ -4,10 +4,13 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+
+import "@solarity/solidity-lib/contracts-registry/AbstractDependant.sol";
+
+import "../interfaces/core/IContractsRegistry.sol";
 import "../interfaces/ISignerAddress.sol";
-import "../common/ContractRegistry.sol";
+
 import "./Staking.sol";
-import "./ContractKeys.sol";
 import "./SlashingVoting.sol";
 
 struct GenerationInfo {
@@ -27,7 +30,7 @@ struct RoundData {
 
 // DKG represents the on-sidechain logic needed to perform distributed key generation process done by validators.
 // Once the DKG process is finished, a new collective/sender address could be stored.
-contract DKG is ISignerAddress, ContractKeys, Initializable {
+contract DKG is ISignerAddress, Initializable, AbstractDependant {
     using ECDSA for bytes;
     using ECDSA for bytes32;
 
@@ -37,7 +40,8 @@ contract DKG is ISignerAddress, ContractKeys, Initializable {
         ACTIVE
     }
 
-    ContractRegistry public contractRegistry;
+    Staking internal _staking;
+    SlashingVoting internal _slashingVoting;
 
     mapping(address => uint256) public signerToGeneration;
 
@@ -89,21 +93,30 @@ contract DKG is ISignerAddress, ContractKeys, Initializable {
         _;
     }
 
-    function initialize(address _contractRegistry, uint256 _deadlinePeriod) external initializer {
+    function initialize(uint256 _deadlinePeriod) external initializer {
         generations.push();
         generations[0].signer = msg.sender;
+
         signerToGeneration[msg.sender] = 0;
-        contractRegistry = ContractRegistry(_contractRegistry);
+
         deadlinePeriod = _deadlinePeriod;
     }
 
+    function setDependencies(address _contractsRegistryAddr, bytes memory) public override dependant {
+        IContractsRegistry contractsRegistry = IContractsRegistry(_contractsRegistryAddr);
+
+        _staking = Staking(contractsRegistry.getStakingContract());
+        _slashingVoting = SlashingVoting(contractsRegistry.getSlashingVotingContract());
+    }
+
+    // solhint-disable-next-line ordering
     function updateGeneration() external {
         uint256 newGeneration = generations.length;
         GenerationInfo storage oldGenerationInfo = generations[newGeneration - 1];
 
         uint256 validatorsCount = 0;
         bool newValidatorsAdded = false;
-        address[] memory stakingValidators = _stakingContract().getValidators();
+        address[] memory stakingValidators = _staking.getValidators();
         address[] memory newValidators = new address[](stakingValidators.length);
         for (uint256 i = 0; i < stakingValidators.length; i++) {
             address validator = stakingValidators[i];
@@ -263,15 +276,7 @@ contract DKG is ISignerAddress, ContractKeys, Initializable {
         return votes > (generations[_generation].validators.length / 2);
     }
 
-    function _stakingContract() private view returns (Staking) {
-        return Staking(payable(contractRegistry.getContract(STAKING_KEY)));
-    }
-
-    function _slashingVotingContract() private view returns (SlashingVoting) {
-        return SlashingVoting(contractRegistry.getContract(SLASHING_VOTING_KEY));
-    }
-
     function _isBannedByReason(address _validator, SlashingReason _reason) private view returns (bool) {
-        return _slashingVotingContract().isBannedByReason(_validator, _reason);
+        return _slashingVoting.isBannedByReason(_validator, _reason);
     }
 }
