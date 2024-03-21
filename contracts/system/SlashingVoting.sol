@@ -74,10 +74,10 @@ contract SlashingVoting is Initializable, AbstractDependant {
         _;
     }
 
-    function initialize(uint256 _epochPeriod, uint256 _slashingThresold, uint256 _lashingEpochs) external initializer {
-        setEpochPeriod(_epochPeriod);
-        setSlashingThresold(_slashingThresold);
-        setSlashingEpochs(_lashingEpochs);
+    function initialize(uint256 _epochPeriod, uint256 _slashingThresold, uint256 _slashingEpochs) external initializer {
+        epochPeriod = _epochPeriod;
+        slashingThresold = _slashingThresold;
+        slashingEpochs = _slashingEpochs;
     }
 
     function setDependencies(address _contractsRegistryAddr, bytes memory) public override dependant {

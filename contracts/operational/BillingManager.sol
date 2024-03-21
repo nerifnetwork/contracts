@@ -16,7 +16,6 @@ import "@solarity/solidity-lib/libs/arrays/Paginator.sol";
 import "@solarity/solidity-lib/libs/data-structures/StringSet.sol";
 
 import "../interfaces/core/IContractsRegistry.sol";
-
 import "../interfaces/operational/IBillingManager.sol";
 
 import "./Registry.sol";

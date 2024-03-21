@@ -71,5 +71,9 @@ contract ContractsRegistry is IContractsRegistry, OwnableContractsRegistry, UUPS
         return getContract(TOKENS_VESTING_NAME);
     }
 
+    function getSignerGetterContract() external view override returns (address) {
+        return getContract(SIGNER_GETTER_NAME);
+    }
+
     function _authorizeUpgrade(address) internal override onlyOwner {}
 }

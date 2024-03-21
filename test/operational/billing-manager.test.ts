@@ -127,12 +127,13 @@ describe('BillingManager', () => {
       depositAssetKey: nativeDepositAssetKey,
       depositAssetData: nativeDepositAssetData,
     });
-    await gatewayFactory.initialize(registry.address, gatewayImpl.address);
+    await gatewayFactory.initialize(gatewayImpl.address);
     await nerifToken.initialize(tokensAmount, 'NERIF', 'NERIF');
     await tokensVesting.initialize();
 
     await contractsRegistry.injectDependencies(await contractsRegistry.REGISTRY_NAME());
     await contractsRegistry.injectDependencies(await contractsRegistry.BILLING_MANAGER_NAME());
+    await contractsRegistry.injectDependencies(await contractsRegistry.GATEWAY_FACTORY_NAME());
     await contractsRegistry.injectDependencies(await contractsRegistry.NERIF_TOKEN_NAME());
 
     await contractsRegistry.setIsMainChain(true);

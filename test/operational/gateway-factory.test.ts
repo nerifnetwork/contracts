@@ -2,7 +2,7 @@ import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { Reverter } from '../helpers/reverter';
-import { Gateway, GatewayFactory, TestGateway } from '../../generated-types/ethers';
+import { ContractsRegistry, Gateway, GatewayFactory, TestGateway } from '../../generated-types/ethers';
 
 describe('GatewayFactory', () => {
   const reverter = new Reverter();
@@ -11,19 +11,39 @@ describe('GatewayFactory', () => {
   let FIRST: SignerWithAddress;
   let REGISTRY: SignerWithAddress;
 
+  let contractsRegistry: ContractsRegistry;
   let gatewayFactory: GatewayFactory;
   let gatewayImpl: Gateway;
 
   before(async () => {
     [OWNER, FIRST, REGISTRY] = await ethers.getSigners();
 
+    const ERC1967ProxyFactory = await ethers.getContractFactory('ERC1967Proxy');
+    const ContractsRegistryFactory = await ethers.getContractFactory('ContractsRegistry');
     const GatewayFactoryFactory = await ethers.getContractFactory('GatewayFactory');
     const GatewayImplFactory = await ethers.getContractFactory('Gateway');
 
-    gatewayFactory = await GatewayFactoryFactory.deploy();
+    const contractsRegistryImpl = await ContractsRegistryFactory.deploy();
+    const contractsRegistryProxy = await ERC1967ProxyFactory.deploy(contractsRegistryImpl.address, '0x');
+
+    const gatewayFactoryImpl = await GatewayFactoryFactory.deploy();
     gatewayImpl = await GatewayImplFactory.deploy();
 
-    await gatewayFactory.initialize(REGISTRY.address, gatewayImpl.address);
+    contractsRegistry = ContractsRegistryFactory.attach(contractsRegistryProxy.address);
+
+    await contractsRegistry.__OwnableContractsRegistry_init();
+
+    await contractsRegistry.addProxyContract(
+      await contractsRegistry.GATEWAY_FACTORY_NAME(),
+      gatewayFactoryImpl.address
+    );
+    await contractsRegistry.addContract(await contractsRegistry.REGISTRY_NAME(), REGISTRY.address);
+
+    gatewayFactory = GatewayFactoryFactory.attach(await contractsRegistry.getGatewayFactoryContract());
+
+    await gatewayFactory.initialize(gatewayImpl.address);
+
+    await contractsRegistry.injectDependencies(await contractsRegistry.GATEWAY_FACTORY_NAME());
 
     await reverter.snapshot();
   });
@@ -41,7 +61,24 @@ describe('GatewayFactory', () => {
     it('should get exception if try to call init function twice', async () => {
       const reason = 'Initializable: contract is already initialized';
 
-      await expect(gatewayFactory.initialize(REGISTRY.address, gatewayImpl.address)).to.be.revertedWith(reason);
+      await expect(gatewayFactory.initialize(gatewayImpl.address)).to.be.revertedWith(reason);
+    });
+  });
+
+  describe('setDependencies', () => {
+    it('should correctly update dependencies', async () => {
+      expect(await gatewayFactory.registryAddr()).to.be.eq(REGISTRY.address);
+
+      await contractsRegistry.addContract(await contractsRegistry.REGISTRY_NAME(), FIRST.address);
+      await contractsRegistry.injectDependencies(await contractsRegistry.GATEWAY_FACTORY_NAME());
+
+      expect(await gatewayFactory.registryAddr()).to.be.eq(FIRST.address);
+    });
+
+    it('should get exception if not a contracts registry try to call this function', async () => {
+      const reason = 'Dependant: not an injector';
+
+      await expect(gatewayFactory.setDependencies(contractsRegistry.address, '0x')).to.be.revertedWith(reason);
     });
   });
 

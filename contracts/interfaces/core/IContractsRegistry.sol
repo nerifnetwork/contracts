@@ -25,4 +25,6 @@ interface IContractsRegistry {
     function getNerifTokenContract() external view returns (address);
 
     function getTokensVestingContract() external view returns (address);
+
+    function getSignerGetterContract() external view returns (address);
 }
