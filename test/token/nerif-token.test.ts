@@ -105,6 +105,30 @@ describe('NerifToken', () => {
     });
   });
 
+  describe('setDependencies', () => {
+    it('should correctly update dependencies', async () => {
+      const TestNerifTokenFactory = await ethers.getContractFactory('TestNerifToken');
+
+      const newNerifTokenImpl = await TestNerifTokenFactory.deploy();
+      await contractsRegistry.upgradeContract(await contractsRegistry.NERIF_TOKEN_NAME(), newNerifTokenImpl.address);
+
+      const newNerifToken = TestNerifTokenFactory.attach(nerifToken.address);
+
+      expect(await newNerifToken.tokensVestingAddress()).to.be.eq(VESTING_CONTRACT.address);
+
+      await contractsRegistry.addContract(await contractsRegistry.TOKENS_VESTING_NAME(), FIRST.address);
+      await contractsRegistry.injectDependencies(await contractsRegistry.NERIF_TOKEN_NAME());
+
+      expect(await newNerifToken.tokensVestingAddress()).to.be.eq(FIRST.address);
+    });
+
+    it('should get exception if not a contracts registry try to call this function', async () => {
+      const reason = 'Dependant: not an injector';
+
+      await expect(nerifToken.setDependencies(contractsRegistry.address, '0x')).to.be.revertedWith(reason);
+    });
+  });
+
   describe('vestingMint', () => {
     it('should correctly mint tokens from the vesting', async () => {
       const tx = await nerifToken.connect(VESTING_CONTRACT).vestingMint(FIRST.address, tokensAmount);

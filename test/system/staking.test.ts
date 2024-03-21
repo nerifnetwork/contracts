@@ -2,7 +2,7 @@ import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { Reverter } from '../helpers/reverter';
-import { ContractsRegistry, DKG, NerifToken, Staking, TestSlashingVoting } from '../../generated-types/ethers';
+import { ContractsRegistry, DKG, NerifToken, TestStaking, TestSlashingVoting } from '../../generated-types/ethers';
 import { wei } from '../helpers/utils';
 import { setNextBlockTime, setTime } from '../helpers/block-helper';
 
@@ -16,7 +16,7 @@ describe('Staking', () => {
   let SECOND: SignerWithAddress;
 
   let contractsRegistry: ContractsRegistry;
-  let staking: Staking;
+  let staking: TestStaking;
   let dkg: DKG;
   let slashingVoting: TestSlashingVoting;
   let nerifToken: NerifToken;
@@ -61,7 +61,7 @@ describe('Staking', () => {
 
     const ERC1967ProxyFactory = await ethers.getContractFactory('ERC1967Proxy');
     const ContractsRegistryFactory = await ethers.getContractFactory('ContractsRegistry');
-    const StakingFactory = await ethers.getContractFactory('Staking');
+    const StakingFactory = await ethers.getContractFactory('TestStaking');
     const DKGFactory = await ethers.getContractFactory('DKG');
     const RewardDistributionPoolFactory = await ethers.getContractFactory('RewardDistributionPool');
     const TokensVestingFactory = await ethers.getContractFactory('TokensVesting');
@@ -149,6 +149,23 @@ describe('Staking', () => {
       const reason = 'Staking: Not a signer';
 
       await expect(staking.connect(FIRST).setMinimalStake(newMinimalStake)).to.be.revertedWith(reason);
+    });
+  });
+
+  describe('setDependencies', () => {
+    it('should correctly update dependencies', async () => {
+      expect(await staking.dkgAddress()).to.be.eq(dkg.address);
+
+      await contractsRegistry.addContract(await contractsRegistry.DKG_NAME(), FIRST.address);
+      await contractsRegistry.injectDependencies(await contractsRegistry.STAKING_NAME());
+
+      expect(await staking.dkgAddress()).to.be.eq(FIRST.address);
+    });
+
+    it('should get exception if not a contracts registry try to call this function', async () => {
+      const reason = 'Dependant: not an injector';
+
+      await expect(staking.setDependencies(contractsRegistry.address, '0x')).to.be.revertedWith(reason);
     });
   });
 

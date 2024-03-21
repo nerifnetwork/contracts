@@ -228,6 +228,33 @@ describe('BillingManager', () => {
     });
   });
 
+  describe('setDependencies', () => {
+    it('should correctly update dependencies', async () => {
+      const TestBillingManagerFactory = await ethers.getContractFactory('TestBillingManager');
+
+      const newBillingManagerImpl = await TestBillingManagerFactory.deploy();
+      await contractsRegistry.upgradeContract(
+        await contractsRegistry.BILLING_MANAGER_NAME(),
+        newBillingManagerImpl.address
+      );
+
+      const newBillingManager = TestBillingManagerFactory.attach(billingManager.address);
+
+      expect(await newBillingManager.registry()).to.be.eq(registry.address);
+
+      await contractsRegistry.addContract(await contractsRegistry.REGISTRY_NAME(), FIRST.address);
+      await contractsRegistry.injectDependencies(await contractsRegistry.BILLING_MANAGER_NAME());
+
+      expect(await newBillingManager.registry()).to.be.eq(FIRST.address);
+    });
+
+    it('should get exception if not a contracts registry try to call this function', async () => {
+      const reason = 'Dependant: not an injector';
+
+      await expect(billingManager.setDependencies(contractsRegistry.address, '0x')).to.be.revertedWith(reason);
+    });
+  });
+
   describe('addDepositAsset', () => {
     const nerifAssetKey: string = 'NERIF';
     let nerifAssetData: IBillingManager.DepositAssetDataStruct;

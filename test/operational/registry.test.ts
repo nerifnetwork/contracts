@@ -142,6 +142,30 @@ describe('Registry', () => {
     });
   });
 
+  describe('setDependencies', () => {
+    it('should correctly update dependencies', async () => {
+      const TestRegistryFactory = await ethers.getContractFactory('TestRegistry');
+
+      const newRegistryImpl = await TestRegistryFactory.deploy();
+      await contractsRegistry.upgradeContract(await contractsRegistry.REGISTRY_NAME(), newRegistryImpl.address);
+
+      const newRegistry = TestRegistryFactory.attach(registry.address);
+
+      expect(await newRegistry.billingManagerAddress()).to.be.eq(billingManager.address);
+
+      await contractsRegistry.addContract(await contractsRegistry.BILLING_MANAGER_NAME(), FIRST.address);
+      await contractsRegistry.injectDependencies(await contractsRegistry.REGISTRY_NAME());
+
+      expect(await newRegistry.billingManagerAddress()).to.be.eq(FIRST.address);
+    });
+
+    it('should get exception if not a contracts registry try to call this function', async () => {
+      const reason = 'Dependant: not an injector';
+
+      await expect(registry.setDependencies(contractsRegistry.address, '0x')).to.be.revertedWith(reason);
+    });
+  });
+
   describe('setMaxWorkflowsPerAccount', () => {
     it('should correctly set max workflows per account', async () => {
       const newMaxWorkflowsPerAccount = 5;
