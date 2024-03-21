@@ -41,7 +41,7 @@
     "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
     "@nomiclabs/hardhat-ethers": "^2.0.5",
     "@nomiclabs/hardhat-solhint": "^2.0.0",
-    "@solarity/hardhat-gobind": "^1.1.1",
+    "@solarity/hardhat-gobind": "^1.2.2",
     "@solarity/hardhat-migrate": "^2.1.5",
     "@typechain/ethers-v5": "^10.1.0",
     "@typechain/hardhat": "^6.1.5",

@@ -135,12 +135,6 @@ interface IRegistry {
     function setMaxWorkflowsPerAccount(uint16 _newMaxWorkflowsPerAccount) external;
 
     /**
-     * @notice Sets the address of the GatewayFactory contract
-     * @param _newGatewayFactory The address of the new GatewayFactory contract
-     */
-    function setGatewayFactory(address _newGatewayFactory) external;
-
-    /**
      * @notice Sets the address of the gateway contract for the msg.sender address
      * @param _gateway The address of the gateway contract to be set
      */

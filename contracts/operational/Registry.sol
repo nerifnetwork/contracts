@@ -5,26 +5,28 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
+import "@solarity/solidity-lib/contracts-registry/AbstractDependant.sol";
 import "@solarity/solidity-lib/libs/arrays/Paginator.sol";
 import "@solarity/solidity-lib/libs/data-structures/StringSet.sol";
 
 import "../interfaces/SignerOwnable.sol";
+import "../interfaces/core/IContractsRegistry.sol";
 import "../interfaces/operational/IGateway.sol";
 import "../interfaces/operational/IGatewayFactory.sol";
 import "../interfaces/operational/IBillingManager.sol";
 import "../interfaces/operational/IRegistry.sol";
 
-contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
+contract Registry is IRegistry, Initializable, AbstractDependant {
     using EnumerableSet for EnumerableSet.AddressSet;
     using StringSet for StringSet.Set;
 
     uint256 internal constant PERFORM_GAS_CUSHION = 5_000;
     string internal constant GATEWAY_PERFORM_FUNC_SIGNATURE = "perform(uint256,address,bytes)";
 
-    IGatewayFactory public gatewayFactory;
-    IBillingManager public billingManager;
+    IContractsRegistry internal _contractsRegistry;
+    IGatewayFactory internal _gatewayFactory;
+    IBillingManager internal _billingManager;
 
-    bool public isMainChain;
     uint16 public maxWorkflowsPerAccount;
 
     uint256[] internal _existingWorkflowIds;
@@ -34,6 +36,11 @@ contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
 
     mapping(uint256 => WorkflowData) internal _workflowsData;
     mapping(address => address) internal _gateways;
+
+    modifier onlySigner() {
+        _onlySigner();
+        _;
+    }
 
     modifier onlyMainchain() {
         _onlyMainChain();
@@ -45,29 +52,22 @@ contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
         _;
     }
 
-    function initialize(
-        bool _isMainChain,
-        address _signerGetterAddress,
-        address _gatewayFactoryAddr,
-        address _billingManagerAddr,
-        uint16 _maxWorkflowsPerAccount
-    ) external initializer {
-        isMainChain = _isMainChain;
-
-        gatewayFactory = IGatewayFactory(_gatewayFactoryAddr);
-        billingManager = IBillingManager(_billingManagerAddr);
-
-        _setSignerGetter(_signerGetterAddress);
-
+    function initialize(uint16 _maxWorkflowsPerAccount) external initializer {
         maxWorkflowsPerAccount = _maxWorkflowsPerAccount;
     }
 
-    function setMaxWorkflowsPerAccount(uint16 _newMaxWorkflowsPerAccount) external override onlySigner {
-        maxWorkflowsPerAccount = _newMaxWorkflowsPerAccount;
+    function setDependencies(address _contractsRegistryAddr, bytes memory) public override dependant {
+        IContractsRegistry contractsRegistry = IContractsRegistry(_contractsRegistryAddr);
+
+        _contractsRegistry = contractsRegistry;
+
+        _gatewayFactory = IGatewayFactory(contractsRegistry.getGatewayFactoryContract());
+        _billingManager = IBillingManager(contractsRegistry.getBillingManagerContract());
     }
 
-    function setGatewayFactory(address _newGatewayFactory) external override onlySigner {
-        gatewayFactory = IGatewayFactory(_newGatewayFactory);
+    // solhint-disable-next-line ordering
+    function setMaxWorkflowsPerAccount(uint16 _newMaxWorkflowsPerAccount) external override onlySigner {
+        maxWorkflowsPerAccount = _newMaxWorkflowsPerAccount;
     }
 
     function setGateway(address _gateway) external override {
@@ -83,7 +83,7 @@ contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
         uint256 _workflowId,
         uint256 _workflowExecutionAmount
     ) external override onlyExistingWorkflow(_workflowId) {
-        require(msg.sender == address(billingManager), "Registry: sender is not a billing manager");
+        require(msg.sender == address(_billingManager), "Registry: sender is not a billing manager");
 
         _workflowsData[_workflowId].depositAssetKeys.add(_depositAssetKey);
         _workflowsData[_workflowId].depositAssetsTotalSpent[_depositAssetKey] += _workflowExecutionAmount;
@@ -106,9 +106,10 @@ contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
     }
 
     function registerWorkflows(RegisterWorkflowInfo[] calldata _registerWorkflowInfoArr) external override {
-        bool isMainChainLocal = isMainChain;
+        bool isMainChain = _contractsRegistry.isMainChain();
+        address signerAddr = _contractsRegistry.getSigner();
 
-        if (isMainChainLocal && maxWorkflowsPerAccount > 0) {
+        if (isMainChain && maxWorkflowsPerAccount > 0) {
             require(
                 workflowsPerAddress[msg.sender] + _registerWorkflowInfoArr.length <= maxWorkflowsPerAccount,
                 "Registry: reached max workflows capacity"
@@ -119,9 +120,7 @@ contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
             RegisterWorkflowInfo calldata currentRegisterInfo = _registerWorkflowInfoArr[i];
 
             require(
-                isMainChainLocal
-                    ? currentRegisterInfo.workflowOwner == msg.sender
-                    : signerGetter.getSignerAddress() == msg.sender,
+                isMainChain ? currentRegisterInfo.workflowOwner == msg.sender : signerAddr == msg.sender,
                 "Registry: not a sender or signer"
             );
 
@@ -144,7 +143,7 @@ contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
                 currentRegisterInfo.id,
                 currentRegisterInfo.workflowOwner,
                 currentRegisterInfo.hash,
-                isMainChainLocal ? WorkflowStatus.PENDING : WorkflowStatus.ACTIVE
+                isMainChain ? WorkflowStatus.PENDING : WorkflowStatus.ACTIVE
             );
             workflowsPerAddress[currentRegisterInfo.workflowOwner]++;
             _existingWorkflowIds.push(currentRegisterInfo.id);
@@ -165,8 +164,8 @@ contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
     }
 
     function cancelWorkflows(uint256[] calldata _workflowIds) external override {
-        bool isMainChainLocal = isMainChain;
-        address signerAddr = signerGetter.getSignerAddress();
+        bool isMainChain = _contractsRegistry.isMainChain();
+        address signerAddr = _contractsRegistry.getSigner();
 
         for (uint256 i = 0; i < _workflowIds.length; i++) {
             _onlyExistingWorkflow(_workflowIds[i]);
@@ -174,7 +173,7 @@ contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
             address workflowOwner = getWorkflowOwner(_workflowIds[i]);
 
             require(
-                isMainChainLocal ? workflowOwner == msg.sender : signerAddr == msg.sender,
+                isMainChain ? workflowOwner == msg.sender : signerAddr == msg.sender,
                 "Registry: not a workflow owner or signer"
             );
 
@@ -195,8 +194,8 @@ contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
         _onlyRequiredStatus(_workflowId, WorkflowStatus.ACTIVE, true);
 
         require(
-            billingManager.getExecutionWorkflowId(_workflowExecutionId) == _workflowId &&
-                billingManager.getWorkflowExecutionStatus(_workflowExecutionId) ==
+            _billingManager.getExecutionWorkflowId(_workflowExecutionId) == _workflowId &&
+                _billingManager.getWorkflowExecutionStatus(_workflowExecutionId) ==
                 IBillingManager.WorkflowExecutionStatus.PENDING,
             "Registry: invalid workflow execution ID"
         );
@@ -300,8 +299,6 @@ contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
         return _workflowsData[_id].baseInfo.status != WorkflowStatus.NONE;
     }
 
-    function _authorizeUpgrade(address) internal virtual override onlySigner {}
-
     function _updateWorkflowStatus(uint256 _id, WorkflowStatus _newStatus) internal {
         _workflowsData[_id].baseInfo.status = _newStatus;
 
@@ -309,7 +306,7 @@ contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
     }
 
     function _deployAndSetGateway(address _gatewayOwner) internal returns (address) {
-        address newGatewayAddr = gatewayFactory.deployGateway(_gatewayOwner);
+        address newGatewayAddr = _gatewayFactory.deployGateway(_gatewayOwner);
 
         _setGateway(_gatewayOwner, newGatewayAddr);
 
@@ -359,8 +356,12 @@ contract Registry is IRegistry, Initializable, SignerOwnable, UUPSUpgradeable {
         }
     }
 
+    function _onlySigner() internal view {
+        require(_contractsRegistry.getSigner() == msg.sender, "Registry: Not a signer");
+    }
+
     function _onlyMainChain() internal view {
-        require(isMainChain, "Registry: not a main chain");
+        require(_contractsRegistry.isMainChain(), "Registry: not a main chain");
     }
 
     function _onlyRequiredStatus(uint256 _id, WorkflowStatus _statusToCheck, bool _isEqual) internal view {

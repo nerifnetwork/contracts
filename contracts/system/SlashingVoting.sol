@@ -2,10 +2,12 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
+import "@solarity/solidity-lib/contracts-registry/AbstractDependant.sol";
+
+import "../interfaces/core/IContractsRegistry.sol";
 import "../interfaces/SignerOwnable.sol";
-import "../common/ContractRegistry.sol";
-import "./ContractKeys.sol";
-import "./ValidatorOwnable.sol";
+
 import "./Staking.sol";
 import "./DKG.sol";
 
@@ -26,7 +28,7 @@ enum SlashingReasonGroup {
 
 // SlashingVoting represents the validator slashing mechanism.
 // It allows validators to vote for slashing of a specific validator.
-contract SlashingVoting is ContractKeys, ValidatorOwnable, SignerOwnable, Initializable {
+contract SlashingVoting is Initializable, AbstractDependant {
     struct SlashingProposal {
         address validator;
         string reason;
@@ -34,9 +36,11 @@ contract SlashingVoting is ContractKeys, ValidatorOwnable, SignerOwnable, Initia
         uint256 slashingProposalVoteCounts;
     }
 
-    SlashingProposal[] public proposals;
+    IContractsRegistry internal _contractsRegistry;
+    Staking internal _staking;
+    DKG internal _dkg;
 
-    ContractRegistry public contractRegistry;
+    SlashingProposal[] public proposals;
 
     uint256 public epochPeriod;
     uint256 public slashingThresold;
@@ -60,29 +64,35 @@ contract SlashingVoting is ContractKeys, ValidatorOwnable, SignerOwnable, Initia
     event ProposalVoted(uint256 proposalId, address validator, address voter);
     event ProposalExecuted(uint256 proposalId, address validator);
 
-    function initialize(
-        address _signerGetterAddress,
-        address _validatorGetterAddress,
-        uint256 _epochPeriod,
-        uint256 _slashingThresold,
-        uint256 _lashingEpochs,
-        address _contractRegistry
-    ) external initializer {
-        _setSignerGetter(_signerGetterAddress);
-        _setValidatorGetter(_validatorGetterAddress);
-        setEpochPeriod(_epochPeriod);
-        setSlashingThresold(_slashingThresold);
-        setSlashingEpochs(_lashingEpochs);
-        contractRegistry = ContractRegistry(_contractRegistry);
+    modifier onlySigner() {
+        _onlySigner();
+        _;
     }
 
-    function voteWithReason(address _validator, SlashingReason _reason, bytes calldata _nonce) external onlyValidator {
-        Staking staking = _stakingContract();
-        DKG dkg = _dkgContract();
+    modifier onlyValidator() {
+        _onlyValidator();
+        _;
+    }
 
+    function initialize(uint256 _epochPeriod, uint256 _slashingThresold, uint256 _slashingEpochs) external initializer {
+        epochPeriod = _epochPeriod;
+        slashingThresold = _slashingThresold;
+        slashingEpochs = _slashingEpochs;
+    }
+
+    function setDependencies(address _contractsRegistryAddr, bytes memory) public override dependant {
+        IContractsRegistry contractsRegistry = IContractsRegistry(_contractsRegistryAddr);
+
+        _contractsRegistry = contractsRegistry;
+        _staking = Staking(contractsRegistry.getStakingContract());
+        _dkg = DKG(contractsRegistry.getDKGContract());
+    }
+
+    // solhint-disable-next-line ordering
+    function voteWithReason(address _validator, SlashingReason _reason, bytes calldata _nonce) external onlyValidator {
         bytes32 voteHash = votingHashWithReason(_validator, _reason, _nonce);
 
-        require(staking.isValidatorActive(_validator) == true, "SlashingVoting: target is not active validator");
+        require(_staking.isValidatorActive(_validator) == true, "SlashingVoting: target is not active validator");
         require(bans[voteHash] == false, "SlashingVoting: validator is already banned");
         require(votes[voteHash][msg.sender] == false, "SlashingVoting: voter is already voted against given validator");
 
@@ -91,7 +101,7 @@ contract SlashingVoting is ContractKeys, ValidatorOwnable, SignerOwnable, Initia
         emit VotedWithReason(msg.sender, _validator, _reason);
 
         uint256 epoch = currentEpoch();
-        address[] memory validators = staking.getValidators();
+        address[] memory validators = _staking.getValidators();
         if (voteCounts[voteHash] >= (validators.length / 2 + 1)) {
             bans[voteHash] = true;
             bansByReason[epoch][_validator][_reason] = true;
@@ -100,12 +110,12 @@ contract SlashingVoting is ContractKeys, ValidatorOwnable, SignerOwnable, Initia
             emit BannedWithReason(_validator, _reason);
 
             if (_reason == SlashingReason.REASON_DKG_INACTIVITY || _reason == SlashingReason.REASON_DKG_VIOLATION) {
-                dkg.updateGeneration();
+                _dkg.updateGeneration();
             }
         }
 
         if (shouldShash(epoch, _validator)) {
-            _stakingContract().slash(_validator);
+            _staking.slash(_validator);
             emit SlashedWithReason(_validator);
         }
     }
@@ -123,14 +133,12 @@ contract SlashingVoting is ContractKeys, ValidatorOwnable, SignerOwnable, Initia
     }
 
     function voteProposal(uint256 _proposalId) public onlyValidator {
-        Staking staking = _stakingContract();
-
         require(_proposalId < proposals.length, "SlashingVoting: proposal doesn't exist!");
 
         SlashingProposal storage proposal = proposals[_proposalId];
 
         require(
-            staking.isValidatorActive(proposal.validator) == true,
+            _staking.isValidatorActive(proposal.validator) == true,
             "SlashingVoting: target is not active validator"
         );
         require(
@@ -141,9 +149,9 @@ contract SlashingVoting is ContractKeys, ValidatorOwnable, SignerOwnable, Initia
         proposals[_proposalId].slashingProposalVotes[msg.sender] = true;
         proposals[_proposalId].slashingProposalVoteCounts++;
 
-        address[] memory validators = staking.getValidators();
+        address[] memory validators = _staking.getValidators();
         if (proposals[_proposalId].slashingProposalVoteCounts >= (validators.length / 2 + 1)) {
-            _stakingContract().slash(proposal.validator);
+            _staking.slash(proposal.validator);
             emit ProposalExecuted(_proposalId, proposal.validator);
         }
         emit ProposalVoted(_proposalId, proposal.validator, msg.sender);
@@ -207,11 +215,11 @@ contract SlashingVoting is ContractKeys, ValidatorOwnable, SignerOwnable, Initia
         return keccak256(abi.encodePacked(_validator, _reason, _nonce));
     }
 
-    function _stakingContract() private view returns (Staking) {
-        return Staking(payable(contractRegistry.getContract(STAKING_KEY)));
+    function _onlySigner() internal view {
+        require(_contractsRegistry.getSigner() == msg.sender, "SlashingVoting: Not a signer");
     }
 
-    function _dkgContract() private view returns (DKG) {
-        return DKG(contractRegistry.getContract(DKG_KEY));
+    function _onlyValidator() internal view {
+        require(_staking.isValidatorActive(msg.sender), "SlashingVoting: Not a system validator");
     }
 }

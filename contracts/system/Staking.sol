@@ -7,23 +7,25 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import "@solarity/solidity-lib/contracts-registry/AbstractDependant.sol";
 import "@solarity/solidity-lib/libs/arrays/Paginator.sol";
 
-import "../interfaces/SignerOwnable.sol";
+import "../interfaces/core/IContractsRegistry.sol";
 import "../interfaces/system/IStaking.sol";
 
-import "../common/ContractRegistry.sol";
-
 import "./DKG.sol";
-import "./ContractKeys.sol";
 import "./SlashingVoting.sol";
 import "./RewardDistributionPool.sol";
 
-contract Staking is IStaking, ContractKeys, SignerOwnable, Initializable {
+contract Staking is IStaking, Initializable, AbstractDependant {
     using EnumerableSet for EnumerableSet.AddressSet;
     using SafeERC20 for IERC20;
 
-    ContractRegistry public contractRegistry;
+    IContractsRegistry internal _contractsRegistry;
+    DKG internal _dkg;
+    SlashingVoting internal _slashingVoting;
+    RewardDistributionPool internal _rewardsDistributionPool;
+
     IERC20 public stakeToken;
 
     uint256 public override minimalStake;
@@ -35,40 +37,45 @@ contract Staking is IStaking, ContractKeys, SignerOwnable, Initializable {
     mapping(address => ValidatorData) internal _validatorsData;
     mapping(address => WithdrawalAnnouncement) internal _withdrawalAnnouncements;
 
+    modifier onlySigner() {
+        _onlySigner();
+        _;
+    }
+
     modifier onlyNotSlashed() {
         require(!isValidatorSlashed(msg.sender), "Staking: validator is slashed");
         _;
     }
 
     modifier onlySlashingVoting() {
-        require(msg.sender == address(_slashingVotingContract()), "Staking: not a slashing voting");
+        require(msg.sender == address(_slashingVoting), "Staking: not a slashing voting");
         _;
     }
 
     modifier onlyRewardDistributionPool() {
-        require(
-            msg.sender == address(_rewardDistributionPoolContract()),
-            "Staking: only RewardDistributionPool contract"
-        );
+        require(msg.sender == address(_rewardsDistributionPool), "Staking: only RewardDistributionPool contract");
         _;
     }
 
-    function initialize(
-        address _signerGetterAddress,
-        address _contractRegistry,
-        address _stakeToken,
-        uint256 _minimalStake,
-        uint256 _withdrawalPeriod
-    ) external initializer {
-        contractRegistry = ContractRegistry(_contractRegistry);
+    function initialize(address _stakeToken, uint256 _minimalStake, uint256 _withdrawalPeriod) external initializer {
         stakeToken = IERC20(_stakeToken);
-
-        _setSignerGetter(_signerGetterAddress);
 
         _setMinimalStake(_minimalStake);
         _setWithdrawalPeriod(_withdrawalPeriod);
     }
 
+    function setDependencies(address _contractsRegistryAddr, bytes memory) public override dependant {
+        IContractsRegistry contractsRegistry = IContractsRegistry(_contractsRegistryAddr);
+
+        _contractsRegistry = contractsRegistry;
+        _dkg = DKG(contractsRegistry.getDKGContract());
+        _slashingVoting = SlashingVoting(contractsRegistry.getSlashingVotingContract());
+        _rewardsDistributionPool = RewardDistributionPool(
+            payable(contractsRegistry.getRewardsDistributionPoolContract())
+        );
+    }
+
+    // solhint-disable-next-line ordering
     function setMinimalStake(uint256 _minimalStake) external override onlySigner {
         _setMinimalStake(_minimalStake);
     }
@@ -229,7 +236,7 @@ contract Staking is IStaking, ContractKeys, SignerOwnable, Initializable {
 
         _validatorsData[_validatorToUpdate].status = _newStatus;
 
-        _dkgContract().updateGeneration();
+        _dkg.updateGeneration();
     }
 
     function _updateValidators(address _validatorToUpdate, bool _isAdding) internal {
@@ -237,7 +244,7 @@ contract Staking is IStaking, ContractKeys, SignerOwnable, Initializable {
 
         require(success, "Staking: Invalid validator address to update");
 
-        _dkgContract().updateGeneration();
+        _dkg.updateGeneration();
     }
 
     function _stake(address _tokenSenderAddr, address _stakeRecipientAddr, uint256 _stakeAmount) internal {
@@ -260,15 +267,7 @@ contract Staking is IStaking, ContractKeys, SignerOwnable, Initializable {
         emit TokensStaked(_tokenSenderAddr, _stakeRecipientAddr, _stakeAmount);
     }
 
-    function _dkgContract() private view returns (DKG) {
-        return DKG(contractRegistry.getContract(DKG_KEY));
-    }
-
-    function _slashingVotingContract() private view returns (SlashingVoting) {
-        return SlashingVoting(contractRegistry.getContract(SLASHING_VOTING_KEY));
-    }
-
-    function _rewardDistributionPoolContract() private view returns (RewardDistributionPool) {
-        return RewardDistributionPool(payable(contractRegistry.getContract(REWARD_DISTRIBUTION_POOL_KEY)));
+    function _onlySigner() internal view {
+        require(_contractsRegistry.getSigner() == msg.sender, "Staking: Not a signer");
     }
 }

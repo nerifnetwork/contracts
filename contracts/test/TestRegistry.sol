@@ -10,6 +10,10 @@ contract TestRegistry is Registry {
         IGateway(_gatewayAddr).perform(_id, _target, _payload);
     }
 
+    function billingManagerAddress() external view returns (address) {
+        return address(_billingManager);
+    }
+
     function version() external pure returns (string memory) {
         return "v2.0.0";
     }

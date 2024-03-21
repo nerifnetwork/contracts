@@ -2,7 +2,7 @@ import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { Reverter } from '../helpers/reverter';
-import { Gateway, SignerStorage, TestRegistry, TestTarget } from '../../generated-types/ethers';
+import { ContractsRegistry, Gateway, SignerStorage, TestRegistry, TestTarget } from '../../generated-types/ethers';
 import { BigNumberish } from 'ethers';
 
 describe('Gateway', () => {
@@ -12,7 +12,9 @@ describe('Gateway', () => {
   let FIRST: SignerWithAddress;
   let SECOND: SignerWithAddress;
   let SIGNER: SignerWithAddress;
+  let NOTHING: SignerWithAddress;
 
+  let contractsRegistry: ContractsRegistry;
   let signerStorage: SignerStorage;
   let gateway: Gateway;
   let testRegistry: TestRegistry;
@@ -25,27 +27,38 @@ describe('Gateway', () => {
   }
 
   before(async () => {
-    [OWNER, FIRST, SECOND, SIGNER] = await ethers.getSigners();
+    [OWNER, FIRST, SECOND, SIGNER, NOTHING] = await ethers.getSigners();
 
+    const ERC1967ProxyFactory = await ethers.getContractFactory('ERC1967Proxy');
+    const ContractsRegistryFactory = await ethers.getContractFactory('ContractsRegistry');
     const GatewayFactory = await ethers.getContractFactory('Gateway');
     const SignerStorageFactory = await ethers.getContractFactory('SignerStorage');
     const TestRegistryFactory = await ethers.getContractFactory('TestRegistry');
     const TestTargetFactory = await ethers.getContractFactory('TestTarget');
+
+    const contractsRegistryImpl = await ContractsRegistryFactory.deploy();
+    const contractsRegistryProxy = await ERC1967ProxyFactory.deploy(contractsRegistryImpl.address, '0x');
+
+    contractsRegistry = ContractsRegistryFactory.attach(contractsRegistryProxy.address);
 
     signerStorage = await SignerStorageFactory.deploy();
     gateway = await GatewayFactory.deploy();
     testRegistry = await TestRegistryFactory.deploy();
     testTarget = await TestTargetFactory.deploy();
 
+    await contractsRegistry.__OwnableContractsRegistry_init();
+
+    await contractsRegistry.addContract(await contractsRegistry.REGISTRY_NAME(), testRegistry.address);
+    await contractsRegistry.addContract(await contractsRegistry.BILLING_MANAGER_NAME(), NOTHING.address);
+    await contractsRegistry.addContract(await contractsRegistry.GATEWAY_FACTORY_NAME(), NOTHING.address);
+
     await signerStorage.initialize(SIGNER.address);
     await gateway.initialize(testRegistry.address, OWNER.address);
-    await testRegistry.initialize(
-      true,
-      signerStorage.address,
-      ethers.constants.AddressZero,
-      ethers.constants.AddressZero,
-      0
-    );
+    await testRegistry.initialize(0);
+
+    await contractsRegistry.injectDependencies(await contractsRegistry.REGISTRY_NAME());
+
+    await contractsRegistry.setIsMainChain(true);
 
     await testRegistry.setGateway(gateway.address);
     await testRegistry.registerWorkflows([

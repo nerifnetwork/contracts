@@ -3,7 +3,6 @@ pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -12,22 +11,22 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 
+import "@solarity/solidity-lib/contracts-registry/AbstractDependant.sol";
 import "@solarity/solidity-lib/libs/arrays/Paginator.sol";
 import "@solarity/solidity-lib/libs/data-structures/StringSet.sol";
 
-import "@solarity/solidity-lib/libs/arrays/Paginator.sol";
-
+import "../interfaces/core/IContractsRegistry.sol";
 import "../interfaces/operational/IBillingManager.sol";
-import "../interfaces/SignerOwnable.sol";
 
 import "./Registry.sol";
 
-contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUpgradeable {
+contract BillingManager is IBillingManager, AbstractDependant, Initializable {
     using EnumerableSet for *;
     using StringSet for StringSet.Set;
     using SafeERC20 for IERC20;
 
-    Registry public registry;
+    IContractsRegistry internal _contractsRegistry;
+    Registry internal _registry;
 
     string public nativeDepositAssetKey;
     uint256 public nextWorkflowExecutionId;
@@ -39,6 +38,11 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
     mapping(address => UserData) internal _usersData;
 
     mapping(uint256 => WorkflowExecutionInfo) internal _workflowsExecutionInfo;
+
+    modifier onlySigner() {
+        require(_contractsRegistry.getSigner() == msg.sender, "BillingManager: Not a signer");
+        _;
+    }
 
     modifier onlyExistingDepositAsset(string memory _depositAssetKey) {
         _onlyExistingDepositAsset(_depositAssetKey);
@@ -54,19 +58,20 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
         _depositAsset(nativeDepositAssetKey, msg.sender, msg.sender, msg.value, true);
     }
 
-    function initialize(
-        address _registryAddr,
-        address _signerGetterAddress,
-        DepositAssetInfo calldata _nativeDepositAssetInfo
-    ) external initializer {
-        registry = Registry(_registryAddr);
-
+    function initialize(DepositAssetInfo calldata _nativeDepositAssetInfo) external initializer {
         nativeDepositAssetKey = _nativeDepositAssetInfo.depositAssetKey;
-        _addDepositAsset(_nativeDepositAssetInfo);
 
-        _setSignerGetter(_signerGetterAddress);
+        _addDepositAsset(_nativeDepositAssetInfo);
     }
 
+    function setDependencies(address _contractsRegistryAddr, bytes memory) public override dependant {
+        IContractsRegistry contractsRegistry = IContractsRegistry(_contractsRegistryAddr);
+
+        _contractsRegistry = contractsRegistry;
+        _registry = Registry(contractsRegistry.getRegistryContract());
+    }
+
+    // solhint-disable-next-line ordering
     function addDepositAssets(DepositAssetInfo[] calldata _depositAssetInfoArr) external onlySigner {
         for (uint256 i = 0; i < _depositAssetInfoArr.length; i++) {
             _addDepositAsset(_depositAssetInfoArr[i]);
@@ -122,9 +127,9 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
         uint256 _workflowId,
         uint256 _executionLockedAmount
     ) external override onlySigner onlyExistingDepositAsset(_depositAssetKey) {
-        require(registry.isWorkflowExist(_workflowId), "BillingManager: Workflow does not exist");
+        require(_registry.isWorkflowExist(_workflowId), "BillingManager: Workflow does not exist");
 
-        address workflowOwner = registry.getWorkflowOwner(_workflowId);
+        address workflowOwner = _registry.getWorkflowOwner(_workflowId);
 
         _onlyEnoughAvailableFunds(_depositAssetKey, workflowOwner, _executionLockedAmount);
 
@@ -187,7 +192,7 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
 
         _depositAssetsData[depositAssetKey].networkRewards += _executionAmount;
 
-        registry.updateWorkflowTotalSpent(depositAssetKey, workflowExecutionInfo.workflowId, _executionAmount);
+        _registry.updateWorkflowTotalSpent(depositAssetKey, workflowExecutionInfo.workflowId, _executionAmount);
 
         emit ExecutionCompleted(_workflowExecutionId, _executionAmount);
     }
@@ -267,7 +272,7 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
 
         delete depositAssetData.networkRewards;
 
-        address signerAddr = signerGetter.getSignerAddress();
+        address signerAddr = _contractsRegistry.getSigner();
 
         require(signerAddr != address(0), "BillingManager: Zero signer address");
 
@@ -382,8 +387,6 @@ contract BillingManager is IBillingManager, Initializable, SignerOwnable, UUPSUp
     function isDepositAssetPermitable(string memory _depositAssetKey) public view override returns (bool) {
         return _depositAssetsData[_depositAssetKey].isPermitable;
     }
-
-    function _authorizeUpgrade(address) internal virtual override onlySigner {}
 
     function _addDepositAsset(DepositAssetInfo memory _depositAssetInfo) internal {
         require(

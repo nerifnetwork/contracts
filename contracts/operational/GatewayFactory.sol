@@ -3,13 +3,15 @@ pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
+import "@solarity/solidity-lib/contracts-registry/AbstractDependant.sol";
 import "@solarity/solidity-lib/proxy/beacon/ProxyBeacon.sol";
 import "@solarity/solidity-lib/proxy/beacon/PublicBeaconProxy.sol";
 
+import "../interfaces/core/IContractsRegistry.sol";
 import "../interfaces/operational/IGateway.sol";
 import "../interfaces/operational/IGatewayFactory.sol";
 
-contract GatewayFactory is IGatewayFactory, OwnableUpgradeable {
+contract GatewayFactory is IGatewayFactory, OwnableUpgradeable, AbstractDependant {
     ProxyBeacon public gatewayBeacon;
 
     address public registryAddr;
@@ -19,15 +21,21 @@ contract GatewayFactory is IGatewayFactory, OwnableUpgradeable {
         _;
     }
 
-    function initialize(address _registryAddr, address _gatewayImpl) external initializer {
+    function initialize(address _gatewayImpl) external initializer {
         __Ownable_init();
 
         gatewayBeacon = new ProxyBeacon();
-        registryAddr = _registryAddr;
 
         _setNewImplementation(_gatewayImpl);
     }
 
+    function setDependencies(address _contractsRegistryAddr, bytes memory) public override dependant {
+        IContractsRegistry contractsRegistry = IContractsRegistry(_contractsRegistryAddr);
+
+        registryAddr = contractsRegistry.getRegistryContract();
+    }
+
+    // solhint-disable-next-line ordering
     function setNewImplementation(address _newGatewayImpl) external override onlyOwner {
         _setNewImplementation(_newGatewayImpl);
     }

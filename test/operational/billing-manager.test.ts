@@ -9,8 +9,9 @@ import {
   Registry,
   BillingManager,
   SignerStorage,
-  TestERC20,
   IBillingManager,
+  ContractsRegistry,
+  NerifToken,
 } from '../../generated-types/ethers';
 import { setTime } from '../helpers/block-helper';
 
@@ -23,13 +24,15 @@ describe('BillingManager', () => {
   let FIRST: SignerWithAddress;
   let SIGNER: SignerWithAddress;
 
+  let contractsRegistry: ContractsRegistry;
+
   let signerStorage: SignerStorage;
   let registry: Registry;
   let billingManager: BillingManager;
   let gatewayFactory: GatewayFactory;
   let gatewayImpl: Gateway;
 
-  let nerifToken: TestERC20;
+  let nerifToken: NerifToken;
 
   const OWNER_PK: string = 'ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
 
@@ -78,32 +81,62 @@ describe('BillingManager', () => {
     [OWNER, FIRST, SIGNER] = await ethers.getSigners();
 
     const ERC1967ProxyFactory = await ethers.getContractFactory('ERC1967Proxy');
+    const ContractsRegistryFactory = await ethers.getContractFactory('ContractsRegistry');
     const RegistryFactory = await ethers.getContractFactory('Registry');
     const BillingManagerFactory = await ethers.getContractFactory('BillingManager');
     const SignerStorageFactory = await ethers.getContractFactory('SignerStorage');
     const GatewayFactoryFactory = await ethers.getContractFactory('GatewayFactory');
     const GatewayImplFactory = await ethers.getContractFactory('Gateway');
-    const TestERC20Factory = await ethers.getContractFactory('TestERC20');
+    const NerifTokenFactory = await ethers.getContractFactory('NerifToken');
+    const TokensVestingFactory = await ethers.getContractFactory('TokensVesting');
 
-    signerStorage = await SignerStorageFactory.deploy();
-    registry = await RegistryFactory.deploy();
+    const contractsRegistryImpl = await ContractsRegistryFactory.deploy();
+    const contractsRegistryProxy = await ERC1967ProxyFactory.deploy(contractsRegistryImpl.address, '0x');
 
+    const registryImpl = await RegistryFactory.deploy();
     const billingManagerImpl = await BillingManagerFactory.deploy();
-    const billingManagerProxy = await ERC1967ProxyFactory.deploy(billingManagerImpl.address, '0x');
-    billingManager = BillingManagerFactory.attach(billingManagerProxy.address);
+    const nerifTokenImpl = await NerifTokenFactory.deploy();
 
+    const tokensVesting = await TokensVestingFactory.deploy();
+    signerStorage = await SignerStorageFactory.deploy();
     gatewayFactory = await GatewayFactoryFactory.deploy();
     gatewayImpl = await GatewayImplFactory.deploy();
 
-    nerifToken = await TestERC20Factory.deploy('Nerif', 'NFF', tokensAmount);
+    contractsRegistry = ContractsRegistryFactory.attach(contractsRegistryProxy.address);
+
+    await contractsRegistry.__OwnableContractsRegistry_init();
+
+    await contractsRegistry.addProxyContract(await contractsRegistry.REGISTRY_NAME(), registryImpl.address);
+    await contractsRegistry.addProxyContract(
+      await contractsRegistry.BILLING_MANAGER_NAME(),
+      billingManagerImpl.address
+    );
+    await contractsRegistry.addProxyContract(await contractsRegistry.NERIF_TOKEN_NAME(), nerifTokenImpl.address);
+
+    await contractsRegistry.addContract(await contractsRegistry.GATEWAY_FACTORY_NAME(), gatewayFactory.address);
+    await contractsRegistry.addContract(await contractsRegistry.TOKENS_VESTING_NAME(), tokensVesting.address);
+    await contractsRegistry.addContract(await contractsRegistry.SIGNER_GETTER_NAME(), signerStorage.address);
+
+    registry = RegistryFactory.attach(await contractsRegistry.getRegistryContract());
+    billingManager = BillingManagerFactory.attach(await contractsRegistry.getBillingManagerContract());
+    nerifToken = NerifTokenFactory.attach(await contractsRegistry.getNerifTokenContract());
 
     await signerStorage.initialize(SIGNER.address);
-    await registry.initialize(true, signerStorage.address, gatewayFactory.address, billingManager.address, 0);
-    await billingManager.initialize(registry.address, signerStorage.address, {
+    await registry.initialize(0);
+    await billingManager.initialize({
       depositAssetKey: nativeDepositAssetKey,
       depositAssetData: nativeDepositAssetData,
     });
-    await gatewayFactory.initialize(registry.address, gatewayImpl.address);
+    await gatewayFactory.initialize(gatewayImpl.address);
+    await nerifToken.initialize(tokensAmount, 'NERIF', 'NERIF');
+    await tokensVesting.initialize();
+
+    await contractsRegistry.injectDependencies(await contractsRegistry.REGISTRY_NAME());
+    await contractsRegistry.injectDependencies(await contractsRegistry.BILLING_MANAGER_NAME());
+    await contractsRegistry.injectDependencies(await contractsRegistry.GATEWAY_FACTORY_NAME());
+    await contractsRegistry.injectDependencies(await contractsRegistry.NERIF_TOKEN_NAME());
+
+    await contractsRegistry.setIsMainChain(true);
 
     await registry.registerWorkflows([
       {
@@ -122,9 +155,6 @@ describe('BillingManager', () => {
 
   describe('creation', () => {
     it('should set correct data after initialize', async () => {
-      expect(await billingManager.registry()).to.be.eq(registry.address);
-      expect(await billingManager.signerGetter()).to.be.eq(signerStorage.address);
-
       const nativeAssetInfo = (await billingManager.getDepositAssetsInfo([nativeDepositAssetKey]))[0];
 
       expect(nativeAssetInfo.depositAssetData.tokenAddr).to.be.eq(ethers.constants.AddressZero);
@@ -135,7 +165,7 @@ describe('BillingManager', () => {
       const reason = 'Initializable: contract is already initialized';
 
       await expect(
-        billingManager.initialize(registry.address, signerStorage.address, {
+        billingManager.initialize({
           depositAssetKey: nativeDepositAssetKey,
           depositAssetData: nativeDepositAssetData,
         })
@@ -190,15 +220,39 @@ describe('BillingManager', () => {
 
       const newBillingManagerImpl = await TestBillingManagerFactory.deploy();
 
-      await testBillingManager.connect(SIGNER).upgradeTo(newBillingManagerImpl.address);
+      await contractsRegistry.upgradeContract(
+        await contractsRegistry.BILLING_MANAGER_NAME(),
+        newBillingManagerImpl.address
+      );
 
       expect(await testBillingManager.version()).to.be.eq('v2.0.0');
     });
+  });
 
-    it('should get exception if not a signer try to call upgareTo function', async () => {
-      const reason = 'SignerOwnable: only signer';
+  describe('setDependencies', () => {
+    it('should correctly update dependencies', async () => {
+      const TestBillingManagerFactory = await ethers.getContractFactory('TestBillingManager');
 
-      await expect(billingManager.upgradeTo(ethers.constants.AddressZero)).to.be.revertedWith(reason);
+      const newBillingManagerImpl = await TestBillingManagerFactory.deploy();
+      await contractsRegistry.upgradeContract(
+        await contractsRegistry.BILLING_MANAGER_NAME(),
+        newBillingManagerImpl.address
+      );
+
+      const newBillingManager = TestBillingManagerFactory.attach(billingManager.address);
+
+      expect(await newBillingManager.registry()).to.be.eq(registry.address);
+
+      await contractsRegistry.addContract(await contractsRegistry.REGISTRY_NAME(), FIRST.address);
+      await contractsRegistry.injectDependencies(await contractsRegistry.BILLING_MANAGER_NAME());
+
+      expect(await newBillingManager.registry()).to.be.eq(FIRST.address);
+    });
+
+    it('should get exception if not a contracts registry try to call this function', async () => {
+      const reason = 'Dependant: not an injector';
+
+      await expect(billingManager.setDependencies(contractsRegistry.address, '0x')).to.be.revertedWith(reason);
     });
   });
 
@@ -242,7 +296,7 @@ describe('BillingManager', () => {
     });
 
     it('should get exception if not a signer try to call this function', async () => {
-      const reason = 'SignerOwnable: only signer';
+      const reason = 'BillingManager: Not a signer';
 
       await expect(
         billingManager.addDepositAssets([
@@ -331,7 +385,7 @@ describe('BillingManager', () => {
     });
 
     it('should get exception if not a signer try to call this function', async () => {
-      const reason = 'SignerOwnable: only signer';
+      const reason = 'BillingManager: Not a signer';
 
       await expect(
         billingManager.updateWorkflowExecutionDiscount(nativeDepositAssetKey, newDiscount)
@@ -364,7 +418,7 @@ describe('BillingManager', () => {
     });
 
     it('should get exception if not a signer try to call this function', async () => {
-      const reason = 'SignerOwnable: only signer';
+      const reason = 'BillingManager: Not a signer';
 
       await expect(
         billingManager.updateDepositAssetEnabledStatus(nativeDepositAssetKey, newEnabledStatus)
@@ -749,7 +803,7 @@ describe('BillingManager', () => {
     });
 
     it('should get exception if not a signer try to call this function', async () => {
-      const reason = 'SignerOwnable: only signer';
+      const reason = 'BillingManager: Not a signer';
 
       await expect(billingManager.lockExecutionFunds(nativeDepositAssetKey, 10, nativeLockAmount)).to.be.revertedWith(
         reason
@@ -891,7 +945,7 @@ describe('BillingManager', () => {
     });
 
     it('should get exception if not a signer try to call this function', async () => {
-      const reason = 'SignerOwnable: only signer';
+      const reason = 'BillingManager: Not a signer';
 
       await expect(billingManager.completeExecution(10, tokensLockAmount)).to.be.revertedWith(reason);
     });
@@ -1181,7 +1235,7 @@ describe('BillingManager', () => {
     });
 
     it('should get exception if not a signer try to call this function', async () => {
-      const reason = 'SignerOwnable: only signer';
+      const reason = 'BillingManager: Not a signer';
 
       await expect(
         billingManager.networkWithdraw(nerifAssetKey, OWNER.address, 10, defaultWithdrawReason)
