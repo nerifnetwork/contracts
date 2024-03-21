@@ -23,8 +23,10 @@ export = async (deployer: Deployer) => {
       const signer = new ethers.Wallet(systemContractsInitParams.stakingKeys[i], ethers.provider);
 
       await nerifToken.ownerMint(signer.address, minimalStake);
-      await nerifToken.connect(signer).approve(staking.address, minimalStake, {customData: {txName: `Approve from ${signer.address}`}});
-      await staking.connect(signer).stake(minimalStake, {customData: {txName: `Stake from ${signer.address}`}});
+      await nerifToken
+        .connect(signer)
+        .approve(staking.address, minimalStake, { customData: { txName: `Approve from ${signer.address}` } });
+      await staking.connect(signer).stake(minimalStake, { customData: { txName: `Stake from ${signer.address}` } });
 
       console.log(`Staked ${minimalStake} from the ${signer.address} address`);
     }
