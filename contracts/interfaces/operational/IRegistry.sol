@@ -9,22 +9,6 @@ import "@solarity/solidity-lib/libs/data-structures/StringSet.sol";
  */
 interface IRegistry {
     /**
-     * @notice Enum representing the status of a workflow
-     * @param NONE The initial status
-     * @param PENDING The workflow is pending activation
-     * @param ACTIVE The workflow is active and operational
-     * @param PAUSED The workflow is temporarily paused
-     * @param CANCELLED The workflow is cancelled and no longer operational
-     */
-    enum WorkflowStatus {
-        NONE,
-        PENDING,
-        ACTIVE,
-        PAUSED,
-        CANCELLED
-    }
-
-    /**
      * @dev Struct containing information about a deposit asset
      * @param depositAssetKey The unique key identifying the deposit asset
      * @param depositAssetTotalSpent The total amount spent on the deposit asset
@@ -38,14 +22,10 @@ interface IRegistry {
      * @dev Struct containing basic information about a workflow
      * @param id The unique identifier of the workflow
      * @param owner The address of the owner of the workflow
-     * @param hash The hash representing the content or configuration of the workflow
-     * @param status The status of the workflow
      */
     struct BaseWorkflowInfo {
         uint256 id;
         address owner;
-        bytes hash;
-        WorkflowStatus status;
     }
 
     /**
@@ -87,13 +67,11 @@ interface IRegistry {
      * @notice Struct containing information required to register a new workflow
      * @param id The unique identifier of the workflow
      * @param workflowOwner The address of the owner of the workflow
-     * @param hash The hash representing the content or configuration of the workflow
      * @param requireGateway The flag indicating whether the workflow requires a gateway
      */
     struct RegisterWorkflowInfo {
         uint256 id;
         address workflowOwner;
-        bytes hash;
         bool requireGateway;
         bool deployGateway;
     }
@@ -109,16 +87,8 @@ interface IRegistry {
      * @notice Event emitted when a workflow is registered
      * @param owner The address of the owner registering the workflow
      * @param id The ID of the registered workflow
-     * @param hash The hash of the registered workflow
      */
-    event WorkflowRegistered(address owner, uint256 id, bytes hash);
-
-    /**
-     * @notice Event emitted when the status of a workflow is changed
-     * @param id The ID of the workflow whose status changed
-     * @param status The new status of the workflow
-     */
-    event WorkflowStatusChanged(uint256 id, WorkflowStatus status);
+    event WorkflowRegistered(address owner, uint256 id);
 
     /**
      * @notice Event emitted upon completion of a workflow execution
@@ -158,34 +128,10 @@ interface IRegistry {
     ) external;
 
     /**
-     * @notice Pauses workflows with the given IDs
-     * @param _workflowIds The array of workflow IDs to be paused
-     */
-    function pauseWorkflows(uint256[] calldata _workflowIds) external;
-
-    /**
-     * @notice Resumes paused workflows with the given IDs
-     * @param _workflowIds The array of workflow IDs to be resumed
-     */
-    function resumeWorkflows(uint256[] calldata _workflowIds) external;
-
-    /**
      * @notice Registers new workflows with the provided information
      * @param _registerWorkflowInfoArr The array containing information to register new workflows
      */
     function registerWorkflows(RegisterWorkflowInfo[] calldata _registerWorkflowInfoArr) external;
-
-    /**
-     * @notice Activates registered workflows with the given IDs
-     * @param _workflowIds The array of workflow IDs to be activated
-     */
-    function activateWorkflows(uint256[] calldata _workflowIds) external;
-
-    /**
-     * @notice Cancels registered workflows with the given IDs
-     * @param _workflowIds The array of workflow IDs to be canceled
-     */
-    function cancelWorkflows(uint256[] calldata _workflowIds) external;
 
     /**
      * @notice Performs an action on a workflow execution
@@ -284,16 +230,9 @@ interface IRegistry {
     function getWorkflowOwner(uint256 _id) external view returns (address);
 
     /**
-     * @notice Retrieves the status of the workflow associated with the given ID
-     * @param _id The ID of the workflow to retrieve the status for
-     * @return The status of the workflow associated with the given ID
-     */
-    function getWorkflowStatus(uint256 _id) external view returns (WorkflowStatus);
-
-    /**
-     * @notice Checks whether a workflow with the given ID exists
+     * @notice Checks whether a workflow with the given ID registered
      * @param _id The ID of the workflow to check for existence
-     * @return True if a workflow with the given ID exists, otherwise false
+     * @return True if a workflow with the given ID registered, otherwise false
      */
-    function isWorkflowExist(uint256 _id) external view returns (bool);
+    function isWorkflowRegistered(uint256 _id) external view returns (bool);
 }

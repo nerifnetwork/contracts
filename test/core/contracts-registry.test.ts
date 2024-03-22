@@ -92,6 +92,7 @@ describe('ContractsRegistry', () => {
 
       await contractsRegistry.addContract(await contractsRegistry.SIGNER_GETTER_NAME(), signerStorage.address);
 
+      expect(await contractsRegistry.getSignerGetterContract()).to.be.eq(signerStorage.address);
       expect(await contractsRegistry.getSigner()).to.be.eq(SIGNER.address);
     });
   });

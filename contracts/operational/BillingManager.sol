@@ -127,7 +127,7 @@ contract BillingManager is IBillingManager, AbstractDependant, Initializable {
         uint256 _workflowId,
         uint256 _executionLockedAmount
     ) external override onlySigner onlyExistingDepositAsset(_depositAssetKey) {
-        require(_registry.isWorkflowExist(_workflowId), "BillingManager: Workflow does not exist");
+        require(_registry.isWorkflowRegistered(_workflowId), "BillingManager: Workflow does not exist");
 
         address workflowOwner = _registry.getWorkflowOwner(_workflowId);
 
