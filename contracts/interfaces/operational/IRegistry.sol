@@ -22,13 +22,10 @@ interface IRegistry {
      * @dev Struct containing basic information about a workflow
      * @param id The unique identifier of the workflow
      * @param owner The address of the owner of the workflow
-     * @param hash The hash representing the content or configuration of the workflow
-     * @param status The status of the workflow
      */
     struct BaseWorkflowInfo {
         uint256 id;
         address owner;
-        bytes hash;
     }
 
     /**
@@ -70,13 +67,11 @@ interface IRegistry {
      * @notice Struct containing information required to register a new workflow
      * @param id The unique identifier of the workflow
      * @param workflowOwner The address of the owner of the workflow
-     * @param hash The hash representing the content or configuration of the workflow
      * @param requireGateway The flag indicating whether the workflow requires a gateway
      */
     struct RegisterWorkflowInfo {
         uint256 id;
         address workflowOwner;
-        bytes hash;
         bool requireGateway;
         bool deployGateway;
     }
@@ -92,9 +87,8 @@ interface IRegistry {
      * @notice Event emitted when a workflow is registered
      * @param owner The address of the owner registering the workflow
      * @param id The ID of the registered workflow
-     * @param hash The hash of the registered workflow
      */
-    event WorkflowRegistered(address owner, uint256 id, bytes hash);
+    event WorkflowRegistered(address owner, uint256 id);
 
     /**
      * @notice Event emitted upon completion of a workflow execution

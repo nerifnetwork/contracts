@@ -224,7 +224,6 @@ describe('Registry', () => {
         {
           id: workflowId,
           workflowOwner: OWNER.address,
-          hash: '0x',
           requireGateway: true,
           deployGateway: true,
         },
@@ -268,7 +267,6 @@ describe('Registry', () => {
         {
           id: workflowId,
           workflowOwner: OWNER.address,
-          hash: '0x',
           requireGateway: true,
           deployGateway: true,
         },
@@ -316,7 +314,6 @@ describe('Registry', () => {
         {
           id: newWorkflowId,
           workflowOwner: FIRST.address,
-          hash: '0x',
           requireGateway: true,
           deployGateway: true,
         },
@@ -374,19 +371,16 @@ describe('Registry', () => {
     const workflowId = 10;
 
     it('should correctly register new workflow on the main chain', async () => {
-      const someHash = ethers.utils.solidityKeccak256(['string'], ['some string']);
-
       const tx = await registry.registerWorkflows([
         {
           id: workflowId,
           workflowOwner: OWNER.address,
-          hash: someHash,
           requireGateway: true,
           deployGateway: true,
         },
       ]);
 
-      await expect(tx).to.emit(registry, 'WorkflowRegistered').withArgs(OWNER.address, workflowId, someHash);
+      await expect(tx).to.emit(registry, 'WorkflowRegistered').withArgs(OWNER.address, workflowId);
 
       const workflow = await registry.getWorkflowInfo(workflowId);
 
@@ -398,19 +392,16 @@ describe('Registry', () => {
     it('should correctly register new workflow on the side chain', async () => {
       await contractsRegistry.setIsMainChain(false);
 
-      const someHash = ethers.utils.solidityKeccak256(['string'], ['some string']);
-
       const tx = await registry.connect(SIGNER).registerWorkflows([
         {
           id: workflowId,
           workflowOwner: OWNER.address,
-          hash: someHash,
           requireGateway: false,
           deployGateway: false,
         },
       ]);
 
-      await expect(tx).to.emit(registry, 'WorkflowRegistered').withArgs(OWNER.address, workflowId, someHash);
+      await expect(tx).to.emit(registry, 'WorkflowRegistered').withArgs(OWNER.address, workflowId);
 
       const workflow = await registry.getWorkflowInfo(workflowId);
 
@@ -422,7 +413,6 @@ describe('Registry', () => {
         {
           id: workflowId + 1,
           workflowOwner: OWNER.address,
-          hash: someHash,
           requireGateway: false,
           deployGateway: false,
         },
@@ -436,20 +426,16 @@ describe('Registry', () => {
 
       expect(await registry.getGateway(OWNER.address)).to.be.eq(ethers.constants.AddressZero);
 
-      const someHash = ethers.utils.solidityKeccak256(['string'], ['some string']);
-
       const tx = await registry.registerWorkflows([
         {
           id: workflowId,
           workflowOwner: OWNER.address,
-          hash: someHash,
           requireGateway: true,
           deployGateway: true,
         },
         {
           id: workflowId + 1,
           workflowOwner: OWNER.address,
-          hash: someHash,
           requireGateway: true,
           deployGateway: true,
         },
@@ -458,10 +444,10 @@ describe('Registry', () => {
       expect(await registry.getGateway(OWNER.address)).to.be.eq(expectedGatewayAddress);
 
       await expect(tx).to.emit(gatewayFactory, 'GatewayDeployed').withArgs(expectedGatewayAddress, OWNER.address);
-      await expect(tx).to.emit(registry, 'WorkflowRegistered').withArgs(OWNER.address, workflowId, someHash);
+      await expect(tx).to.emit(registry, 'WorkflowRegistered').withArgs(OWNER.address, workflowId);
       await expect(tx)
         .to.emit(registry, 'WorkflowRegistered')
-        .withArgs(OWNER.address, workflowId + 1, someHash);
+        .withArgs(OWNER.address, workflowId + 1);
     });
 
     it('should get exception if the sender is not the specified addr or signer', async () => {
@@ -474,7 +460,6 @@ describe('Registry', () => {
           {
             id: workflowId,
             workflowOwner: FIRST.address,
-            hash: '0x',
             requireGateway: false,
             deployGateway: false,
           },
@@ -486,7 +471,6 @@ describe('Registry', () => {
           {
             id: workflowId,
             workflowOwner: OWNER.address,
-            hash: '0x',
             requireGateway: false,
             deployGateway: false,
           },
@@ -502,7 +486,6 @@ describe('Registry', () => {
           {
             id: workflowId,
             workflowOwner: OWNER.address,
-            hash: '0x',
             requireGateway: true,
             deployGateway: false,
           },
@@ -519,7 +502,6 @@ describe('Registry', () => {
         {
           id: workflowId,
           workflowOwner: OWNER.address,
-          hash: '0x',
           requireGateway: true,
           deployGateway: true,
         },
@@ -530,7 +512,6 @@ describe('Registry', () => {
           {
             id: workflowId + 1,
             workflowOwner: OWNER.address,
-            hash: '0x',
             requireGateway: true,
             deployGateway: true,
           },
@@ -539,21 +520,19 @@ describe('Registry', () => {
     });
 
     it('should get exception if pass workflow id that already exists', async () => {
-      const reason = 'Registry: workflow id is already exists';
+      const reason = 'Registry: workflow id already exists';
 
       await expect(
         registry.registerWorkflows([
           {
             id: workflowId,
             workflowOwner: OWNER.address,
-            hash: '0x',
             requireGateway: true,
             deployGateway: true,
           },
           {
             id: workflowId,
             workflowOwner: OWNER.address,
-            hash: '0x',
             requireGateway: true,
             deployGateway: true,
           },
@@ -574,21 +553,16 @@ describe('Registry', () => {
     beforeEach('setup', async () => {
       ownerGateway = await registry.callStatic.deployAndSetGateway();
 
-      ownerHash = ethers.utils.solidityKeccak256(['string'], ['some string1']);
-      firstHash = ethers.utils.solidityKeccak256(['string'], ['some string1']);
-
       await registry.registerWorkflows([
         {
           id: startWorkflowId,
           workflowOwner: OWNER.address,
-          hash: ownerHash,
           requireGateway: true,
           deployGateway: true,
         },
         {
           id: startWorkflowId + 1,
           workflowOwner: OWNER.address,
-          hash: ownerHash,
           requireGateway: true,
           deployGateway: true,
         },
@@ -601,7 +575,6 @@ describe('Registry', () => {
         {
           id: startWorkflowId + 2,
           workflowOwner: FIRST.address,
-          hash: firstHash,
           requireGateway: true,
           deployGateway: true,
         },
@@ -673,7 +646,6 @@ describe('Registry', () => {
       workflowsInfo.forEach((el, index) => {
         expect(el.baseInfo.id).to.be.eq(expectedWorkflowsInfo[index].workflowId);
         expect(el.baseInfo.owner).to.be.eq(expectedWorkflowsInfo[index].workflowOwner);
-        expect(el.baseInfo.hash).to.be.eq(expectedWorkflowsInfo[index].hash);
       });
     });
   });

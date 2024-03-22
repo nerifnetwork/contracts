@@ -102,7 +102,7 @@ contract Registry is IRegistry, Initializable, AbstractDependant {
                 isMainChain ? currentRegisterInfo.workflowOwner == msg.sender : signerAddr == msg.sender,
                 "Registry: not a sender or signer"
             );
-            require(!isWorkflowExist(currentRegisterInfo.id), "Registry: workflow id is already exists");
+            require(!isWorkflowExist(currentRegisterInfo.id), "Registry: workflow id already exists");
 
             if (currentRegisterInfo.requireGateway) {
                 address currentGateway = _gateways[currentRegisterInfo.workflowOwner];
@@ -116,17 +116,12 @@ contract Registry is IRegistry, Initializable, AbstractDependant {
 
             _workflowsData[currentRegisterInfo.id].baseInfo = BaseWorkflowInfo(
                 currentRegisterInfo.id,
-                currentRegisterInfo.workflowOwner,
-                currentRegisterInfo.hash
+                currentRegisterInfo.workflowOwner
             );
             workflowsPerAddress[currentRegisterInfo.workflowOwner]++;
             _existingWorkflowIds.push(currentRegisterInfo.id);
 
-            emit WorkflowRegistered(
-                currentRegisterInfo.workflowOwner,
-                currentRegisterInfo.id,
-                currentRegisterInfo.hash
-            );
+            emit WorkflowRegistered(currentRegisterInfo.workflowOwner, currentRegisterInfo.id);
         }
     }
 
