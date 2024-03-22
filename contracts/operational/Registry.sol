@@ -102,7 +102,7 @@ contract Registry is IRegistry, Initializable, AbstractDependant {
                 isMainChain ? currentRegisterInfo.workflowOwner == msg.sender : signerAddr == msg.sender,
                 "Registry: not a sender or signer"
             );
-            require(!isWorkflowExist(currentRegisterInfo.id), "Registry: workflow id already exists");
+            require(!isWorkflowRegistered(currentRegisterInfo.id), "Registry: workflow id already exists");
 
             if (currentRegisterInfo.requireGateway) {
                 address currentGateway = _gateways[currentRegisterInfo.workflowOwner];
@@ -230,7 +230,7 @@ contract Registry is IRegistry, Initializable, AbstractDependant {
         return _workflowsData[_id].baseInfo.owner;
     }
 
-    function isWorkflowExist(uint256 _id) public view override returns (bool) {
+    function isWorkflowRegistered(uint256 _id) public view override returns (bool) {
         return _workflowsData[_id].baseInfo.owner != address(0);
     }
 
@@ -290,6 +290,6 @@ contract Registry is IRegistry, Initializable, AbstractDependant {
     }
 
     function _onlyExistingWorkflow(uint256 _id) internal view {
-        require(isWorkflowExist(_id), "Registry: workflow does not exist");
+        require(isWorkflowRegistered(_id), "Registry: workflow does not exist");
     }
 }

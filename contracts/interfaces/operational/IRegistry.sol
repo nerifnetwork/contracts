@@ -230,9 +230,9 @@ interface IRegistry {
     function getWorkflowOwner(uint256 _id) external view returns (address);
 
     /**
-     * @notice Checks whether a workflow with the given ID exists
+     * @notice Checks whether a workflow with the given ID registered
      * @param _id The ID of the workflow to check for existence
-     * @return True if a workflow with the given ID exists, otherwise false
+     * @return True if a workflow with the given ID registered, otherwise false
      */
-    function isWorkflowExist(uint256 _id) external view returns (bool);
+    function isWorkflowRegistered(uint256 _id) external view returns (bool);
 }
