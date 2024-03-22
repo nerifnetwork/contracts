@@ -9,22 +9,6 @@ import "@solarity/solidity-lib/libs/data-structures/StringSet.sol";
  */
 interface IRegistry {
     /**
-     * @notice Enum representing the status of a workflow
-     * @param NONE The initial status
-     * @param PENDING The workflow is pending activation
-     * @param ACTIVE The workflow is active and operational
-     * @param PAUSED The workflow is temporarily paused
-     * @param CANCELLED The workflow is cancelled and no longer operational
-     */
-    enum WorkflowStatus {
-        NONE,
-        PENDING,
-        ACTIVE,
-        PAUSED,
-        CANCELLED
-    }
-
-    /**
      * @dev Struct containing information about a deposit asset
      * @param depositAssetKey The unique key identifying the deposit asset
      * @param depositAssetTotalSpent The total amount spent on the deposit asset
@@ -45,7 +29,6 @@ interface IRegistry {
         uint256 id;
         address owner;
         bytes hash;
-        WorkflowStatus status;
     }
 
     /**
@@ -114,13 +97,6 @@ interface IRegistry {
     event WorkflowRegistered(address owner, uint256 id, bytes hash);
 
     /**
-     * @notice Event emitted when the status of a workflow is changed
-     * @param id The ID of the workflow whose status changed
-     * @param status The new status of the workflow
-     */
-    event WorkflowStatusChanged(uint256 id, WorkflowStatus status);
-
-    /**
      * @notice Event emitted upon completion of a workflow execution
      * @param workflowId The ID of the executed workflow
      * @param workflowExecutionId The ID of the specific execution within the workflow
@@ -158,34 +134,10 @@ interface IRegistry {
     ) external;
 
     /**
-     * @notice Pauses workflows with the given IDs
-     * @param _workflowIds The array of workflow IDs to be paused
-     */
-    function pauseWorkflows(uint256[] calldata _workflowIds) external;
-
-    /**
-     * @notice Resumes paused workflows with the given IDs
-     * @param _workflowIds The array of workflow IDs to be resumed
-     */
-    function resumeWorkflows(uint256[] calldata _workflowIds) external;
-
-    /**
      * @notice Registers new workflows with the provided information
      * @param _registerWorkflowInfoArr The array containing information to register new workflows
      */
     function registerWorkflows(RegisterWorkflowInfo[] calldata _registerWorkflowInfoArr) external;
-
-    /**
-     * @notice Activates registered workflows with the given IDs
-     * @param _workflowIds The array of workflow IDs to be activated
-     */
-    function activateWorkflows(uint256[] calldata _workflowIds) external;
-
-    /**
-     * @notice Cancels registered workflows with the given IDs
-     * @param _workflowIds The array of workflow IDs to be canceled
-     */
-    function cancelWorkflows(uint256[] calldata _workflowIds) external;
 
     /**
      * @notice Performs an action on a workflow execution
@@ -282,13 +234,6 @@ interface IRegistry {
      * @return The owner address of the workflow associated with the given ID
      */
     function getWorkflowOwner(uint256 _id) external view returns (address);
-
-    /**
-     * @notice Retrieves the status of the workflow associated with the given ID
-     * @param _id The ID of the workflow to retrieve the status for
-     * @return The status of the workflow associated with the given ID
-     */
-    function getWorkflowStatus(uint256 _id) external view returns (WorkflowStatus);
 
     /**
      * @notice Checks whether a workflow with the given ID exists

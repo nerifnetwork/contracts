@@ -42,11 +42,6 @@ contract Registry is IRegistry, Initializable, AbstractDependant {
         _;
     }
 
-    modifier onlyMainchain() {
-        _onlyMainChain();
-        _;
-    }
-
     modifier onlyExistingWorkflow(uint256 _id) {
         _onlyExistingWorkflow(_id);
         _;
@@ -89,22 +84,6 @@ contract Registry is IRegistry, Initializable, AbstractDependant {
         _workflowsData[_workflowId].depositAssetsTotalSpent[_depositAssetKey] += _workflowExecutionAmount;
     }
 
-    function pauseWorkflows(uint256[] calldata _workflowIds) external override onlyMainchain {
-        for (uint256 i = 0; i < _workflowIds.length; i++) {
-            _onlyWorkflowOwner(_workflowIds[i]);
-            _onlyRequiredStatus(_workflowIds[i], WorkflowStatus.ACTIVE, true);
-            _updateWorkflowStatus(_workflowIds[i], WorkflowStatus.PAUSED);
-        }
-    }
-
-    function resumeWorkflows(uint256[] calldata _workflowIds) external override onlyMainchain {
-        for (uint256 i = 0; i < _workflowIds.length; i++) {
-            _onlyWorkflowOwner(_workflowIds[i]);
-            _onlyRequiredStatus(_workflowIds[i], WorkflowStatus.PAUSED, true);
-            _updateWorkflowStatus(_workflowIds[i], WorkflowStatus.ACTIVE);
-        }
-    }
-
     function registerWorkflows(RegisterWorkflowInfo[] calldata _registerWorkflowInfoArr) external override {
         bool isMainChain = _contractsRegistry.isMainChain();
         address signerAddr = _contractsRegistry.getSigner();
@@ -123,6 +102,7 @@ contract Registry is IRegistry, Initializable, AbstractDependant {
                 isMainChain ? currentRegisterInfo.workflowOwner == msg.sender : signerAddr == msg.sender,
                 "Registry: not a sender or signer"
             );
+            require(!isWorkflowExist(currentRegisterInfo.id), "Registry: workflow id is already exists");
 
             if (currentRegisterInfo.requireGateway) {
                 address currentGateway = _gateways[currentRegisterInfo.workflowOwner];
@@ -134,16 +114,10 @@ contract Registry is IRegistry, Initializable, AbstractDependant {
                 }
             }
 
-            require(
-                _workflowsData[currentRegisterInfo.id].baseInfo.status == WorkflowStatus.NONE,
-                "Registry: workflow id is already exists"
-            );
-
             _workflowsData[currentRegisterInfo.id].baseInfo = BaseWorkflowInfo(
                 currentRegisterInfo.id,
                 currentRegisterInfo.workflowOwner,
-                currentRegisterInfo.hash,
-                isMainChain ? WorkflowStatus.PENDING : WorkflowStatus.ACTIVE
+                currentRegisterInfo.hash
             );
             workflowsPerAddress[currentRegisterInfo.workflowOwner]++;
             _existingWorkflowIds.push(currentRegisterInfo.id);
@@ -156,43 +130,13 @@ contract Registry is IRegistry, Initializable, AbstractDependant {
         }
     }
 
-    function activateWorkflows(uint256[] calldata _workflowIds) external override onlyMainchain onlySigner {
-        for (uint256 i = 0; i < _workflowIds.length; i++) {
-            _onlyRequiredStatus(_workflowIds[i], WorkflowStatus.PENDING, true);
-            _updateWorkflowStatus(_workflowIds[i], WorkflowStatus.ACTIVE);
-        }
-    }
-
-    function cancelWorkflows(uint256[] calldata _workflowIds) external override {
-        bool isMainChain = _contractsRegistry.isMainChain();
-        address signerAddr = _contractsRegistry.getSigner();
-
-        for (uint256 i = 0; i < _workflowIds.length; i++) {
-            _onlyExistingWorkflow(_workflowIds[i]);
-
-            address workflowOwner = getWorkflowOwner(_workflowIds[i]);
-
-            require(
-                isMainChain ? workflowOwner == msg.sender : signerAddr == msg.sender,
-                "Registry: not a workflow owner or signer"
-            );
-
-            _onlyRequiredStatus(_workflowIds[i], WorkflowStatus.CANCELLED, false);
-            _updateWorkflowStatus(_workflowIds[i], WorkflowStatus.CANCELLED);
-
-            workflowsPerAddress[workflowOwner]--;
-        }
-    }
-
     function perform(
         uint256 _workflowId,
         uint256 _workflowExecutionId,
         uint256 _gasAmount,
         bytes calldata _data,
         address _target
-    ) external override onlySigner {
-        _onlyRequiredStatus(_workflowId, WorkflowStatus.ACTIVE, true);
-
+    ) external override onlySigner onlyExistingWorkflow(_workflowId) {
         require(
             _billingManager.getExecutionWorkflowId(_workflowExecutionId) == _workflowId &&
                 _billingManager.getWorkflowExecutionStatus(_workflowExecutionId) ==
@@ -291,18 +235,8 @@ contract Registry is IRegistry, Initializable, AbstractDependant {
         return _workflowsData[_id].baseInfo.owner;
     }
 
-    function getWorkflowStatus(uint256 _id) public view override returns (WorkflowStatus) {
-        return _workflowsData[_id].baseInfo.status;
-    }
-
     function isWorkflowExist(uint256 _id) public view override returns (bool) {
-        return _workflowsData[_id].baseInfo.status != WorkflowStatus.NONE;
-    }
-
-    function _updateWorkflowStatus(uint256 _id, WorkflowStatus _newStatus) internal {
-        _workflowsData[_id].baseInfo.status = _newStatus;
-
-        emit WorkflowStatusChanged(_id, _newStatus);
+        return _workflowsData[_id].baseInfo.owner != address(0);
     }
 
     function _deployAndSetGateway(address _gatewayOwner) internal returns (address) {
@@ -360,19 +294,7 @@ contract Registry is IRegistry, Initializable, AbstractDependant {
         require(_contractsRegistry.getSigner() == msg.sender, "Registry: Not a signer");
     }
 
-    function _onlyMainChain() internal view {
-        require(_contractsRegistry.isMainChain(), "Registry: not a main chain");
-    }
-
-    function _onlyRequiredStatus(uint256 _id, WorkflowStatus _statusToCheck, bool _isEqual) internal view {
-        require((getWorkflowStatus(_id) == _statusToCheck) == _isEqual, "Registry: invalid workflow status");
-    }
-
     function _onlyExistingWorkflow(uint256 _id) internal view {
         require(isWorkflowExist(_id), "Registry: workflow does not exist");
-    }
-
-    function _onlyWorkflowOwner(uint256 _id) internal view {
-        require(getWorkflowOwner(_id) == msg.sender, "Registry: sender is not the workflow owner");
     }
 }
