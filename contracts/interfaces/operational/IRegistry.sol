@@ -93,10 +93,9 @@ interface IRegistry {
     /**
      * @notice Event emitted upon completion of a workflow execution
      * @param workflowId The ID of the executed workflow
-     * @param workflowExecutionId The ID of the specific execution within the workflow
      * @param success The boolean indicating whether the execution was successful
      */
-    event Performance(uint256 workflowId, uint256 workflowExecutionId, bool success);
+    event Performance(uint256 workflowId, bool success);
 
     /**
      * @notice Sets the maximum number of workflows allowed per account
@@ -136,18 +135,11 @@ interface IRegistry {
     /**
      * @notice Performs an action on a workflow execution
      * @param _workflowId The ID of the workflow
-     * @param _workflowExecutionId The ID of the specific execution within the workflow
      * @param _gasAmount The gas amount for the transaction
      * @param _data The transaction data
      * @param _target The address of the target contract
      */
-    function perform(
-        uint256 _workflowId,
-        uint256 _workflowExecutionId,
-        uint256 _gasAmount,
-        bytes calldata _data,
-        address _target
-    ) external;
+    function perform(uint256 _workflowId, uint256 _gasAmount, bytes calldata _data, address _target) external;
 
     /**
      * @notice Retrieves the total count of gateways

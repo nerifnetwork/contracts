@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
@@ -20,16 +20,21 @@ import "../interfaces/operational/IBillingManager.sol";
 
 import "./Registry.sol";
 
-contract BillingManager is IBillingManager, AbstractDependant, Initializable {
+contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable {
     using EnumerableSet for *;
     using StringSet for StringSet.Set;
     using SafeERC20 for IERC20;
+
+    // solhint-disable-next-line var-name-mixedcase
+    bytes32 private constant _WITHDRAW_TYPEHASH =
+        keccak256(
+            "Withdraw(address userAddr,string depositAssetKey,uint256 withdrawAmount,uint256 nonce,uint256 deadline)"
+        );
 
     IContractsRegistry internal _contractsRegistry;
     Registry internal _registry;
 
     string public nativeDepositAssetKey;
-    uint256 public nextWorkflowExecutionId;
 
     EnumerableSet.AddressSet internal _existingUsers;
     StringSet.Set internal _supportedDepositAssetKeys;
@@ -37,10 +42,8 @@ contract BillingManager is IBillingManager, AbstractDependant, Initializable {
     mapping(string => DepositAssetData) internal _depositAssetsData;
     mapping(address => UserData) internal _usersData;
 
-    mapping(uint256 => WorkflowExecutionInfo) internal _workflowsExecutionInfo;
-
     modifier onlySigner() {
-        require(_contractsRegistry.getSigner() == msg.sender, "BillingManager: Not a signer");
+        _onlySigner(msg.sender);
         _;
     }
 
@@ -59,6 +62,8 @@ contract BillingManager is IBillingManager, AbstractDependant, Initializable {
     }
 
     function initialize(DepositAssetInfo calldata _nativeDepositAssetInfo) external initializer {
+        __EIP712_init("BillingManager", "1");
+
         nativeDepositAssetKey = _nativeDepositAssetInfo.depositAssetKey;
 
         _addDepositAsset(_nativeDepositAssetInfo);
@@ -107,94 +112,28 @@ contract BillingManager is IBillingManager, AbstractDependant, Initializable {
         emit DepositAssetEnabledStatusUpdated(_depositAssetKey, _newEnabledStatus);
     }
 
-    function networkWithdraw(
-        string calldata _depositAssetKey,
-        address _userAddr,
-        uint256 _amountToWithdraw,
-        NetworkWithdrawReasons _withdrawReason
-    ) external override onlySigner onlyExistingDepositAsset(_depositAssetKey) {
-        _onlyEnoughAvailableFunds(_depositAssetKey, _userAddr, _amountToWithdraw);
+    function networkWithdraw(NetworkWithdrawInfo[] calldata _networkWithdrawArr) external override onlySigner {
+        for (uint256 i = 0; i < _networkWithdrawArr.length; i++) {
+            NetworkWithdrawInfo calldata withdrawInfo = _networkWithdrawArr[i];
 
-        _updateUserDepositData(_depositAssetKey, _userAddr, _amountToWithdraw, false);
+            _onlyExistingDepositAsset(withdrawInfo.depositAssetKey);
+            _onlyEnoughFunds(withdrawInfo.depositAssetKey, withdrawInfo.userAddr, withdrawInfo.amountToWithdraw);
 
-        _depositAssetsData[_depositAssetKey].networkRewards += _amountToWithdraw;
-
-        emit NetworkWithdrawCompleted(_depositAssetKey, _userAddr, _withdrawReason, _amountToWithdraw);
-    }
-
-    function lockExecutionFunds(
-        string calldata _depositAssetKey,
-        uint256 _workflowId,
-        uint256 _executionLockedAmount
-    ) external override onlySigner onlyExistingDepositAsset(_depositAssetKey) {
-        require(_registry.isWorkflowRegistered(_workflowId), "BillingManager: Workflow does not exist");
-
-        address workflowOwner = _registry.getWorkflowOwner(_workflowId);
-
-        _onlyEnoughAvailableFunds(_depositAssetKey, workflowOwner, _executionLockedAmount);
-
-        uint256 currentWorkflowExecutionId = nextWorkflowExecutionId++;
-
-        UserDepositData storage userDepositData = _usersData[workflowOwner].userDepositsData[_depositAssetKey];
-
-        userDepositData.userLockedAmount += _executionLockedAmount;
-        userDepositData.pendingWorkflowExecutionIds.add(currentWorkflowExecutionId);
-
-        _workflowsExecutionInfo[currentWorkflowExecutionId] = WorkflowExecutionInfo(
-            _depositAssetKey,
-            _workflowId,
-            _executionLockedAmount,
-            0,
-            workflowOwner,
-            WorkflowExecutionStatus.PENDING
-        );
-
-        emit ExecutionFundsLocked(
-            _depositAssetKey,
-            _workflowId,
-            workflowOwner,
-            currentWorkflowExecutionId,
-            _executionLockedAmount
-        );
-    }
-
-    function completeExecution(uint256 _workflowExecutionId, uint256 _executionAmount) external override onlySigner {
-        WorkflowExecutionInfo storage workflowExecutionInfo = _workflowsExecutionInfo[_workflowExecutionId];
-
-        require(
-            workflowExecutionInfo.status == WorkflowExecutionStatus.PENDING,
-            "BillingManager: Not a pending workflow execution"
-        );
-
-        string memory depositAssetKey = workflowExecutionInfo.depositAssetKey;
-        UserDepositData storage userDepositData = _usersData[workflowExecutionInfo.workflowOwner].userDepositsData[
-            depositAssetKey
-        ];
-
-        uint256 executionLockedAmount = workflowExecutionInfo.executionLockedAmount;
-
-        if (executionLockedAmount < _executionAmount) {
-            _executionAmount = Math.min(
-                _executionAmount,
-                userDepositData.userDepositedAmount - userDepositData.userLockedAmount + executionLockedAmount
+            _updateUserDepositData(
+                withdrawInfo.depositAssetKey,
+                withdrawInfo.userAddr,
+                withdrawInfo.amountToWithdraw,
+                false
             );
 
-            emit UnexpectedExecutionAmountFound(_workflowExecutionId, executionLockedAmount, _executionAmount);
+            _depositAssetsData[withdrawInfo.depositAssetKey].networkRewards += withdrawInfo.amountToWithdraw;
+
+            emit NetworkWithdrawCompleted(
+                withdrawInfo.depositAssetKey,
+                withdrawInfo.userAddr,
+                withdrawInfo.amountToWithdraw
+            );
         }
-
-        workflowExecutionInfo.status = WorkflowExecutionStatus.COMPLETED;
-        workflowExecutionInfo.executionAmount = _executionAmount;
-
-        userDepositData.userLockedAmount -= executionLockedAmount;
-        userDepositData.pendingWorkflowExecutionIds.remove(_workflowExecutionId);
-
-        _updateUserDepositData(depositAssetKey, workflowExecutionInfo.workflowOwner, _executionAmount, false);
-
-        _depositAssetsData[depositAssetKey].networkRewards += _executionAmount;
-
-        _registry.updateWorkflowTotalSpent(depositAssetKey, workflowExecutionInfo.workflowId, _executionAmount);
-
-        emit ExecutionCompleted(_workflowExecutionId, _executionAmount);
     }
 
     function deposit(
@@ -244,21 +183,34 @@ contract BillingManager is IBillingManager, AbstractDependant, Initializable {
 
     function withdrawFunds(
         string memory _depositAssetKey,
-        uint256 _amountToWithdraw
-    ) external override onlyExistingDepositAsset(_depositAssetKey) {
-        _onlyEnoughAvailableFunds(_depositAssetKey, msg.sender, _amountToWithdraw);
+        uint256 _amountToWithdraw,
+        uint256 _sigExpirationTime,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
+    ) external {
+        require(block.timestamp <= _sigExpirationTime, "BillingManager: expired deadline");
 
-        _withdrawUserFunds(_depositAssetKey, msg.sender, _amountToWithdraw);
+        uint256 currentNonce = _usersData[msg.sender].withdrawNonce++;
+
+        bytes32 withdrawStructHash = keccak256(
+            abi.encode(
+                _WITHDRAW_TYPEHASH,
+                msg.sender,
+                keccak256(bytes(_depositAssetKey)),
+                _amountToWithdraw,
+                currentNonce,
+                _sigExpirationTime
+            )
+        );
+
+        _onlySigner(ECDSA.recover(_hashTypedDataV4(withdrawStructHash), _v, _r, _s));
+
+        _onlyEnoughFunds(_depositAssetKey, msg.sender, _amountToWithdraw);
+        _updateUserDepositData(_depositAssetKey, msg.sender, _amountToWithdraw, false);
+        _sendFunds(_depositAssetKey, msg.sender, _amountToWithdraw);
 
         emit UserFundsWithdrawn(_depositAssetKey, msg.sender, _amountToWithdraw);
-    }
-
-    function withdrawAllFunds(string memory _depositAssetKey) external onlyExistingDepositAsset(_depositAssetKey) {
-        uint256 availableAmount = getUserAvailableFunds(msg.sender, _depositAssetKey);
-
-        _withdrawUserFunds(_depositAssetKey, msg.sender, availableAmount);
-
-        emit UserFundsWithdrawn(_depositAssetKey, msg.sender, availableAmount);
     }
 
     function withdrawNetworkRewards(
@@ -302,20 +254,6 @@ contract BillingManager is IBillingManager, AbstractDependant, Initializable {
         }
     }
 
-    function getWorkflowExecutionStatus(
-        uint256 _workflowExecutionId
-    ) external view override returns (WorkflowExecutionStatus) {
-        return _workflowsExecutionInfo[_workflowExecutionId].status;
-    }
-
-    function getWorkflowExecutionOwner(uint256 _workflowExecutionId) external view override returns (address) {
-        return _workflowsExecutionInfo[_workflowExecutionId].workflowOwner;
-    }
-
-    function getExecutionWorkflowId(uint256 _workflowExecutionId) external view override returns (uint256) {
-        return _workflowsExecutionInfo[_workflowExecutionId].workflowId;
-    }
-
     function getExistingUsers(uint256 _offset, uint256 _limit) external view override returns (address[] memory) {
         return Paginator.part(_existingUsers, _offset, _limit);
     }
@@ -334,10 +272,8 @@ contract BillingManager is IBillingManager, AbstractDependant, Initializable {
         }
     }
 
-    function getWorkflowExecutionInfo(
-        uint256 _workflowExecutionId
-    ) external view override returns (WorkflowExecutionInfo memory) {
-        return _workflowsExecutionInfo[_workflowExecutionId];
+    function getUserWithdrawNonce(address _userAddr) external view returns (uint256) {
+        return _usersData[_userAddr].withdrawNonce;
     }
 
     function getUserDepositAssetKeys(address _userAddr) external view returns (string[] memory) {
@@ -352,24 +288,7 @@ contract BillingManager is IBillingManager, AbstractDependant, Initializable {
         address _userAddr,
         string memory _depositAssetKey
     ) public view override returns (UserDepositInfo memory) {
-        UserDepositData storage userDepositData = _usersData[_userAddr].userDepositsData[_depositAssetKey];
-
-        return
-            UserDepositInfo(
-                _userAddr,
-                userDepositData.userDepositedAmount,
-                userDepositData.userLockedAmount,
-                userDepositData.pendingWorkflowExecutionIds.values()
-            );
-    }
-
-    function getUserAvailableFunds(
-        address _userAddr,
-        string memory _depositAssetKey
-    ) public view override returns (uint256) {
-        UserDepositData storage userDepositData = _usersData[_userAddr].userDepositsData[_depositAssetKey];
-
-        return userDepositData.userDepositedAmount - userDepositData.userLockedAmount;
+        return UserDepositInfo(_userAddr, _usersData[_userAddr].userDepositsAmount[_depositAssetKey]);
     }
 
     function isDepositAssetSupported(string memory _depositAssetKey) public view override returns (bool) {
@@ -432,12 +351,6 @@ contract BillingManager is IBillingManager, AbstractDependant, Initializable {
         emit AssetDeposited(_depositAssetKey, _tokensSenderAddr, _recipientAddr, _depositAmount);
     }
 
-    function _withdrawUserFunds(string memory _depositAssetKey, address _userAddr, uint256 _amountToWithdraw) internal {
-        _updateUserDepositData(_depositAssetKey, _userAddr, _amountToWithdraw, false);
-
-        _sendFunds(_depositAssetKey, _userAddr, _amountToWithdraw);
-    }
-
     function _updateUserDepositData(
         string memory _depositAssetKey,
         address _userAddr,
@@ -449,16 +362,14 @@ contract BillingManager is IBillingManager, AbstractDependant, Initializable {
         UserData storage userData = _usersData[_userAddr];
 
         if (_isAdding) {
-            userData.userDepositsData[_depositAssetKey].userDepositedAmount += _amountToUpdate;
+            userData.userDepositsAmount[_depositAssetKey] += _amountToUpdate;
             userData.depositAssetKeys.add(_depositAssetKey);
 
             _existingUsers.add(_userAddr);
         } else {
-            UserDepositData storage userDepositData = userData.userDepositsData[_depositAssetKey];
+            uint256 newUserFundsAmount = userData.userDepositsAmount[_depositAssetKey] - _amountToUpdate;
 
-            uint256 newUserFundsAmount = userDepositData.userDepositedAmount - _amountToUpdate;
-
-            userDepositData.userDepositedAmount = newUserFundsAmount;
+            userData.userDepositsAmount[_depositAssetKey] = newUserFundsAmount;
 
             if (newUserFundsAmount == 0) {
                 _existingUsers.remove(_userAddr);
@@ -474,6 +385,10 @@ contract BillingManager is IBillingManager, AbstractDependant, Initializable {
         }
     }
 
+    function _onlySigner(address _userAddr) internal view {
+        require(_contractsRegistry.getSigner() == _userAddr, "BillingManager: Not a signer");
+    }
+
     function _onlyExistingDepositAsset(string memory _depositAssetKey) internal view {
         require(isDepositAssetSupported(_depositAssetKey), "BillingManager: Deposit asset does not exist");
     }
@@ -482,14 +397,10 @@ contract BillingManager is IBillingManager, AbstractDependant, Initializable {
         require(isDepositAssetEnabled(_depositAssetKey), "BillingManager: Deposit asset is disabled");
     }
 
-    function _onlyEnoughAvailableFunds(
-        string memory _depositAssetKey,
-        address _userAddr,
-        uint256 _neededAmount
-    ) internal view {
+    function _onlyEnoughFunds(string memory _depositAssetKey, address _userAddr, uint256 _neededAmount) internal view {
         require(
-            getUserAvailableFunds(_userAddr, _depositAssetKey) >= _neededAmount,
-            "BillingManager: Not enough available funds"
+            _usersData[_userAddr].userDepositsAmount[_depositAssetKey] >= _neededAmount,
+            "BillingManager: Not enough deposited funds"
         );
     }
 }
