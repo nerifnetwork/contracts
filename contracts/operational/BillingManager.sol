@@ -189,7 +189,7 @@ contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable
         bytes32 _r,
         bytes32 _s
     ) external {
-        require(block.timestamp <= _sigExpirationTime, "BillingManager: expired deadline");
+        require(block.timestamp <= _sigExpirationTime, "BillingManager: Expired deadline");
 
         uint256 currentNonce = _usersData[msg.sender].withdrawNonce++;
 
