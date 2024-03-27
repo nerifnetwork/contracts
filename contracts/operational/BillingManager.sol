@@ -188,7 +188,7 @@ contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable
         uint8 _v,
         bytes32 _r,
         bytes32 _s
-    ) external {
+    ) external override {
         require(block.timestamp <= _sigExpirationTime, "BillingManager: Expired deadline");
 
         uint256 currentNonce = _usersData[msg.sender].withdrawNonce++;
@@ -237,13 +237,13 @@ contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable
         return _existingUsers.length();
     }
 
-    function getSupportedDepositAssetKeys() external view returns (string[] memory) {
+    function getSupportedDepositAssetKeys() external view override returns (string[] memory) {
         return _supportedDepositAssetKeys.values();
     }
 
     function getDepositAssetsInfo(
         string[] calldata _depositAssetKeysArr
-    ) external view returns (DepositAssetInfo[] memory _depositAssetsInfoArr) {
+    ) external view override returns (DepositAssetInfo[] memory _depositAssetsInfoArr) {
         _depositAssetsInfoArr = new DepositAssetInfo[](_depositAssetKeysArr.length);
 
         for (uint256 i = 0; i < _depositAssetKeysArr.length; i++) {
@@ -272,15 +272,15 @@ contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable
         }
     }
 
-    function getUserWithdrawNonce(address _userAddr) external view returns (uint256) {
+    function getUserWithdrawNonce(address _userAddr) external view override returns (uint256) {
         return _usersData[_userAddr].withdrawNonce;
     }
 
-    function getUserDepositAssetKeys(address _userAddr) external view returns (string[] memory) {
+    function getUserDepositAssetKeys(address _userAddr) external view override returns (string[] memory) {
         return _usersData[_userAddr].depositAssetKeys.values();
     }
 
-    function getNetworkRewards(string memory _depositAssetKey) external view returns (uint256) {
+    function getNetworkRewards(string memory _depositAssetKey) external view override returns (uint256) {
         return _depositAssetsData[_depositAssetKey].networkRewards;
     }
 

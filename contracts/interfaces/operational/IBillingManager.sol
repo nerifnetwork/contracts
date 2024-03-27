@@ -38,8 +38,9 @@ interface IBillingManager {
 
     /**
      * @dev Struct containing user data related to deposits
-     * @param depositAssetKeys The set stores all the deposit aset keys that the user holds
-     * @param userDepositsData Mapping from deposit asset keys to user deposit data
+     * @param withdrawNonce The nonce for withdrawals, used to prevent replay attacks
+     * @param depositAssetKeys Set containing keys of all deposit assets associated with the user
+     * @param userDepositsAmount Mapping from deposit asset keys to the amount deposited by the user
      */
     struct UserData {
         uint256 withdrawNonce;
@@ -48,14 +49,21 @@ interface IBillingManager {
     }
 
     /**
-     * @notice Struct containing information about a user's funds
+     * @dev Struct containing information about a user's deposit
      * @param userAddr The address of the user
+     * @param userDepositedAmount The amount deposited by the user
      */
     struct UserDepositInfo {
         address userAddr;
         uint256 userDepositedAmount;
     }
 
+    /**
+     * @dev Struct containing information about a network withdrawal
+     * @param depositAssetKey The key identifying the deposit asset
+     * @param userAddr The address of the user from whom the tokens will be withdrawn
+     * @param amountToWithdraw The amount of tokens to be withdrawn
+     */
     struct NetworkWithdrawInfo {
         string depositAssetKey;
         address userAddr;
@@ -149,7 +157,8 @@ interface IBillingManager {
     function updateDepositAssetEnabledStatus(string memory _depositAssetKey, bool _newEnabledStatus) external;
 
     /**
-     * @notice Allows the network to withdraw tokens on behalf of a user for a specific reason
+     * @notice Allows the network to withdraw tokens on behalf of users
+     * @param _networkWithdrawArr An array containing NetworkWithdrawInfo structs for each withdrawal
      */
     function networkWithdraw(NetworkWithdrawInfo[] calldata _networkWithdrawArr) external;
 
@@ -183,6 +192,15 @@ interface IBillingManager {
         bytes32 _s
     ) external;
 
+    /**
+     * @notice Initiates a withdrawal of funds
+     * @param _depositAssetKey The key identifying the deposit asset
+     * @param _amountToWithdraw The amount of tokens to withdraw
+     * @param _sigExpirationTime The expiration time for the withdrawal signature
+     * @param _v The recovery byte of the withdrawal signature
+     * @param _r The R part of the withdrawal signature
+     * @param _s The S part of the withdrawal signature
+     */
     function withdrawFunds(
         string memory _depositAssetKey,
         uint256 _amountToWithdraw,
@@ -245,6 +263,11 @@ interface IBillingManager {
         uint256 _limit
     ) external view returns (UserDepositInfo[] memory _usersInfoArr);
 
+    /**
+     * @notice Retrieves the withdrawal nonce for a specific user
+     * @param _userAddr The address of the user
+     * @return The withdrawal nonce for the user
+     */
     function getUserWithdrawNonce(address _userAddr) external view returns (uint256);
 
     /**
