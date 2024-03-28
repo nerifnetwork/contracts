@@ -127,17 +127,10 @@ contract Registry is IRegistry, Initializable, AbstractDependant {
 
     function perform(
         uint256 _workflowId,
-        uint256 _workflowExecutionId,
         uint256 _gasAmount,
         bytes calldata _data,
         address _target
     ) external override onlySigner onlyExistingWorkflow(_workflowId) {
-        require(
-            _billingManager.getExecutionWorkflowId(_workflowExecutionId) == _workflowId &&
-                _billingManager.getWorkflowExecutionStatus(_workflowExecutionId) ==
-                IBillingManager.WorkflowExecutionStatus.PENDING,
-            "Registry: invalid workflow execution ID"
-        );
         require(address(this) != _target, "Registry: operation is not permitted");
 
         address existingGateway = _gateways[getWorkflowOwner(_workflowId)];
@@ -150,7 +143,7 @@ contract Registry is IRegistry, Initializable, AbstractDependant {
             abi.encodeWithSignature(GATEWAY_PERFORM_FUNC_SIGNATURE, _workflowId, _target, _data)
         );
 
-        emit Performance(_workflowId, _workflowExecutionId, success);
+        emit Performance(_workflowId, success);
     }
 
     function getTotalGatewaysCount() external view override returns (uint256) {

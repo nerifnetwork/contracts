@@ -257,9 +257,7 @@ describe('Registry', () => {
 
   describe('perform', () => {
     const workflowId = 10;
-    const workflowExecutionId = 0;
     const nativeDepositAmount = wei('1');
-    const lockAmount = wei('0.5');
     const gasAmount = 1000000;
 
     beforeEach('setup', async () => {
@@ -275,22 +273,21 @@ describe('Registry', () => {
       await billingManager.deposit(nativeDepositAssetKey, OWNER.address, nativeDepositAmount, {
         value: nativeDepositAmount,
       });
-      await billingManager.connect(SIGNER).lockExecutionFunds(nativeDepositAssetKey, workflowId, lockAmount);
     });
 
     it('should correctly perform function', async () => {
       const tx = await registry
         .connect(SIGNER)
-        .perform(workflowId, workflowExecutionId, gasAmount, getSetNumberCalldata(10), testTarget.address);
+        .perform(workflowId, gasAmount, getSetNumberCalldata(10), testTarget.address);
 
-      await expect(tx).to.emit(registry, 'Performance').withArgs(workflowId, workflowExecutionId, true);
+      await expect(tx).to.emit(registry, 'Performance').withArgs(workflowId, true);
     });
 
     it('should get exception if not a signer call this function', async () => {
       const reason = 'Registry: Not a signer';
 
       await expect(
-        registry.perform(workflowId, workflowExecutionId, gasAmount, getSetNumberCalldata(10), testTarget.address)
+        registry.perform(workflowId, gasAmount, getSetNumberCalldata(10), testTarget.address)
       ).to.be.revertedWith(reason);
     });
 
@@ -298,49 +295,7 @@ describe('Registry', () => {
       const reason = 'Registry: workflow does not exist';
 
       await expect(
-        registry
-          .connect(SIGNER)
-          .perform(workflowId + 1, workflowExecutionId, gasAmount, getSetNumberCalldata(10), testTarget.address)
-      ).to.be.revertedWith(reason);
-    });
-
-    it('should get exception if pass invalid workflow execution ID', async () => {
-      const reason = 'Registry: invalid workflow execution ID';
-
-      const newWorkflowId = 20;
-      const newWorkflowExecutionId = 1;
-
-      await registry.connect(FIRST).registerWorkflows([
-        {
-          id: newWorkflowId,
-          workflowOwner: FIRST.address,
-          requireGateway: true,
-          deployGateway: true,
-        },
-      ]);
-
-      await expect(
-        registry
-          .connect(SIGNER)
-          .perform(newWorkflowId, newWorkflowExecutionId, gasAmount, getSetNumberCalldata(10), testTarget.address)
-      ).to.be.revertedWith(reason);
-
-      await billingManager
-        .connect(FIRST)
-        .deposit(nativeDepositAssetKey, FIRST.address, nativeDepositAmount, { value: nativeDepositAmount });
-      await billingManager.connect(SIGNER).lockExecutionFunds(nativeDepositAssetKey, newWorkflowId, lockAmount);
-      await billingManager.connect(SIGNER).completeExecution(newWorkflowExecutionId, lockAmount);
-
-      await expect(
-        registry
-          .connect(SIGNER)
-          .perform(newWorkflowId, newWorkflowExecutionId, gasAmount, getSetNumberCalldata(10), testTarget.address)
-      ).to.be.revertedWith(reason);
-
-      await expect(
-        registry
-          .connect(SIGNER)
-          .perform(newWorkflowId, workflowExecutionId, gasAmount, getSetNumberCalldata(10), testTarget.address)
+        registry.connect(SIGNER).perform(workflowId + 1, gasAmount, getSetNumberCalldata(10), testTarget.address)
       ).to.be.revertedWith(reason);
     });
 
@@ -348,9 +303,7 @@ describe('Registry', () => {
       const reason = 'Registry: operation is not permitted';
 
       await expect(
-        registry
-          .connect(SIGNER)
-          .perform(workflowId, workflowExecutionId, gasAmount, getSetNumberCalldata(10), registry.address)
+        registry.connect(SIGNER).perform(workflowId, gasAmount, getSetNumberCalldata(10), registry.address)
       ).to.be.revertedWith(reason);
     });
 
@@ -360,9 +313,7 @@ describe('Registry', () => {
       await registry.setGateway(ethers.constants.AddressZero);
 
       await expect(
-        registry
-          .connect(SIGNER)
-          .perform(workflowId, workflowExecutionId, gasAmount, getSetNumberCalldata(10), testTarget.address)
+        registry.connect(SIGNER).perform(workflowId, gasAmount, getSetNumberCalldata(10), testTarget.address)
       ).to.be.revertedWith(reason);
     });
   });

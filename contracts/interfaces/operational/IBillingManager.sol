@@ -11,30 +11,6 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
  */
 interface IBillingManager {
     /**
-     * @notice Enum representing the status of a workflow execution
-     * @param NONE The default status indicating no execution status
-     * @param PENDING The status indicating the execution is pending
-     * @param COMPLETED The status indicating the execution is completed
-     */
-    enum WorkflowExecutionStatus {
-        NONE,
-        PENDING,
-        COMPLETED
-    }
-
-    /**
-     * @notice Enum defining reasons for network withdrawals
-     * @param GATEWAY_DEPLOY Indicates the withdrawal is for gateway deployment purposes
-     * @param WORKFLOW_ACTIVATION Indicates the workflow activation purposes
-     * @param WORKFLOW_CANCELLATION Indicates the workflow cancellation purposes
-     */
-    enum NetworkWithdrawReasons {
-        GATEWAY_DEPLOY,
-        WORKFLOW_ACTIVATION,
-        WORKFLOW_CANCELLATION
-    }
-
-    /**
      * @dev Struct containing data related to the deposit asset
      * @param tokenAddr The address of the token for the deposit asset
      * @param workflowExecutionDiscount The discount applied for workflow execution
@@ -62,53 +38,36 @@ interface IBillingManager {
 
     /**
      * @dev Struct containing user data related to deposits
-     * @param depositAssetKeys The set stores all the deposit aset keys that the user holds
-     * @param userDepositsData Mapping from deposit asset keys to user deposit data
+     * @param withdrawNonce The nonce for withdrawals, used to prevent replay attacks
+     * @param depositAssetKeys Set containing keys of all deposit assets associated with the user
+     * @param userDepositsAmount Mapping from deposit asset keys to the amount deposited by the user
      */
     struct UserData {
+        uint256 withdrawNonce;
         StringSet.Set depositAssetKeys;
-        mapping(string => UserDepositData) userDepositsData;
+        mapping(string => uint256) userDepositsAmount;
     }
 
     /**
-     * @dev Struct containing data related to a user's deposit
-     * @param userDepositedAmount The amount deposited by the user
-     * @param userLockedAmount The amount locked in the user's deposit
-     * @param pendingWorkflowExecutionIds Set containing IDs of pending workflow executions associated with the deposit
-     */
-    struct UserDepositData {
-        uint256 userDepositedAmount;
-        uint256 userLockedAmount;
-        EnumerableSet.UintSet pendingWorkflowExecutionIds;
-    }
-
-    /**
-     * @notice Struct containing information about a user's funds
+     * @dev Struct containing information about a user's deposit
      * @param userAddr The address of the user
-     * @param pendingWorkflowExecutionIds The array of IDs of pending workflow executions
+     * @param userDepositedAmount The amount deposited by the user
      */
     struct UserDepositInfo {
         address userAddr;
         uint256 userDepositedAmount;
-        uint256 userLockedAmount;
-        uint256[] pendingWorkflowExecutionIds;
     }
 
     /**
-     * @notice Struct containing information about a workflow execution
-     * @param workflowId The ID of the associated workflow
-     * @param executionLockedAmount The amount of funds locked for the execution
-     * @param executionAmount The amount of funds transferred for the execution
-     * @param workflowOwner The address of the owner of the workflow
-     * @param status The status of the workflow execution
+     * @dev Struct containing information about a network withdrawal
+     * @param depositAssetKey The key identifying the deposit asset
+     * @param userAddr The address of the user from whom the tokens will be withdrawn
+     * @param amountToWithdraw The amount of tokens to be withdrawn
      */
-    struct WorkflowExecutionInfo {
+    struct NetworkWithdrawInfo {
         string depositAssetKey;
-        uint256 workflowId;
-        uint256 executionLockedAmount;
-        uint256 executionAmount;
-        address workflowOwner;
-        WorkflowExecutionStatus status;
+        address userAddr;
+        uint256 amountToWithdraw;
     }
 
     /**
@@ -167,52 +126,12 @@ interface IBillingManager {
     event RewardsWithdrawn(string indexed depositAssetKey, address indexed recipientAddr, uint256 rewardsAmount);
 
     /**
-     * @notice Event emitted when funds are locked for a workflow execution
-     * @param workflowId The ID of the associated workflow
-     * @param userAddr The address of the user initiating the execution
-     * @param workflowExecutionId The ID of the workflow execution
-     * @param executionLockedAmount The amount of funds locked for the execution
-     */
-    event ExecutionFundsLocked(
-        string indexed depositAssetKey,
-        uint256 indexed workflowId,
-        address indexed userAddr,
-        uint256 workflowExecutionId,
-        uint256 executionLockedAmount
-    );
-
-    /**
-     * @notice Event emitted when a workflow execution is completed
-     * @param workflowExecutionId The ID of the workflow execution
-     * @param executionAmount The amount transferred for the execution
-     */
-    event ExecutionCompleted(uint256 workflowExecutionId, uint256 executionAmount);
-
-    /**
-     * @notice Event emitted when an unexpected execution amount is found
-     * @param workflowExecutionId The ID of the workflow execution
-     * @param executionLockedAmount The amount of funds locked for the execution
-     * @param executionAmount The amount transferred for the execution
-     */
-    event UnexpectedExecutionAmountFound(
-        uint256 workflowExecutionId,
-        uint256 executionLockedAmount,
-        uint256 executionAmount
-    );
-
-    /**
      * @notice Emitted when a network withdrawal is completed
      * @param depositAssetKey The unique key identifying the deposit asset
      * @param userAddr The address of the user from whom the tokens were withdrawn
-     * @param withdrawReason The reason for the withdrawal
      * @param amountToWithdraw The amount of tokens withdrawn
      */
-    event NetworkWithdrawCompleted(
-        string indexed depositAssetKey,
-        address indexed userAddr,
-        NetworkWithdrawReasons indexed withdrawReason,
-        uint256 amountToWithdraw
-    );
+    event NetworkWithdrawCompleted(string indexed depositAssetKey, address indexed userAddr, uint256 amountToWithdraw);
 
     /**
      * @notice Adds multiple deposit assets with their corresponding information
@@ -238,36 +157,10 @@ interface IBillingManager {
     function updateDepositAssetEnabledStatus(string memory _depositAssetKey, bool _newEnabledStatus) external;
 
     /**
-     * @notice Allows the network to withdraw tokens on behalf of a user for a specific reason
-     * @param _depositAssetKey The unique key identifying the deposit asset
-     * @param _userAddr The address of the user from whom the tokens will be withdrawn
-     * @param _amountToWithdraw The amount of tokens to be withdrawn
-     * @param _withdrawReason The reason for the withdrawal, indicating the purpose or context of the withdrawal
+     * @notice Allows the network to withdraw tokens on behalf of users
+     * @param _networkWithdrawArr An array containing NetworkWithdrawInfo structs for each withdrawal
      */
-    function networkWithdraw(
-        string calldata _depositAssetKey,
-        address _userAddr,
-        uint256 _amountToWithdraw,
-        NetworkWithdrawReasons _withdrawReason
-    ) external;
-
-    /**
-     * @notice Locks funds for a workflow execution
-     * @param _workflowId The ID of the associated workflow
-     * @param _executionLockedAmount The amount of funds to be locked for the execution
-     */
-    function lockExecutionFunds(
-        string memory _depositAssetKey,
-        uint256 _workflowId,
-        uint256 _executionLockedAmount
-    ) external;
-
-    /**
-     * @notice Completes a workflow execution
-     * @param _workflowExecutionId The ID of the workflow execution to be completed
-     * @param _executionAmount The amount transferred for the execution
-     */
-    function completeExecution(uint256 _workflowExecutionId, uint256 _executionAmount) external;
+    function networkWithdraw(NetworkWithdrawInfo[] calldata _networkWithdrawArr) external;
 
     /**
      * @notice Deposits a specified amount of tokens into the protocol
@@ -300,17 +193,22 @@ interface IBillingManager {
     ) external;
 
     /**
-     * @notice Withdraws funds from the user's balance
-     * @param _depositAssetKey The unique key identifying the deposit asset
-     * @param _amountToWithdraw The amount to be withdrawn
+     * @notice Initiates a withdrawal of funds
+     * @param _depositAssetKey The key identifying the deposit asset
+     * @param _amountToWithdraw The amount of tokens to withdraw
+     * @param _sigExpirationTime The expiration time for the withdrawal signature
+     * @param _v The recovery byte of the withdrawal signature
+     * @param _r The R part of the withdrawal signature
+     * @param _s The S part of the withdrawal signature
      */
-    function withdrawFunds(string memory _depositAssetKey, uint256 _amountToWithdraw) external;
-
-    /**
-     * @notice Withdraws all available funds from the user's balance
-     * @param _depositAssetKey The unique key identifying the deposit asset
-     */
-    function withdrawAllFunds(string memory _depositAssetKey) external;
+    function withdrawFunds(
+        string memory _depositAssetKey,
+        uint256 _amountToWithdraw,
+        uint256 _sigExpirationTime,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
+    ) external;
 
     /**
      * @notice Withdraws network rewards
@@ -325,10 +223,10 @@ interface IBillingManager {
     function nativeDepositAssetKey() external view returns (string memory);
 
     /**
-     * @notice Retrieves the ID for the next workflow execution
-     * @return uint256 The ID for the next workflow execution
+     * @notice Retrieves the total count of registered users
+     * @return uint256 The total count of registered users
      */
-    function nextWorkflowExecutionId() external view returns (uint256);
+    function getTotalUsersCount() external view returns (uint256);
 
     /**
      * @notice Retrieves an array of supported deposit asset keys
@@ -344,33 +242,6 @@ interface IBillingManager {
     function getDepositAssetsInfo(
         string[] memory _depositAssetKeysArr
     ) external view returns (DepositAssetInfo[] memory);
-
-    /**
-     * @notice Retrieves the total count of registered users
-     * @return uint256 The total count of registered users
-     */
-    function getTotalUsersCount() external view returns (uint256);
-
-    /**
-     * @notice Retrieves the status of a workflow execution
-     * @param _workflowExecutionId The ID of the workflow execution
-     * @return The status of the workflow execution
-     */
-    function getWorkflowExecutionStatus(uint256 _workflowExecutionId) external view returns (WorkflowExecutionStatus);
-
-    /**
-     * @notice Retrieves the owner of a workflow execution
-     * @param _workflowExecutionId The ID of the workflow execution
-     * @return The address of the owner of the workflow execution
-     */
-    function getWorkflowExecutionOwner(uint256 _workflowExecutionId) external view returns (address);
-
-    /**
-     * @notice Retrieves the workflow ID associated with the given execution ID
-     * @param _workflowExecutionId The execution ID for which to retrieve the associated workflow ID
-     * @return The workflow ID associated with the given execution ID
-     */
-    function getExecutionWorkflowId(uint256 _workflowExecutionId) external view returns (uint256);
 
     /**
      * @notice Retrieves an array of existing user addresses within the specified range
@@ -393,13 +264,11 @@ interface IBillingManager {
     ) external view returns (UserDepositInfo[] memory _usersInfoArr);
 
     /**
-     * @notice Retrieves information about a workflow execution
-     * @param _workflowExecutionId The ID of the workflow execution
-     * @return Information about the workflow execution
+     * @notice Retrieves the withdrawal nonce for a specific user
+     * @param _userAddr The address of the user
+     * @return The withdrawal nonce for the user
      */
-    function getWorkflowExecutionInfo(
-        uint256 _workflowExecutionId
-    ) external view returns (WorkflowExecutionInfo memory);
+    function getUserWithdrawNonce(address _userAddr) external view returns (uint256);
 
     /**
      * @notice Retrieves the deposit asset keys associated with a specific user
@@ -424,13 +293,6 @@ interface IBillingManager {
         address _userAddr,
         string memory _depositAssetKey
     ) external view returns (UserDepositInfo memory);
-
-    /**
-     * @notice Retrieves the available funds of a user
-     * @param _userAddr The address of the user
-     * @return The available funds of the user
-     */
-    function getUserAvailableFunds(address _userAddr, string memory _depositAssetKey) external view returns (uint256);
 
     /**
      * @notice Checks if a deposit asset is supported

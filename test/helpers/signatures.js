@@ -29,6 +29,35 @@ const signPermit = (domain, message, privateKey) => {
   return fromRpcSig(signTypedData({ privateKey, data, version: "V4" }));
 };
 
+const signWithdraw = (domain, message, privateKey) => {
+  const { name, version, chainId, verifyingContract } = domain;
+
+  const EIP712Domain = [
+    { name: "name", type: "string" },
+    { name: "version", type: "string" },
+    { name: "chainId", type: "uint256" },
+    { name: "verifyingContract", type: "address" },
+  ];
+
+  const Withdraw = [
+    { name: "userAddr", type: "address" },
+    { name: "depositAssetKey", type: "string" },
+    { name: "withdrawAmount", type: "uint256" },
+    { name: "nonce", type: "uint256" },
+    { name: "deadline", type: "uint256" },
+  ];
+
+  const data = {
+    primaryType: "Withdraw",
+    types: { EIP712Domain, Withdraw },
+    domain: { name, version, chainId, verifyingContract },
+    message: message,
+  };
+
+  return fromRpcSig(signTypedData({ privateKey, data, version: "V4" }));
+};
+
 module.exports = {
   signPermit,
+  signWithdraw,
 };
