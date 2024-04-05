@@ -7,9 +7,9 @@ import "@solarity/solidity-lib/contracts-registry/AbstractDependant.sol";
 
 import "../interfaces/core/IContractsRegistry.sol";
 import "../interfaces/SignerOwnable.sol";
+import "../interfaces/system/IDKG.sol";
 
 import "./Staking.sol";
-import "./DKG.sol";
 
 enum SlashingReason {
     REASON_NO_RECENT_BLOCKS,
@@ -38,7 +38,7 @@ contract SlashingVoting is Initializable, AbstractDependant {
 
     IContractsRegistry internal _contractsRegistry;
     Staking internal _staking;
-    DKG internal _dkg;
+    IDKG internal _dkg;
 
     SlashingProposal[] public proposals;
 
@@ -85,7 +85,7 @@ contract SlashingVoting is Initializable, AbstractDependant {
 
         _contractsRegistry = contractsRegistry;
         _staking = Staking(contractsRegistry.getStakingContract());
-        _dkg = DKG(contractsRegistry.getDKGContract());
+        _dkg = IDKG(contractsRegistry.getDKGContract());
     }
 
     // solhint-disable-next-line ordering
@@ -110,7 +110,7 @@ contract SlashingVoting is Initializable, AbstractDependant {
             emit BannedWithReason(_validator, _reason);
 
             if (_reason == SlashingReason.REASON_DKG_INACTIVITY || _reason == SlashingReason.REASON_DKG_VIOLATION) {
-                _dkg.updateGeneration();
+                _dkg.updateActiveValidators();
             }
         }
 

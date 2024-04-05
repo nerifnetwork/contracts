@@ -12,8 +12,8 @@ import "@solarity/solidity-lib/libs/arrays/Paginator.sol";
 
 import "../interfaces/core/IContractsRegistry.sol";
 import "../interfaces/system/IStaking.sol";
+import "../interfaces/system/IDKG.sol";
 
-import "./DKG.sol";
 import "./SlashingVoting.sol";
 import "./RewardDistributionPool.sol";
 
@@ -22,7 +22,7 @@ contract Staking is IStaking, Initializable, AbstractDependant {
     using SafeERC20 for IERC20;
 
     IContractsRegistry internal _contractsRegistry;
-    DKG internal _dkg;
+    IDKG internal _dkg;
     SlashingVoting internal _slashingVoting;
     RewardDistributionPool internal _rewardsDistributionPool;
 
@@ -68,7 +68,7 @@ contract Staking is IStaking, Initializable, AbstractDependant {
         IContractsRegistry contractsRegistry = IContractsRegistry(_contractsRegistryAddr);
 
         _contractsRegistry = contractsRegistry;
-        _dkg = DKG(contractsRegistry.getDKGContract());
+        _dkg = IDKG(contractsRegistry.getDKGContract());
         _slashingVoting = SlashingVoting(contractsRegistry.getSlashingVotingContract());
         _rewardsDistributionPool = RewardDistributionPool(
             payable(contractsRegistry.getRewardsDistributionPoolContract())
@@ -236,7 +236,7 @@ contract Staking is IStaking, Initializable, AbstractDependant {
 
         _validatorsData[_validatorToUpdate].status = _newStatus;
 
-        _dkg.updateGeneration();
+        _dkg.updateActiveValidators();
     }
 
     function _updateValidators(address _validatorToUpdate, bool _isAdding) internal {
@@ -244,7 +244,7 @@ contract Staking is IStaking, Initializable, AbstractDependant {
 
         require(success, "Staking: Invalid validator address to update");
 
-        _dkg.updateGeneration();
+        _dkg.updateActiveValidators();
     }
 
     function _stake(address _tokenSenderAddr, address _stakeRecipientAddr, uint256 _stakeAmount) internal {

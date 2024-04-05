@@ -2,104 +2,68 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
 
 import "@solarity/solidity-lib/contracts-registry/AbstractDependant.sol";
+import "@solarity/solidity-lib/libs/data-structures/memory/Vector.sol";
 
 import "../interfaces/core/IContractsRegistry.sol";
+import "../interfaces/system/IDKG.sol";
 import "../interfaces/ISignerAddress.sol";
 
 import "./Staking.sol";
 import "./SlashingVoting.sol";
 
-struct GenerationInfo {
-    address signer;
-    address[] validators;
-    uint256 deadline;
-    mapping(address => bool) isValidator;
-    mapping(address => address) signerVotes;
-    mapping(address => uint256) signerVoteCounts;
-    mapping(uint256 => RoundData) roundData;
-}
-
-struct RoundData {
-    uint256 count;
-    mapping(address => bytes) data;
-}
-
-// DKG represents the on-sidechain logic needed to perform distributed key generation process done by validators.
-// Once the DKG process is finished, a new collective/sender address could be stored.
-contract DKG is ISignerAddress, Initializable, AbstractDependant {
-    using ECDSA for bytes;
-    using ECDSA for bytes32;
-
-    enum GenerationStatus {
-        PENDING,
-        EXPIRED,
-        ACTIVE
-    }
+contract DKG is IDKG, Initializable, AbstractDependant {
+    using EnumerableSet for EnumerableSet.AddressSet;
+    using Vector for Vector.AddressVector;
+    using ECDSA for *;
 
     Staking internal _staking;
     SlashingVoting internal _slashingVoting;
 
-    mapping(address => uint256) public signerToGeneration;
+    uint256 public updatesCollectionEpochDuration;
+    uint256 public dkgGenerationEpochDuration;
+    uint256 public guaranteedWorkingEpochDuration;
 
-    GenerationInfo[] public generations;
-    uint256 public lastActiveGeneration;
-    uint256 public deadlinePeriod;
+    uint256 internal _lastEpochId;
+    address internal _activeSigner;
 
-    event RoundDataProvided(uint256 generation, uint256 round, address validator);
-    event RoundDataFilled(uint256 generation, uint256 round);
+    EnumerableSet.AddressSet internal _validators;
 
-    event ValidatorsUpdated(uint256 generation, address[] validators);
-    event SignerVoted(uint256 generation, address validator, address collectiveSigner);
-    event SignerAddressUpdated(uint256 generation, address signerAddress);
+    mapping(uint256 => DKGEpochData) internal _dkgEpochsData;
+    mapping(address => ValidatorData) internal _validatorsData;
 
-    event ThresholdSignerUpdated(address signer);
-
-    modifier onlyDKGValidator(uint256 _generation) {
-        require(
-            generations.length > _generation && generations[_generation].isValidator[msg.sender],
-            "DKG: not a validator"
-        );
+    modifier onlyActiveValidator() {
+        _onlyActiveValidator();
         _;
     }
 
-    modifier roundIsFilled(uint256 _generation, uint256 _round) {
-        require(
-            _round == 0 ||
-                generations[_generation].roundData[_round].count == generations[_generation].validators.length,
-            "DKG: round was not filled"
-        );
+    modifier onlyStaking() {
+        _onlyStaking();
         _;
     }
 
-    modifier roundNotProvided(uint256 _generation, uint256 _round) {
-        require(
-            generations[_generation].roundData[_round].data[msg.sender].length == 0,
-            "DKG: round data already provided"
-        );
-        _;
-    }
+    function initialize(
+        uint256 _updatesCollectionEpochDuration,
+        uint256 _dkgGenerationEpochDuration,
+        uint256 _guaranteedWorkingEpochDuration
+    ) external initializer {
+        updatesCollectionEpochDuration = _updatesCollectionEpochDuration;
+        dkgGenerationEpochDuration = _dkgGenerationEpochDuration;
+        guaranteedWorkingEpochDuration = _guaranteedWorkingEpochDuration;
 
-    modifier onlySigner() {
-        require(msg.sender == generations[lastActiveGeneration].signer, "DKG: not a active signer");
-        _;
-    }
+        uint256 epochId = ++_lastEpochId;
 
-    modifier onlyPending(uint256 _generation) {
-        require(getStatus(_generation) == GenerationStatus.PENDING, "DKG: not a pending generation");
-        _;
-    }
+        _activeSigner = msg.sender;
 
-    function initialize(uint256 _deadlinePeriod) external initializer {
-        generations.push();
-        generations[0].signer = msg.sender;
+        _dkgEpochsData[epochId].epochSigner = msg.sender;
+        _dkgEpochsData[epochId].epochStartTime = block.timestamp;
 
-        signerToGeneration[msg.sender] = 0;
-
-        deadlinePeriod = _deadlinePeriod;
+        _validators.add(msg.sender);
+        _validatorsData[msg.sender] = ValidatorData(block.timestamp, type(uint256).max);
     }
 
     function setDependencies(address _contractsRegistryAddr, bytes memory) public override dependant {
@@ -110,173 +74,210 @@ contract DKG is ISignerAddress, Initializable, AbstractDependant {
     }
 
     // solhint-disable-next-line ordering
-    function updateGeneration() external {
-        uint256 newGeneration = generations.length;
-        GenerationInfo storage oldGenerationInfo = generations[newGeneration - 1];
+    function addValidator(address _validatorToAdd) external onlyStaking {
+        require(!_validators.contains(_validatorToAdd), "DKG: Validator already exists");
 
-        uint256 validatorsCount = 0;
-        bool newValidatorsAdded = false;
-        address[] memory stakingValidators = _staking.getValidators();
-        address[] memory newValidators = new address[](stakingValidators.length);
-        for (uint256 i = 0; i < stakingValidators.length; i++) {
-            address validator = stakingValidators[i];
+        uint256 currentEpochId = getCurrentEpochId();
+        DKGEpochStatuses currentEpochStatus = getEpochStatus(currentEpochId);
 
-            // Validators banned by DKG reasons do not participate
-            // in key generation for some time
-            if (
-                _isBannedByReason(validator, SlashingReason.REASON_DKG_INACTIVITY) ||
-                _isBannedByReason(validator, SlashingReason.REASON_DKG_VIOLATION)
-            ) {
-                continue;
+        uint256 startValidationTime;
+
+        if (currentEpochStatus != DKGEpochStatuses.UPDATES_COLLECTION) {
+            uint256 nextEpochId = ++_lastEpochId;
+
+            if (isLastEpoch(currentEpochId)) {
+                uint256 nextEpochStartTime = block.timestamp;
+
+                if (currentEpochStatus != DKGEpochStatuses.ACTIVE) {
+                    nextEpochStartTime = getEpochEndTime(currentEpochId);
+                }
+
+                _dkgEpochsData[nextEpochId].epochStartTime = nextEpochStartTime;
+
+                emit NewEpochCreated(nextEpochId, nextEpochStartTime);
+
+                updateActiveValidators();
             }
 
-            if (!oldGenerationInfo.isValidator[validator]) {
-                newValidatorsAdded = true;
-            }
-
-            newValidators[validatorsCount] = validator;
-            validatorsCount++;
+            startValidationTime = getDKGPeriodEndTime(nextEpochId);
+        } else {
+            startValidationTime = getDKGPeriodEndTime(currentEpochId);
         }
 
-        uint256 oldValidatorsCount = oldGenerationInfo.validators.length;
-        if (
-            // Distributed key generation algorithm requires at least 2 participants
-            validatorsCount < 2 ||
-            // Validator count same as previous and there is no new validators,
-            // meaning both arrays the same, no need to create new DKG generation
-            (validatorsCount == oldValidatorsCount && !newValidatorsAdded)
-        ) {
-            return;
-        }
+        _validatorsData[_validatorToAdd] = ValidatorData(startValidationTime, type(uint256).max);
+        _validators.add(_validatorToAdd);
 
-        generations.push();
-        for (uint256 i = 0; i < validatorsCount; i++) {
-            generations[newGeneration].validators.push(newValidators[i]);
-            generations[newGeneration].isValidator[newValidators[i]] = true;
-        }
-
-        generations[newGeneration].deadline = block.number + deadlinePeriod;
-        lastActiveGeneration = newGeneration;
-
-        emit ValidatorsUpdated(newGeneration, newValidators);
-        emit RoundDataFilled(newGeneration, 0);
+        emit NewValidatorAdded(_validatorToAdd, startValidationTime);
     }
 
-    function roundBroadcast(
-        uint256 _generation,
-        uint256 _round,
-        bytes memory _rawData
-    )
-        external
-        onlyDKGValidator(_generation)
-        roundIsFilled(_generation, _round - 1)
-        roundNotProvided(_generation, _round)
-        onlyPending(_generation)
-    {
-        generations[_generation].roundData[_round].count++;
-        generations[_generation].roundData[_round].data[msg.sender] = _rawData;
-        emit RoundDataProvided(_generation, _round, msg.sender);
-        if (generations[_generation].roundData[_round].count == generations[_generation].validators.length) {
-            emit RoundDataFilled(_generation, _round);
-        }
+    function announceValidatorExit(address _validatorToExit) external onlyStaking returns (uint256) {
+        require(isActiveValidator(_validatorToExit), "DKG: Validator is not active");
+        require(
+            _validatorsData[_validatorToExit].endValidationTime == type(uint256).max,
+            "DKG: Exit of the validator has already been announced"
+        );
+
+        uint256 newEndValidationTime = getDKGPeriodEndTime(_lastEpochId);
+
+        _validatorsData[_validatorToExit].endValidationTime = newEndValidationTime;
+
+        emit ValidatorExitAnnounced(_validatorToExit, newEndValidationTime);
+
+        return newEndValidationTime;
+    }
+
+    function removeValidator(address _validatorToRemove) external onlyStaking {
+        require(_validators.contains(_validatorToRemove), "DKG: Validator does not exist");
+        require(
+            _validatorsData[_validatorToRemove].endValidationTime <= block.timestamp,
+            "DKG: Validator can't be removed yet"
+        );
+
+        _validators.remove(_validatorToRemove);
+        delete _validatorsData[_validatorToRemove];
+
+        emit ValidatorRemoved(_validatorToRemove);
     }
 
     function voteSigner(
-        uint256 _generation,
+        uint256 _epochId,
         address _signerAddress,
         bytes memory _signature
-    ) external onlyDKGValidator(_generation) roundIsFilled(_generation, 3) {
-        GenerationInfo storage generationInfo = generations[_generation];
-        require(generationInfo.deadline >= block.number, "DKG: voting is ended");
+    ) external onlyActiveValidator {
+        require(getEpochStatus(_epochId) == DKGEpochStatuses.DKG_GENERATION, "DKG: Not a DKG generation period");
 
         address recoveredSigner = bytes("verify").toEthSignedMessageHash().recover(_signature);
-        require(recoveredSigner == _signerAddress, "DKG: signature is invalid");
+        require(recoveredSigner == _signerAddress, "DKG: Signature is invalid");
 
-        require(generationInfo.signerVotes[msg.sender] == address(0), "DKG: already voted");
+        DKGEpochData storage epochData = _dkgEpochsData[_epochId];
 
-        generationInfo.signerVotes[msg.sender] = _signerAddress;
-        generationInfo.signerVoteCounts[_signerAddress]++;
+        require(epochData.signerVotes[msg.sender] == address(0), "DKG: Already voted");
 
-        emit SignerVoted(_generation, msg.sender, _signerAddress);
+        uint256 newVotesCount = ++epochData.signerVotesCount[_signerAddress];
+        epochData.signerVotes[msg.sender] = _signerAddress;
 
-        bool enoughVotes = _enoughVotes(_generation, generationInfo.signerVoteCounts[_signerAddress]);
-        bool signerChanged = generationInfo.signer != _signerAddress;
-        if (enoughVotes && signerChanged) {
-            generationInfo.signer = _signerAddress;
-            signerToGeneration[_signerAddress] = _generation;
-            emit SignerAddressUpdated(_generation, _signerAddress);
+        emit SignerVoted(_epochId, msg.sender, _signerAddress);
+
+        if (newVotesCount > getActiveValidatorsCount() / 2 && _activeSigner != _signerAddress) {
+            epochData.epochSigner = _signerAddress;
+            _activeSigner = _signerAddress;
+
+            emit SignerAddressUpdated(_epochId, _signerAddress);
         }
     }
 
-    function isRoundFilled(uint256 _generation, uint256 _round) external view returns (bool) {
-        return generations[_generation].roundData[_round].count == generations[_generation].validators.length;
-    }
+    function updateActiveValidators() public {
+        address[] memory allCurrentValidators = _validators.values();
 
-    function getRoundBroadcastCount(uint256 _generation, uint256 _round) external view returns (uint256) {
-        return generations[_generation].roundData[_round].count;
-    }
-
-    function getRoundBroadcastData(
-        uint256 _generation,
-        uint256 _round,
-        address _validator
-    ) external view returns (bytes memory) {
-        return generations[_generation].roundData[_round].data[_validator];
-    }
-
-    function getCurrentValidators() external view returns (address[] memory) {
-        return generations[generations.length - 1].validators;
+        for (uint256 i = 0; i < allCurrentValidators.length; ++i) {
+            if (_validatorsData[allCurrentValidators[i]].endValidationTime <= block.timestamp) {
+                _validators.remove(allCurrentValidators[i]);
+            }
+        }
     }
 
     function getSignerAddress() external view returns (address) {
-        return generations[lastActiveGeneration].signer;
+        return _activeSigner;
     }
 
-    function getGenerationsCount() external view returns (uint256) {
-        return generations.length;
-    }
+    function getActiveValidators() external view returns (address[] memory) {
+        Vector.AddressVector memory validatorsVector = Vector.newAddress();
 
-    function isCurrentValidator(address _validator) external view returns (bool) {
-        return this.isValidator(lastActiveGeneration, _validator);
-    }
+        uint256 allValidatorsCount = _validators.length();
 
-    function isValidator(uint256 _generation, address _validator) external view returns (bool) {
-        if (generations.length > _generation) {
-            return generations[_generation].isValidator[_validator];
+        for (uint256 i = 0; i < allValidatorsCount; ++i) {
+            address currentValidator = _validators.at(i);
+
+            if (isActiveValidator(currentValidator)) {
+                validatorsVector.push(currentValidator);
+            }
         }
 
-        return false;
+        return validatorsVector.toArray();
     }
 
-    function getValidatorsCount(uint256 _generation) external view returns (uint256) {
-        return generations[_generation].validators.length;
+    function getActiveValidatorsCount() public view returns (uint256 _activeValidatorsCount) {
+        uint256 allValidatorsCount = _validators.length();
+
+        for (uint256 i = 0; i < allValidatorsCount; ++i) {
+            if (isActiveValidator(_validators.at(i))) {
+                _activeValidatorsCount++;
+            }
+        }
     }
 
-    function setDeadlinePeriod(uint256 _deadlinePeriod) public onlySigner {
-        deadlinePeriod = _deadlinePeriod;
+    function getCurrentEpochStatus() public view returns (DKGEpochStatuses) {
+        return getEpochStatus(getCurrentEpochId());
     }
 
-    function getStatus(uint256 _generation) public view returns (GenerationStatus) {
-        if (generations[_generation].signer != address(0)) {
-            return GenerationStatus.ACTIVE;
+    function getEpochStatus(uint256 _epochId) public view returns (DKGEpochStatuses) {
+        if (_epochId > _lastEpochId) {
+            return DKGEpochStatuses.NONE;
         }
 
-        if (generations[_generation].deadline >= block.number) {
-            return GenerationStatus.PENDING;
+        uint256 epochStartTime = _dkgEpochsData[_epochId].epochStartTime;
+
+        if (isLastEpoch(_epochId) && epochStartTime > block.timestamp) {
+            return DKGEpochStatuses.NOT_STARTED;
         }
 
-        return GenerationStatus.EXPIRED;
+        if (!isCurrentEpoch(_epochId)) {
+            return DKGEpochStatuses.FINISHED;
+        }
+
+        if ((epochStartTime += updatesCollectionEpochDuration) >= block.timestamp) {
+            return DKGEpochStatuses.UPDATES_COLLECTION;
+        } else if ((epochStartTime += dkgGenerationEpochDuration) >= block.timestamp) {
+            return DKGEpochStatuses.DKG_GENERATION;
+        } else if ((epochStartTime += guaranteedWorkingEpochDuration) >= block.timestamp) {
+            return DKGEpochStatuses.GUARANTEED_WORKING;
+        } else {
+            return DKGEpochStatuses.ACTIVE;
+        }
     }
 
-    function getValidators(uint256 _generation) public view returns (address[] memory) {
-        return generations[_generation].validators;
+    function getUpdatedCollectionPeriodEndTime(uint256 _epochId) public view returns (uint256) {
+        return _dkgEpochsData[_epochId].epochStartTime + updatesCollectionEpochDuration;
     }
 
-    function _enoughVotes(uint256 _generation, uint256 votes) private view returns (bool) {
-        return votes > (generations[_generation].validators.length / 2);
+    function getDKGPeriodEndTime(uint256 _epochId) public view returns (uint256) {
+        return getUpdatedCollectionPeriodEndTime(_epochId) + dkgGenerationEpochDuration;
     }
 
-    function _isBannedByReason(address _validator, SlashingReason _reason) private view returns (bool) {
-        return _slashingVoting.isBannedByReason(_validator, _reason);
+    function getEpochEndTime(uint256 _epochId) public view returns (uint256) {
+        return getDKGPeriodEndTime(_epochId) + guaranteedWorkingEpochDuration;
+    }
+
+    function getCurrentEpochId() public view returns (uint256 _currentEpochId) {
+        _currentEpochId = _lastEpochId;
+
+        if (_dkgEpochsData[_currentEpochId].epochStartTime > block.timestamp) {
+            _currentEpochId--;
+        }
+    }
+
+    function isCurrentEpoch(uint256 _epochId) public view returns (bool) {
+        return getCurrentEpochId() == _epochId;
+    }
+
+    function isLastEpoch(uint256 _epochId) public view returns (bool) {
+        return _lastEpochId == _epochId;
+    }
+
+    function isActiveValidator(address _validatorAddr) public view returns (bool) {
+        ValidatorData memory validatorData = _validatorsData[_validatorAddr];
+
+        return
+            validatorData.startValidationTime != 0 &&
+            validatorData.startValidationTime <= block.timestamp &&
+            validatorData.endValidationTime > block.timestamp;
+    }
+
+    function _onlyActiveValidator() internal view {
+        require(isActiveValidator(msg.sender), "DKG: Not an active validator");
+    }
+
+    function _onlyStaking() internal view {
+        require(msg.sender == address(_staking), "DKG: Not a staking address");
     }
 }
