@@ -64,4 +64,6 @@ interface IDKG {
     function isLastEpoch(uint256 _epochId) external view returns (bool);
 
     function isActiveValidator(address _validatorAddr) external view returns (bool);
+
+    function isValidator(address _validatorAddr) external view returns (bool);
 }

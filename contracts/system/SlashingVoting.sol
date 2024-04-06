@@ -92,7 +92,7 @@ contract SlashingVoting is Initializable, AbstractDependant {
     function voteWithReason(address _validator, SlashingReason _reason, bytes calldata _nonce) external onlyValidator {
         bytes32 voteHash = votingHashWithReason(_validator, _reason, _nonce);
 
-        require(_staking.isValidatorActive(_validator) == true, "SlashingVoting: target is not active validator");
+        require(_dkg.isActiveValidator(_validator) == true, "SlashingVoting: target is not active validator");
         require(bans[voteHash] == false, "SlashingVoting: validator is already banned");
         require(votes[voteHash][msg.sender] == false, "SlashingVoting: voter is already voted against given validator");
 
@@ -101,7 +101,7 @@ contract SlashingVoting is Initializable, AbstractDependant {
         emit VotedWithReason(msg.sender, _validator, _reason);
 
         uint256 epoch = currentEpoch();
-        address[] memory validators = _staking.getValidators();
+        address[] memory validators = _dkg.getActiveValidators();
         if (voteCounts[voteHash] >= (validators.length / 2 + 1)) {
             bans[voteHash] = true;
             bansByReason[epoch][_validator][_reason] = true;
@@ -115,7 +115,7 @@ contract SlashingVoting is Initializable, AbstractDependant {
         }
 
         if (shouldShash(epoch, _validator)) {
-            _staking.slash(_validator);
+            // _staking.slash(_validator);
             emit SlashedWithReason(_validator);
         }
     }
@@ -137,10 +137,7 @@ contract SlashingVoting is Initializable, AbstractDependant {
 
         SlashingProposal storage proposal = proposals[_proposalId];
 
-        require(
-            _staking.isValidatorActive(proposal.validator) == true,
-            "SlashingVoting: target is not active validator"
-        );
+        require(_dkg.isActiveValidator(proposal.validator) == true, "SlashingVoting: target is not active validator");
         require(
             proposals[_proposalId].slashingProposalVotes[msg.sender] == false,
             "SlashingVoting: you already voted in this proposal"
@@ -149,9 +146,9 @@ contract SlashingVoting is Initializable, AbstractDependant {
         proposals[_proposalId].slashingProposalVotes[msg.sender] = true;
         proposals[_proposalId].slashingProposalVoteCounts++;
 
-        address[] memory validators = _staking.getValidators();
+        address[] memory validators = _dkg.getActiveValidators();
         if (proposals[_proposalId].slashingProposalVoteCounts >= (validators.length / 2 + 1)) {
-            _staking.slash(proposal.validator);
+            // _staking.slash(proposal.validator);
             emit ProposalExecuted(_proposalId, proposal.validator);
         }
         emit ProposalVoted(_proposalId, proposal.validator, msg.sender);
@@ -220,6 +217,6 @@ contract SlashingVoting is Initializable, AbstractDependant {
     }
 
     function _onlyValidator() internal view {
-        require(_staking.isValidatorActive(msg.sender), "SlashingVoting: Not a system validator");
+        require(_dkg.isActiveValidator(msg.sender), "SlashingVoting: Not a system validator");
     }
 }

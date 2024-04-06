@@ -75,7 +75,7 @@ contract DKG is IDKG, Initializable, AbstractDependant {
 
     // solhint-disable-next-line ordering
     function addValidator(address _validatorToAdd) external onlyStaking {
-        require(!_validators.contains(_validatorToAdd), "DKG: Validator already exists");
+        require(!isValidator(_validatorToAdd), "DKG: Validator already exists");
 
         uint256 currentEpochId = getCurrentEpochId();
         DKGEpochStatuses currentEpochStatus = getEpochStatus(currentEpochId);
@@ -271,6 +271,10 @@ contract DKG is IDKG, Initializable, AbstractDependant {
             validatorData.startValidationTime != 0 &&
             validatorData.startValidationTime <= block.timestamp &&
             validatorData.endValidationTime > block.timestamp;
+    }
+
+    function isValidator(address _validatorAddr) public view returns (bool) {
+        return _validators.contains(_validatorAddr);
     }
 
     function _onlyActiveValidator() internal view {
