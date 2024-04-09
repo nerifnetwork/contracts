@@ -90,9 +90,33 @@ contract Staking is IStaking, Initializable, AbstractDependant {
         totalStake += _amount;
     }
 
+    function stake(uint256 _stakeAmount) external override onlyWhitelistedUser {
+        _stake(msg.sender, msg.sender, _stakeAmount);
+    }
+
+    function stakeWithPermit(
+        uint256 _stakeAmount,
+        uint256 _sigExpirationTime,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
+    ) external override onlyWhitelistedUser {
+        IERC20Permit(address(stakeToken)).permit(
+            msg.sender,
+            address(this),
+            _stakeAmount,
+            _sigExpirationTime,
+            _v,
+            _r,
+            _s
+        );
+
+        _stake(msg.sender, msg.sender, _stakeAmount);
+    }
+
     function announceWithdrawal(uint256 _amountToAnnounce) external override {
         require(_amountToAnnounce > 0, "Staking: Amount must be greater than zero");
-        require(!hasWithdrawalAnnouncement(msg.sender), "Staking: user already has withdrawal announcement");
+        require(!hasWithdrawalAnnouncement(msg.sender), "Staking: User already has withdrawal announcement");
 
         uint256 userStakedAmount = _usersStake[msg.sender];
 
@@ -117,43 +141,20 @@ contract Staking is IStaking, Initializable, AbstractDependant {
         );
 
         uint256 withdrawalAmount = _withdrawalAnnouncements[msg.sender].tokensAmount;
+        uint256 newUserStakeAmount = _usersStake[msg.sender] - withdrawalAmount;
 
-        _usersStake[msg.sender] -= withdrawalAmount;
+        _usersStake[msg.sender] = newUserStakeAmount;
         totalStake -= withdrawalAmount;
 
         delete _withdrawalAnnouncements[msg.sender];
 
-        if (_dkg.isValidator(msg.sender)) {
+        if (newUserStakeAmount < minimalStake && _dkg.isValidator(msg.sender)) {
             _dkg.removeValidator(msg.sender);
         }
 
         stakeToken.safeTransfer(msg.sender, withdrawalAmount);
 
         emit TokensWithdrawn(msg.sender, withdrawalAmount);
-    }
-
-    function stake(uint256 _stakeAmount) external override onlyWhitelistedUser {
-        _stake(msg.sender, msg.sender, _stakeAmount);
-    }
-
-    function stakeWithPermit(
-        uint256 _stakeAmount,
-        uint256 _sigExpirationTime,
-        uint8 _v,
-        bytes32 _r,
-        bytes32 _s
-    ) external override onlyWhitelistedUser {
-        IERC20Permit(address(stakeToken)).permit(
-            msg.sender,
-            address(this),
-            _stakeAmount,
-            _sigExpirationTime,
-            _v,
-            _r,
-            _s
-        );
-
-        _stake(msg.sender, msg.sender, _stakeAmount);
     }
 
     function getUsersStakeInfo(
@@ -179,6 +180,10 @@ contract Staking is IStaking, Initializable, AbstractDependant {
         address _userAddr
     ) external view override returns (WithdrawalAnnouncement memory) {
         return _withdrawalAnnouncements[_userAddr];
+    }
+
+    function getWhitelistedUsers() external view returns (address[] memory) {
+        return _usersWhitelist.values();
     }
 
     function isUserWhitelisted(address _userAddr) public view returns (bool) {
