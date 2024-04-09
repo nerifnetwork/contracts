@@ -12,6 +12,19 @@ interface IDKG {
         FINISHED
     }
 
+    struct DKGEpochInfo {
+        uint256 epochId;
+        uint256 epochStartTime;
+        address epochSigner;
+        DKGEpochStatuses epochStatus;
+    }
+
+    struct ValidatorInfo {
+        address validator;
+        uint256 startValidationTime;
+        uint256 endValidationTime;
+    }
+
     struct DKGEpochData {
         address epochSigner;
         uint256 epochStartTime;
@@ -43,7 +56,19 @@ interface IDKG {
 
     function getSignerAddress() external view returns (address);
 
+    function getDKGEpochInfo(uint256 _epochId) external view returns (DKGEpochInfo memory);
+
+    function getValidatorInfo(address _validator) external view returns (ValidatorInfo memory);
+
+    function getSignerVotesCount(uint256 _epochId, address _signerAddr) external view returns (uint256);
+
+    function getValidatorVote(uint256 _epochId, address _validatorAddr) external view returns (address);
+
     function getActiveValidators() external view returns (address[] memory);
+
+    function getAllValidators() external view returns (address[] memory);
+
+    function getAllValidatorsCount() external view returns (uint256);
 
     function getActiveValidatorsCount() external view returns (uint256);
 

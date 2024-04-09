@@ -123,7 +123,9 @@ contract Staking is IStaking, Initializable, AbstractDependant {
 
         delete _withdrawalAnnouncements[msg.sender];
 
-        _dkg.removeValidator(msg.sender);
+        if (_dkg.isValidator(msg.sender)) {
+            _dkg.removeValidator(msg.sender);
+        }
 
         stakeToken.safeTransfer(msg.sender, withdrawalAmount);
 
