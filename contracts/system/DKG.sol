@@ -75,7 +75,7 @@ contract DKG is IDKG, Initializable, AbstractDependant {
     }
 
     // solhint-disable-next-line ordering
-    function addValidator(address _validatorToAdd) external onlyStaking {
+    function addValidator(address _validatorToAdd) external override onlyStaking {
         require(!isValidator(_validatorToAdd), "DKG: Validator already exists");
 
         ValidationData memory startValidationData = _createEpochEndUpdateValidators();
@@ -90,7 +90,7 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         );
     }
 
-    function announceValidatorExit(address _validatorToExit) external onlyStaking returns (uint256) {
+    function announceValidatorExit(address _validatorToExit) external override onlyStaking returns (uint256) {
         require(isActiveValidator(_validatorToExit), "DKG: Validator is not active");
         require(
             _validatorsData[_validatorToExit].endValidationData.validationTime == type(uint256).max,
@@ -110,7 +110,7 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         return endValidationData.validationTime;
     }
 
-    function removeValidator(address _validatorToRemove) external onlyStaking {
+    function removeValidator(address _validatorToRemove) external override onlyStaking {
         require(_validators.contains(_validatorToRemove), "DKG: Validator does not exist");
         require(
             _validatorsData[_validatorToRemove].endValidationData.validationTime <= block.timestamp,
@@ -124,7 +124,7 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         uint256 _epochId,
         address _signerAddress,
         bytes memory _signature
-    ) external onlyActiveValidator {
+    ) external override onlyActiveValidator {
         require(getEpochStatus(_epochId) == DKGEpochStatuses.DKG_GENERATION, "DKG: Not a DKG generation period");
 
         address recoveredSigner = bytes("verify").toEthSignedMessageHash().recover(_signature);
@@ -147,7 +147,7 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         }
     }
 
-    function updateAllValidators() public {
+    function updateAllValidators() public override {
         address[] memory allCurrentValidators = _validators.values();
 
         for (uint256 i = 0; i < allCurrentValidators.length; ++i) {
@@ -165,31 +165,35 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         }
     }
 
-    function getSignerAddress() external view returns (address) {
+    function getSignerAddress() external view override returns (address) {
         return _activeSigner;
     }
 
-    function getDKGEpochInfo(uint256 _epochId) external view returns (DKGEpochInfo memory) {
+    function getDKGEpochInfo(uint256 _epochId) external view override returns (DKGEpochInfo memory) {
         DKGEpochData storage epochData = _dkgEpochsData[_epochId];
 
         return DKGEpochInfo(_epochId, epochData.epochStartTime, epochData.epochSigner, getEpochStatus(_epochId));
     }
 
-    function getValidatorInfo(address _validator) external view returns (ValidatorInfo memory) {
+    function getValidatorInfo(address _validator) external view override returns (ValidatorInfo memory) {
         ValidatorData storage validatorData = _validatorsData[_validator];
 
         return ValidatorInfo(_validator, validatorData.startValidationData, validatorData.endValidationData);
     }
 
-    function getSignerVotesCount(uint256 _epochId, address _signerAddr) external view returns (uint256) {
+    function getSignerVotesCount(uint256 _epochId, address _signerAddr) external view override returns (uint256) {
         return _dkgEpochsData[_epochId].signerVotesCount[_signerAddr];
     }
 
-    function getValidatorVote(uint256 _epochId, address _validatorAddr) external view returns (address) {
+    function getValidatorVote(uint256 _epochId, address _validatorAddr) external view override returns (address) {
         return _dkgEpochsData[_epochId].signerVotes[_validatorAddr];
     }
 
-    function getActiveValidators() external view returns (address[] memory) {
+    function getAllValidators() external view override returns (address[] memory) {
+        return _validators.values();
+    }
+
+    function getActiveValidators() external view override returns (address[] memory) {
         Vector.AddressVector memory validatorsVector = Vector.newAddress();
 
         uint256 allValidatorsCount = _validators.length();
@@ -205,19 +209,11 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         return validatorsVector.toArray();
     }
 
-    function getAllValidators() external view returns (address[] memory) {
-        return _validators.values();
-    }
-
-    function getLastEpochId() external view returns (uint256) {
-        return _lastEpochId;
-    }
-
-    function getAllValidatorsCount() external view returns (uint256) {
+    function getAllValidatorsCount() external view override returns (uint256) {
         return _validators.length();
     }
 
-    function getActiveValidatorsCount() public view returns (uint256 _activeValidatorsCount) {
+    function getActiveValidatorsCount() public view override returns (uint256 _activeValidatorsCount) {
         uint256 allValidatorsCount = _validators.length();
 
         for (uint256 i = 0; i < allValidatorsCount; ++i) {
@@ -227,11 +223,11 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         }
     }
 
-    function getCurrentEpochStatus() public view returns (DKGEpochStatuses) {
+    function getCurrentEpochStatus() public view override returns (DKGEpochStatuses) {
         return getEpochStatus(getCurrentEpochId());
     }
 
-    function getEpochStatus(uint256 _epochId) public view returns (DKGEpochStatuses) {
+    function getEpochStatus(uint256 _epochId) public view override returns (DKGEpochStatuses) {
         if (_epochId > _lastEpochId) {
             return DKGEpochStatuses.NONE;
         }
@@ -257,19 +253,23 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         }
     }
 
-    function getUpdatedCollectionPeriodEndTime(uint256 _epochId) public view returns (uint256) {
+    function getUpdatedCollectionPeriodEndTime(uint256 _epochId) public view override returns (uint256) {
         return _dkgEpochsData[_epochId].epochStartTime + updatesCollectionEpochDuration;
     }
 
-    function getDKGPeriodEndTime(uint256 _epochId) public view returns (uint256) {
+    function getDKGPeriodEndTime(uint256 _epochId) public view override returns (uint256) {
         return getUpdatedCollectionPeriodEndTime(_epochId) + dkgGenerationEpochDuration;
     }
 
-    function getEpochEndTime(uint256 _epochId) public view returns (uint256) {
+    function getEpochEndTime(uint256 _epochId) public view override returns (uint256) {
         return getDKGPeriodEndTime(_epochId) + guaranteedWorkingEpochDuration;
     }
 
-    function getCurrentEpochId() public view returns (uint256 _currentEpochId) {
+    function getLastEpochId() public view override returns (uint256) {
+        return _lastEpochId;
+    }
+
+    function getCurrentEpochId() public view override returns (uint256 _currentEpochId) {
         _currentEpochId = _lastEpochId;
 
         if (_dkgEpochsData[_currentEpochId].epochStartTime > block.timestamp) {
@@ -277,15 +277,15 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         }
     }
 
-    function isCurrentEpoch(uint256 _epochId) public view returns (bool) {
+    function isCurrentEpoch(uint256 _epochId) public view override returns (bool) {
         return getCurrentEpochId() == _epochId;
     }
 
-    function isLastEpoch(uint256 _epochId) public view returns (bool) {
+    function isLastEpoch(uint256 _epochId) public view override returns (bool) {
         return _lastEpochId == _epochId;
     }
 
-    function isActiveValidator(address _validatorAddr) public view returns (bool) {
+    function isActiveValidator(address _validatorAddr) public view override returns (bool) {
         ValidatorData memory validatorData = _validatorsData[_validatorAddr];
 
         bool startValidationTimeCheck = isDKGGenSuccessful(validatorData.startValidationData.validationEpoch) &&
@@ -296,11 +296,11 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         return startValidationTimeCheck && endValidationTimeCheck;
     }
 
-    function isValidator(address _validatorAddr) public view returns (bool) {
+    function isValidator(address _validatorAddr) public view override returns (bool) {
         return _validators.contains(_validatorAddr);
     }
 
-    function isDKGGenSuccessful(uint256 _epochId) public view returns (bool) {
+    function isDKGGenSuccessful(uint256 _epochId) public view override returns (bool) {
         return _dkgEpochsData[_epochId].epochSigner != address(0);
     }
 
