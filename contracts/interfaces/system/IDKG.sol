@@ -21,8 +21,8 @@ interface IDKG {
 
     struct ValidatorInfo {
         address validator;
-        uint256 startValidationTime;
-        uint256 endValidationTime;
+        ValidationData startValidationData;
+        ValidationData endValidationData;
     }
 
     struct DKGEpochData {
@@ -32,14 +32,19 @@ interface IDKG {
         mapping(address => address) signerVotes;
     }
 
+    struct ValidationData {
+        uint256 validationTime;
+        uint256 validationEpoch;
+    }
+
     struct ValidatorData {
-        uint256 startValidationTime;
-        uint256 endValidationTime;
+        ValidationData startValidationData;
+        ValidationData endValidationData;
     }
 
     event NewEpochCreated(uint256 epochId, uint256 epochStartTime);
-    event NewValidatorAdded(address indexed validatorAddr, uint256 startValidationTime);
-    event ValidatorExitAnnounced(address indexed validatorAddr, uint256 endValidationTime);
+    event NewValidatorAdded(address indexed validatorAddr, uint256 startValidationTime, uint256 startValidationEpoch);
+    event ValidatorExitAnnounced(address indexed validatorAddr, uint256 endValidationTime, uint256 endValidationEpoch);
     event ValidatorRemoved(address indexed validatorAddr);
     event SignerVoted(uint256 generation, address validator, address collectiveSigner);
     event SignerAddressUpdated(uint256 generation, address signerAddress);
@@ -52,7 +57,7 @@ interface IDKG {
 
     function voteSigner(uint256 _epochId, address _signerAddress, bytes memory _signature) external;
 
-    function updateActiveValidators() external;
+    function updateAllValidators() external;
 
     function getSignerAddress() external view returns (address);
 

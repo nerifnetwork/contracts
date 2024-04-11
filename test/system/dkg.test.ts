@@ -2,10 +2,10 @@ import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { Reverter } from '../helpers/reverter';
-import { ContractsRegistry, DKG } from '../../generated-types/ethers';
+import { ContractsRegistry, IDKG, TestDKG } from '../../generated-types/ethers';
 import { wei } from '../helpers/utils';
 import { setNextBlockTime, setTime } from '../helpers/block-helper';
-import { BigNumber } from 'ethers';
+import { BigNumber, BigNumberish } from 'ethers';
 
 describe('DKG', () => {
   const reverter = new Reverter();
@@ -17,7 +17,7 @@ describe('DKG', () => {
   let STAKING: SignerWithAddress;
 
   let contractsRegistry: ContractsRegistry;
-  let dkg: DKG;
+  let dkg: TestDKG;
 
   const msgToSign = 'verify';
   const defUpdateCollectionsEpochDuration = wei('7200', 0);
@@ -38,12 +38,20 @@ describe('DKG', () => {
       .add(defGuaranteedWorkingEpochDuration);
   }
 
+  function checkValidationData(
+    actualValidationData: IDKG.ValidationDataStruct,
+    expectedValidationData: BigNumberish[]
+  ) {
+    expect(actualValidationData.validationTime).to.be.eq(expectedValidationData[0]);
+    expect(actualValidationData.validationEpoch).to.be.eq(expectedValidationData[1]);
+  }
+
   before(async () => {
     [OWNER, FIRST, SECOND, THIRD, STAKING] = await ethers.getSigners();
 
     const ERC1967ProxyFactory = await ethers.getContractFactory('ERC1967Proxy');
     const ContractsRegistryFactory = await ethers.getContractFactory('ContractsRegistry');
-    const DKGFactory = await ethers.getContractFactory('DKG');
+    const DKGFactory = await ethers.getContractFactory('TestDKG');
 
     const contractsRegistryImpl = await ContractsRegistryFactory.deploy();
     const contractsRegistryProxy = await ERC1967ProxyFactory.deploy(contractsRegistryImpl.address, '0x');
@@ -107,20 +115,12 @@ describe('DKG', () => {
 
   describe('setDependencies', () => {
     it('should correctly update dependencies', async () => {
-      const TestDKGFactory = await ethers.getContractFactory('TestDKG');
-
-      const newDKGImpl = await TestDKGFactory.deploy();
-
-      await contractsRegistry.upgradeContract(await contractsRegistry.DKG_NAME(), newDKGImpl.address);
-
-      const newDKG = TestDKGFactory.attach(dkg.address);
-
-      expect(await newDKG.getStaking()).to.be.eq(STAKING.address);
+      expect(await dkg.getStaking()).to.be.eq(STAKING.address);
 
       await contractsRegistry.addContract(await contractsRegistry.STAKING_NAME(), FIRST.address);
       await contractsRegistry.injectDependencies(await contractsRegistry.DKG_NAME());
 
-      expect(await newDKG.getStaking()).to.be.eq(FIRST.address);
+      expect(await dkg.getStaking()).to.be.eq(FIRST.address);
     });
 
     it('should get exception if not a registry contract try to call this function', async () => {
@@ -141,7 +141,9 @@ describe('DKG', () => {
       expect(await dkg.getDKGPeriodEndTime(startEpochId)).to.be.eq(expectedStartValidationTime);
 
       expect((await tx.wait()).events?.length).to.be.eq(1);
-      await expect(tx).emit(dkg, 'NewValidatorAdded').withArgs(FIRST.address, expectedStartValidationTime);
+      await expect(tx)
+        .emit(dkg, 'NewValidatorAdded')
+        .withArgs(FIRST.address, expectedStartValidationTime, startEpochId);
 
       expect(await dkg.isValidator(FIRST.address)).to.be.eq(true);
       expect(await dkg.getAllValidators()).to.be.deep.eq([OWNER.address, FIRST.address]);
@@ -149,8 +151,8 @@ describe('DKG', () => {
       const valInfo = await dkg.getValidatorInfo(FIRST.address);
 
       expect(valInfo.validator).to.be.eq(FIRST.address);
-      expect(valInfo.startValidationTime).to.be.eq(expectedStartValidationTime);
-      expect(valInfo.endValidationTime).to.be.eq(ethers.constants.MaxUint256);
+      checkValidationData(valInfo.startValidationData, [expectedStartValidationTime, startEpochId]);
+      checkValidationData(valInfo.endValidationData, [ethers.constants.MaxUint256, 0]);
 
       expect(await dkg.isLastEpoch(startEpochId)).to.be.eq(true);
       expect(await dkg.isCurrentEpoch(startEpochId)).to.be.eq(true);
@@ -190,14 +192,14 @@ describe('DKG', () => {
       expect(await dkg.getDKGPeriodEndTime(newEpochId)).to.be.eq(expectedStartValidationTime);
 
       expect((await tx.wait()).events?.length).to.be.eq(2);
-      await expect(tx).emit(dkg, 'NewValidatorAdded').withArgs(FIRST.address, expectedStartValidationTime);
+      await expect(tx).emit(dkg, 'NewValidatorAdded').withArgs(FIRST.address, expectedStartValidationTime, newEpochId);
       await expect(tx).emit(dkg, 'NewEpochCreated').withArgs(newEpochId, newEpochStartTime);
 
       const valInfo = await dkg.getValidatorInfo(FIRST.address);
 
       expect(valInfo.validator).to.be.eq(FIRST.address);
-      expect(valInfo.startValidationTime).to.be.eq(expectedStartValidationTime);
-      expect(valInfo.endValidationTime).to.be.eq(ethers.constants.MaxUint256);
+      checkValidationData(valInfo.startValidationData, [expectedStartValidationTime, newEpochId]);
+      checkValidationData(valInfo.endValidationData, [ethers.constants.MaxUint256, 0]);
     });
 
     it('should correctly add validator during DKG generation epoch with next epoch creation', async () => {
@@ -234,11 +236,11 @@ describe('DKG', () => {
       const valInfo = await dkg.getValidatorInfo(FIRST.address);
 
       expect(valInfo.validator).to.be.eq(FIRST.address);
-      expect(valInfo.startValidationTime).to.be.eq(expectedStartValidationTime);
-      expect(valInfo.endValidationTime).to.be.eq(ethers.constants.MaxUint256);
+      checkValidationData(valInfo.startValidationData, [expectedStartValidationTime, newEpochId]);
+      checkValidationData(valInfo.endValidationData, [ethers.constants.MaxUint256, 0]);
 
       expect((await tx.wait()).events?.length).to.be.eq(2);
-      await expect(tx).emit(dkg, 'NewValidatorAdded').withArgs(FIRST.address, expectedStartValidationTime);
+      await expect(tx).emit(dkg, 'NewValidatorAdded').withArgs(FIRST.address, expectedStartValidationTime, newEpochId);
       await expect(tx).emit(dkg, 'NewEpochCreated').withArgs(newEpochId, newEpochStartTime);
 
       await setTime(newEpochStartTime.toNumber());
@@ -279,11 +281,11 @@ describe('DKG', () => {
       const valInfo = await dkg.getValidatorInfo(FIRST.address);
 
       expect(valInfo.validator).to.be.eq(FIRST.address);
-      expect(valInfo.startValidationTime).to.be.eq(expectedStartValidationTime);
-      expect(valInfo.endValidationTime).to.be.eq(ethers.constants.MaxUint256);
+      checkValidationData(valInfo.startValidationData, [expectedStartValidationTime, newEpochId]);
+      checkValidationData(valInfo.endValidationData, [ethers.constants.MaxUint256, 0]);
 
       expect((await tx.wait()).events?.length).to.be.eq(2);
-      await expect(tx).emit(dkg, 'NewValidatorAdded').withArgs(FIRST.address, expectedStartValidationTime);
+      await expect(tx).emit(dkg, 'NewValidatorAdded').withArgs(FIRST.address, expectedStartValidationTime, newEpochId);
       await expect(tx).emit(dkg, 'NewEpochCreated').withArgs(newEpochId, newEpochStartTime);
 
       await setTime(newEpochStartTime.toNumber());
@@ -328,11 +330,11 @@ describe('DKG', () => {
       const valInfo = await dkg.getValidatorInfo(SECOND.address);
 
       expect(valInfo.validator).to.be.eq(SECOND.address);
-      expect(valInfo.startValidationTime).to.be.eq(expectedStartValidationTime);
-      expect(valInfo.endValidationTime).to.be.eq(ethers.constants.MaxUint256);
+      checkValidationData(valInfo.startValidationData, [expectedStartValidationTime, newEpochId]);
+      checkValidationData(valInfo.endValidationData, [ethers.constants.MaxUint256, 0]);
 
       expect((await tx.wait()).events?.length).to.be.eq(1);
-      await expect(tx).emit(dkg, 'NewValidatorAdded').withArgs(SECOND.address, expectedStartValidationTime);
+      await expect(tx).emit(dkg, 'NewValidatorAdded').withArgs(SECOND.address, expectedStartValidationTime, newEpochId);
     });
 
     it('should get exception if not the Staking address try to call this function', async () => {
@@ -375,19 +377,22 @@ describe('DKG', () => {
       const expectedEndValidationTime = getEndDKGPeriodTime(newEpochStartTime);
 
       expect((await tx.wait()).events?.length).to.be.eq(2);
-      await expect(tx).emit(dkg, 'ValidatorExitAnnounced').withArgs(FIRST.address, expectedEndValidationTime);
+      await expect(tx)
+        .emit(dkg, 'ValidatorExitAnnounced')
+        .withArgs(FIRST.address, expectedEndValidationTime, newEpochId);
       await expect(tx).emit(dkg, 'NewEpochCreated').withArgs(newEpochId, newEpochStartTime);
 
       const valInfo = await dkg.getValidatorInfo(FIRST.address);
 
       expect(valInfo.validator).to.be.eq(FIRST.address);
-      expect(valInfo.startValidationTime).to.be.eq(startValidationTime);
-      expect(valInfo.endValidationTime).to.be.eq(expectedEndValidationTime);
+      checkValidationData(valInfo.startValidationData, [startValidationTime, startEpochId]);
+      checkValidationData(valInfo.endValidationData, [expectedEndValidationTime, newEpochId]);
 
       expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(true);
       expect(await dkg.isValidator(FIRST.address)).to.be.eq(true);
 
       await setTime(expectedEndValidationTime.toNumber());
+      await dkg.setSigner(newEpochId, OWNER.address);
 
       expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(false);
       expect(await dkg.isValidator(FIRST.address)).to.be.eq(true);
@@ -416,14 +421,16 @@ describe('DKG', () => {
       const tx = await dkg.connect(STAKING).announceValidatorExit(OWNER.address);
 
       expect((await tx.wait()).events?.length).to.be.eq(2);
-      await expect(tx).emit(dkg, 'ValidatorExitAnnounced').withArgs(OWNER.address, expectedEndValidationTime);
+      await expect(tx)
+        .emit(dkg, 'ValidatorExitAnnounced')
+        .withArgs(OWNER.address, expectedEndValidationTime, newEpochId);
       await expect(tx).emit(dkg, 'NewEpochCreated').withArgs(newEpochId, newEpochStartTime);
 
       const valInfo = await dkg.getValidatorInfo(OWNER.address);
 
       expect(valInfo.validator).to.be.eq(OWNER.address);
-      expect(valInfo.startValidationTime).to.be.eq(startTime);
-      expect(valInfo.endValidationTime).to.be.eq(expectedEndValidationTime);
+      checkValidationData(valInfo.startValidationData, [startTime, startEpochId]);
+      checkValidationData(valInfo.endValidationData, [expectedEndValidationTime, newEpochId]);
 
       expect(await dkg.isActiveValidator(OWNER.address)).to.be.eq(true);
       expect(await dkg.isValidator(OWNER.address)).to.be.eq(true);
@@ -436,6 +443,7 @@ describe('DKG', () => {
       expect(await dkg.isValidator(OWNER.address)).to.be.eq(true);
 
       await setTime(expectedEndValidationTime.add('1').toNumber());
+      await dkg.setSigner(newEpochId, OWNER.address);
 
       expect(await dkg.isActiveValidator(OWNER.address)).to.be.eq(false);
       expect(await dkg.isValidator(OWNER.address)).to.be.eq(true);
@@ -487,11 +495,13 @@ describe('DKG', () => {
       const valInfo = await dkg.getValidatorInfo(FIRST.address);
 
       expect(valInfo.validator).to.be.eq(FIRST.address);
-      expect(valInfo.startValidationTime).to.be.eq(expetcedStartValidationTime);
-      expect(valInfo.endValidationTime).to.be.eq(expectedEndValidationTime);
+      checkValidationData(valInfo.startValidationData, [expetcedStartValidationTime, startEpochId]);
+      checkValidationData(valInfo.endValidationData, [expectedEndValidationTime, thirdEpochId]);
 
       expect((await tx.wait()).events?.length).to.be.eq(1);
-      await expect(tx).emit(dkg, 'ValidatorExitAnnounced').withArgs(FIRST.address, expectedEndValidationTime);
+      await expect(tx)
+        .emit(dkg, 'ValidatorExitAnnounced')
+        .withArgs(FIRST.address, expectedEndValidationTime, thirdEpochId);
 
       expect(await dkg.isLastEpoch(thirdEpochId)).to.be.eq(true);
     });
@@ -535,6 +545,8 @@ describe('DKG', () => {
       await dkg.connect(STAKING).addValidator(FIRST.address);
 
       const firstEpochEndTime = getEpochEndTime(startTime);
+
+      const secondEpochId = startEpochId.add('1');
       const secondEpochStartTime = firstEpochEndTime.add('10');
 
       await setNextBlockTime(secondEpochStartTime.toNumber());
@@ -545,9 +557,13 @@ describe('DKG', () => {
 
       const expectedEndValidationTime = getEndDKGPeriodTime(secondEpochStartTime);
 
-      expect((await dkg.getValidatorInfo(FIRST.address)).endValidationTime).to.be.eq(expectedEndValidationTime);
+      checkValidationData((await dkg.getValidatorInfo(FIRST.address)).endValidationData, [
+        expectedEndValidationTime,
+        secondEpochId,
+      ]);
 
       await setTime(expectedEndValidationTime.add('10').toNumber());
+      await dkg.setSigner(secondEpochId, OWNER.address);
 
       expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(false);
       expect(await dkg.isValidator(FIRST.address)).to.be.eq(true);
@@ -588,7 +604,7 @@ describe('DKG', () => {
     });
   });
 
-  describe('updateActiveValidators', async () => {
+  describe('updateAllValidators', async () => {
     it('should correctly update active validators', async () => {
       await dkg.connect(STAKING).addValidator(FIRST.address);
       await dkg.connect(STAKING).addValidator(SECOND.address);
@@ -606,22 +622,30 @@ describe('DKG', () => {
 
       expect(await dkg.getActiveValidators()).to.be.deep.eq([OWNER.address, FIRST.address, SECOND.address]);
 
+      const secondEpochId = startEpochId.add('1');
       const secondEpochDKGGenEndTime = getEndDKGPeriodTime(secondEpochStartTime);
 
-      expect((await dkg.getValidatorInfo(THIRD.address)).startValidationTime).to.be.eq(secondEpochDKGGenEndTime);
-      expect((await dkg.getValidatorInfo(SECOND.address)).endValidationTime).to.be.eq(secondEpochDKGGenEndTime);
+      checkValidationData((await dkg.getValidatorInfo(THIRD.address)).startValidationData, [
+        secondEpochDKGGenEndTime,
+        secondEpochId,
+      ]);
+      checkValidationData((await dkg.getValidatorInfo(SECOND.address)).endValidationData, [
+        secondEpochDKGGenEndTime,
+        secondEpochId,
+      ]);
 
       expect(await dkg.getAllValidatorsCount()).to.be.eq('4');
       expect(await dkg.getAllValidators()).to.be.deep.eq([OWNER.address, FIRST.address, SECOND.address, THIRD.address]);
       expect(await dkg.getActiveValidators()).to.be.deep.eq([OWNER.address, FIRST.address, SECOND.address]);
 
-      await dkg.updateActiveValidators();
+      await dkg.updateAllValidators();
 
       expect(await dkg.getAllValidators()).to.be.deep.eq([OWNER.address, FIRST.address, SECOND.address, THIRD.address]);
 
       await setNextBlockTime(secondEpochDKGGenEndTime.add('10').toNumber());
+      await dkg.setSigner(secondEpochId, OWNER.address);
 
-      const tx = await dkg.updateActiveValidators();
+      const tx = await dkg.updateAllValidators();
 
       expect(await dkg.getAllValidatorsCount()).to.be.eq('3');
       expect(await dkg.getActiveValidators()).to.be.deep.eq(await dkg.getAllValidators());

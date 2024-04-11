@@ -62,7 +62,10 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         _dkgEpochsData[epochId].epochStartTime = block.timestamp;
 
         _validators.add(msg.sender);
-        _validatorsData[msg.sender] = ValidatorData(block.timestamp, type(uint256).max);
+        _validatorsData[msg.sender] = ValidatorData(
+            ValidationData(block.timestamp, epochId),
+            ValidationData(type(uint256).max, 0)
+        );
     }
 
     function setDependencies(address _contractsRegistryAddr, bytes memory) public override dependant {
@@ -75,34 +78,42 @@ contract DKG is IDKG, Initializable, AbstractDependant {
     function addValidator(address _validatorToAdd) external onlyStaking {
         require(!isValidator(_validatorToAdd), "DKG: Validator already exists");
 
-        uint256 startValidationTime = _createEpoch();
+        ValidationData memory startValidationData = _createEpochEndUpdateValidators();
 
-        _validatorsData[_validatorToAdd] = ValidatorData(startValidationTime, type(uint256).max);
+        _validatorsData[_validatorToAdd] = ValidatorData(startValidationData, ValidationData(type(uint256).max, 0));
         _validators.add(_validatorToAdd);
 
-        emit NewValidatorAdded(_validatorToAdd, startValidationTime);
+        emit NewValidatorAdded(
+            _validatorToAdd,
+            startValidationData.validationTime,
+            startValidationData.validationEpoch
+        );
     }
 
     function announceValidatorExit(address _validatorToExit) external onlyStaking returns (uint256) {
         require(isActiveValidator(_validatorToExit), "DKG: Validator is not active");
         require(
-            _validatorsData[_validatorToExit].endValidationTime == type(uint256).max,
+            _validatorsData[_validatorToExit].endValidationData.validationTime == type(uint256).max,
             "DKG: Exit of the validator has already been announced"
         );
 
-        uint256 newEndValidationTime = _createEpoch();
+        ValidationData memory endValidationData = _createEpochEndUpdateValidators();
 
-        _validatorsData[_validatorToExit].endValidationTime = newEndValidationTime;
+        _validatorsData[_validatorToExit].endValidationData = endValidationData;
 
-        emit ValidatorExitAnnounced(_validatorToExit, newEndValidationTime);
+        emit ValidatorExitAnnounced(
+            _validatorToExit,
+            endValidationData.validationTime,
+            endValidationData.validationEpoch
+        );
 
-        return newEndValidationTime;
+        return endValidationData.validationTime;
     }
 
     function removeValidator(address _validatorToRemove) external onlyStaking {
         require(_validators.contains(_validatorToRemove), "DKG: Validator does not exist");
         require(
-            _validatorsData[_validatorToRemove].endValidationTime <= block.timestamp,
+            _validatorsData[_validatorToRemove].endValidationData.validationTime <= block.timestamp,
             "DKG: Validator can't be removed yet"
         );
 
@@ -136,11 +147,18 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         }
     }
 
-    function updateActiveValidators() public {
+    function updateAllValidators() public {
         address[] memory allCurrentValidators = _validators.values();
 
         for (uint256 i = 0; i < allCurrentValidators.length; ++i) {
-            if (_validatorsData[allCurrentValidators[i]].endValidationTime <= block.timestamp) {
+            ValidatorData storage validatorData = _validatorsData[allCurrentValidators[i]];
+
+            if (!isActiveValidator(allCurrentValidators[i])) {
+                _updateValidationData(validatorData.startValidationData);
+                _updateValidationData(validatorData.endValidationData);
+            }
+
+            if (validatorData.endValidationData.validationTime <= block.timestamp) {
                 _removeValidator(allCurrentValidators[i]);
             }
         }
@@ -159,7 +177,7 @@ contract DKG is IDKG, Initializable, AbstractDependant {
     function getValidatorInfo(address _validator) external view returns (ValidatorInfo memory) {
         ValidatorData storage validatorData = _validatorsData[_validator];
 
-        return ValidatorInfo(_validator, validatorData.startValidationTime, validatorData.endValidationTime);
+        return ValidatorInfo(_validator, validatorData.startValidationData, validatorData.endValidationData);
     }
 
     function getSignerVotesCount(uint256 _epochId, address _signerAddr) external view returns (uint256) {
@@ -269,42 +287,65 @@ contract DKG is IDKG, Initializable, AbstractDependant {
     function isActiveValidator(address _validatorAddr) public view returns (bool) {
         ValidatorData memory validatorData = _validatorsData[_validatorAddr];
 
-        return
-            validatorData.startValidationTime != 0 &&
-            validatorData.startValidationTime <= block.timestamp &&
-            validatorData.endValidationTime > block.timestamp;
+        bool startValidationTimeCheck = isDKGGenSuccessful(validatorData.startValidationData.validationEpoch) &&
+            validatorData.startValidationData.validationTime <= block.timestamp;
+        bool endValidationTimeCheck = !isDKGGenSuccessful(validatorData.endValidationData.validationEpoch) ||
+            validatorData.endValidationData.validationTime > block.timestamp;
+
+        return startValidationTimeCheck && endValidationTimeCheck;
     }
 
     function isValidator(address _validatorAddr) public view returns (bool) {
         return _validators.contains(_validatorAddr);
     }
 
-    function _createEpoch() internal returns (uint256 _endDKGPeriodTime) {
+    function isDKGGenSuccessful(uint256 _epochId) public view returns (bool) {
+        return _dkgEpochsData[_epochId].epochSigner != address(0);
+    }
+
+    function _createEpoch() internal returns (ValidationData memory) {
         uint256 currentEpochId = getCurrentEpochId();
         DKGEpochStatuses currentEpochStatus = getEpochStatus(currentEpochId);
 
+        uint256 epochId = currentEpochId;
+
         if (currentEpochStatus != DKGEpochStatuses.UPDATES_COLLECTION) {
-            uint256 nextEpochId = _lastEpochId;
+            epochId = _lastEpochId;
 
             if (isLastEpoch(currentEpochId)) {
                 uint256 nextEpochStartTime = block.timestamp;
 
-                nextEpochId = ++_lastEpochId;
-
                 if (currentEpochStatus != DKGEpochStatuses.ACTIVE) {
-                    nextEpochStartTime = getEpochEndTime(currentEpochId);
+                    nextEpochStartTime = getEpochEndTime(epochId);
                 }
 
-                _dkgEpochsData[nextEpochId].epochStartTime = nextEpochStartTime;
+                epochId = ++_lastEpochId;
 
-                emit NewEpochCreated(nextEpochId, nextEpochStartTime);
+                _dkgEpochsData[epochId].epochStartTime = nextEpochStartTime;
 
-                updateActiveValidators();
+                emit NewEpochCreated(epochId, nextEpochStartTime);
             }
+        }
 
-            _endDKGPeriodTime = getDKGPeriodEndTime(nextEpochId);
-        } else {
-            _endDKGPeriodTime = getDKGPeriodEndTime(currentEpochId);
+        return ValidationData(getDKGPeriodEndTime(epochId), epochId);
+    }
+
+    function _createEpochEndUpdateValidators() internal returns (ValidationData memory _validationData) {
+        uint256 currentLastEpochId = _lastEpochId;
+
+        _validationData = _createEpoch();
+
+        if (_validationData.validationEpoch != currentLastEpochId) {
+            updateAllValidators();
+        }
+    }
+
+    function _updateValidationData(ValidationData storage _validationData) internal {
+        if (_validationData.validationTime <= block.timestamp && !isDKGGenSuccessful(_validationData.validationEpoch)) {
+            ValidationData memory validationData = _createEpoch();
+
+            _validationData.validationTime = validationData.validationTime;
+            _validationData.validationEpoch = validationData.validationEpoch;
         }
     }
 

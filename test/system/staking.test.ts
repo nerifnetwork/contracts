@@ -480,7 +480,7 @@ describe('Staking', () => {
 
       await setNextBlockTime(withdrawalTime.add('100').toNumber());
 
-      await dkg.updateActiveValidators();
+      await dkg.updateAllValidators();
 
       expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(false);
       expect(await dkg.isValidator(FIRST.address)).to.be.eq(false);

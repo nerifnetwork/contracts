@@ -110,7 +110,7 @@ contract SlashingVoting is Initializable, AbstractDependant {
             emit BannedWithReason(_validator, _reason);
 
             if (_reason == SlashingReason.REASON_DKG_INACTIVITY || _reason == SlashingReason.REASON_DKG_VIOLATION) {
-                _dkg.updateActiveValidators();
+                _dkg.updateAllValidators();
             }
         }
 
