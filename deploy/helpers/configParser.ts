@@ -20,8 +20,7 @@ export type NerifTokenData = {
 };
 
 export type SystemContractsInitParams = {
-  dkgDeadlinePeriod: BigNumber;
-
+  dkgInitParams: DKGInitParams;
   stakingInitParams: StakingInitParams;
   slashingVotingInitParams: SlashingVotingInitParams;
 
@@ -54,10 +53,16 @@ export type VestingData = {
   scheduleId: BigNumberish;
 };
 
+export type DKGInitParams = {
+  updatesCollectionEpochDuration: BigNumberish;
+  dkgGenerationEpochDuration: BigNumberish;
+  guaranteedWorkingEpochDuration: BigNumberish;
+};
+
 export type StakingInitParams = {
   stakingTokenAddr: string;
   minimalStake: BigNumber;
-  withdrawalPeriod: BigNumber;
+  whitelistedUsers: string[];
 };
 
 export type SlashingVotingInitParams = {
@@ -127,9 +132,9 @@ export class ConfigParser {
   }
 
   protected validateSystemContractsInitParams(systemContractsInitParams: SystemContractsInitParams) {
-    this.nonEmptyField(systemContractsInitParams.dkgDeadlinePeriod, 'dkgDeadlinePeriod');
     this.nonUndefinedField(systemContractsInitParams.stakingKeys, 'stakingKeys');
 
+    this.validateDKGInitParams(systemContractsInitParams.dkgInitParams);
     this.validateStakingInitParams(systemContractsInitParams.stakingInitParams);
     this.validateSlashingVotingInitParams(systemContractsInitParams.slashingVotingInitParams);
   }
@@ -165,9 +170,15 @@ export class ConfigParser {
     this.nonEmptyField(vestingData.vestingStartTime, 'vestingStartTime');
   }
 
+  protected validateDKGInitParams(dkgInitParams: DKGInitParams) {
+    this.nonEmptyField(dkgInitParams.updatesCollectionEpochDuration, 'updatesCollectionEpochDuration');
+    this.nonEmptyField(dkgInitParams.dkgGenerationEpochDuration, 'dkgGenerationEpochDuration');
+    this.nonEmptyField(dkgInitParams.guaranteedWorkingEpochDuration, 'guaranteedWorkingEpochDuration');
+  }
+
   protected validateStakingInitParams(stakingInitParams: StakingInitParams) {
     this.nonEmptyField(stakingInitParams.minimalStake, 'minimalStake');
-    this.nonEmptyField(stakingInitParams.withdrawalPeriod, 'withdrawalPeriod');
+    this.nonUndefinedField(stakingInitParams.whitelistedUsers, 'whitelistedUsers');
 
     if (!this.needToDeployNerifToken()) {
       this.nonZeroAddr(stakingInitParams.stakingTokenAddr, 'stakingTokenAddr');
