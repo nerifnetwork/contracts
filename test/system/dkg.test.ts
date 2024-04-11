@@ -654,6 +654,82 @@ describe('DKG', () => {
       expect((await tx.wait()).events?.length).to.be.eq(1);
       await expect(tx).emit(dkg, 'ValidatorRemoved').withArgs(SECOND.address);
     });
+
+    it('should correctly update start validation data for users', async () => {
+      await dkg.connect(STAKING).addValidator(FIRST.address);
+      await dkg.connect(STAKING).addValidator(SECOND.address);
+
+      const secondEpochId = startEpochId.add('1');
+      const secondEpochStartTime = getEpochEndTime(startTime).add('10');
+
+      await setNextBlockTime(secondEpochStartTime.toNumber());
+
+      await dkg.connect(STAKING).addValidator(THIRD.address);
+
+      expect(await dkg.getActiveValidators()).to.be.deep.eq([OWNER.address, FIRST.address, SECOND.address]);
+
+      let expectedStartValidationTime = getEndDKGPeriodTime(secondEpochStartTime);
+      checkValidationData((await dkg.getValidatorInfo(THIRD.address)).startValidationData, [
+        expectedStartValidationTime,
+        secondEpochId,
+      ]);
+
+      await setTime(expectedStartValidationTime.add('10').toNumber());
+
+      expect(await dkg.isActiveValidator(THIRD.address)).to.be.eq(false);
+
+      const thirdEpochId = secondEpochId.add('1');
+      const thirdEpochStartTime = getEpochEndTime(secondEpochStartTime);
+
+      await setNextBlockTime(thirdEpochStartTime.toNumber());
+
+      await dkg.updateAllValidators();
+
+      expectedStartValidationTime = getEndDKGPeriodTime(thirdEpochStartTime);
+
+      checkValidationData((await dkg.getValidatorInfo(THIRD.address)).startValidationData, [
+        expectedStartValidationTime,
+        thirdEpochId,
+      ]);
+    });
+
+    it('should correctly update end validation data for users', async () => {
+      await dkg.connect(STAKING).addValidator(FIRST.address);
+      await dkg.connect(STAKING).addValidator(SECOND.address);
+
+      const secondEpochId = startEpochId.add('1');
+      const secondEpochStartTime = getEpochEndTime(startTime).add('10');
+
+      await setNextBlockTime(secondEpochStartTime.toNumber());
+
+      await dkg.connect(STAKING).announceValidatorExit(FIRST.address);
+
+      expect(await dkg.getActiveValidators()).to.be.deep.eq([OWNER.address, FIRST.address, SECOND.address]);
+
+      let expectedEndValidationTime = getEndDKGPeriodTime(secondEpochStartTime);
+      checkValidationData((await dkg.getValidatorInfo(FIRST.address)).endValidationData, [
+        expectedEndValidationTime,
+        secondEpochId,
+      ]);
+
+      await setTime(expectedEndValidationTime.add('10').toNumber());
+
+      expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(true);
+
+      const thirdEpochId = secondEpochId.add('1');
+      const thirdEpochStartTime = getEpochEndTime(secondEpochStartTime);
+
+      await setNextBlockTime(thirdEpochStartTime.toNumber());
+
+      await dkg.updateAllValidators();
+
+      expectedEndValidationTime = getEndDKGPeriodTime(thirdEpochStartTime);
+
+      checkValidationData((await dkg.getValidatorInfo(FIRST.address)).endValidationData, [
+        expectedEndValidationTime,
+        thirdEpochId,
+      ]);
+    });
   });
 
   describe('voteSigner', () => {
@@ -775,6 +851,103 @@ describe('DKG', () => {
       await setTime((await dkg.getEpochEndTime(secondEpochId)).add('100').toNumber());
 
       expect(await dkg.getEpochStatus(secondEpochId)).to.be.eq(5); // GUARANTEED_WORKING
+    });
+  });
+
+  describe('isActiveValidator', () => {
+    it('should return correct result if the validation start time has not come yet', async () => {
+      await dkg.connect(STAKING).addValidator(FIRST.address);
+
+      const expectedValidationStartTime = getEndDKGPeriodTime(startTime);
+
+      checkValidationData((await dkg.getValidatorInfo(FIRST.address)).startValidationData, [
+        expectedValidationStartTime,
+        startEpochId,
+      ]);
+
+      expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(false);
+    });
+
+    it('should return correct result if the dkg generetion period was not successful', async () => {
+      await dkg.connect(STAKING).addValidator(FIRST.address);
+
+      const expectedValidationStartTime = getEndDKGPeriodTime(startTime);
+
+      checkValidationData((await dkg.getValidatorInfo(FIRST.address)).startValidationData, [
+        expectedValidationStartTime,
+        startEpochId,
+      ]);
+
+      await setTime(expectedValidationStartTime.add('100').toNumber());
+      await dkg.setSigner(startEpochId, ethers.constants.AddressZero);
+
+      expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(false);
+    });
+
+    it('should return correct result when user can unstake his tokens', async () => {
+      await dkg.connect(STAKING).addValidator(FIRST.address);
+
+      const expectedValidationStartTime = getEndDKGPeriodTime(startTime);
+
+      await setTime(expectedValidationStartTime.add('100').toNumber());
+
+      expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(true);
+
+      await dkg.connect(STAKING).announceValidatorExit(FIRST.address);
+
+      const newEpochId = startEpochId.add('1');
+      const expectedEndValidationTime = getEndDKGPeriodTime(getEpochEndTime(startTime));
+
+      await setTime(expectedEndValidationTime.add('100').toNumber());
+      await dkg.setSigner(newEpochId, OWNER.address);
+
+      expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(false);
+    });
+
+    it('should return correct result when user wants to withdraw but dkg generetion was not successful', async () => {
+      await dkg.connect(STAKING).addValidator(FIRST.address);
+
+      const expectedValidationStartTime = getEndDKGPeriodTime(startTime);
+
+      await setTime(expectedValidationStartTime.add('100').toNumber());
+
+      expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(true);
+
+      await dkg.connect(STAKING).announceValidatorExit(FIRST.address);
+
+      const expectedEndValidationTime = getEndDKGPeriodTime(getEpochEndTime(startTime));
+
+      await setTime(expectedEndValidationTime.add('100').toNumber());
+
+      expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(true);
+    });
+
+    it('should return correct result for active validators', async () => {
+      await dkg.connect(STAKING).addValidator(FIRST.address);
+      await dkg.connect(STAKING).addValidator(SECOND.address);
+
+      const expectedValidationStartTime = getEndDKGPeriodTime(startTime);
+
+      await setTime(expectedValidationStartTime.add('100').toNumber());
+
+      expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(true);
+      expect(await dkg.isActiveValidator(SECOND.address)).to.be.eq(true);
+
+      const newEpochId = startEpochId.add('1');
+      const newEpochStartTime = getEpochEndTime(startTime);
+
+      await dkg.connect(STAKING).announceValidatorExit(FIRST.address);
+
+      const expectedEndValidationTime = getEndDKGPeriodTime(newEpochStartTime);
+
+      checkValidationData((await dkg.getValidatorInfo(FIRST.address)).endValidationData, [
+        expectedEndValidationTime,
+        newEpochId,
+      ]);
+
+      await setTime(expectedEndValidationTime.add('100').toNumber());
+
+      expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(true);
     });
   });
 });

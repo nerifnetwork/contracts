@@ -153,9 +153,10 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         for (uint256 i = 0; i < allCurrentValidators.length; ++i) {
             ValidatorData storage validatorData = _validatorsData[allCurrentValidators[i]];
 
-            if (!isActiveValidator(allCurrentValidators[i])) {
-                _updateValidationData(validatorData.startValidationData);
+            if (isActiveValidator(allCurrentValidators[i])) {
                 _updateValidationData(validatorData.endValidationData);
+            } else {
+                _updateValidationData(validatorData.startValidationData);
             }
 
             if (validatorData.endValidationData.validationTime <= block.timestamp) {

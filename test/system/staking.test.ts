@@ -2,7 +2,7 @@ import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { Reverter } from '../helpers/reverter';
-import { ContractsRegistry, DKG, NerifToken, TestStaking } from '../../generated-types/ethers';
+import { ContractsRegistry, TestDKG, NerifToken, TestStaking } from '../../generated-types/ethers';
 import { wei } from '../helpers/utils';
 import { setNextBlockTime, setTime } from '../helpers/block-helper';
 import { BigNumber } from 'ethers';
@@ -18,7 +18,7 @@ describe('Staking', () => {
 
   let contractsRegistry: ContractsRegistry;
   let staking: TestStaking;
-  let dkg: DKG;
+  let dkg: TestDKG;
   let nerifToken: NerifToken;
 
   const FIRST_PK: string = '59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d';
@@ -71,7 +71,7 @@ describe('Staking', () => {
     const ERC1967ProxyFactory = await ethers.getContractFactory('ERC1967Proxy');
     const ContractsRegistryFactory = await ethers.getContractFactory('ContractsRegistry');
     const StakingFactory = await ethers.getContractFactory('TestStaking');
-    const DKGFactory = await ethers.getContractFactory('DKG');
+    const DKGFactory = await ethers.getContractFactory('TestDKG');
     const RewardDistributionPoolFactory = await ethers.getContractFactory('RewardDistributionPool');
     const TokensVestingFactory = await ethers.getContractFactory('TokensVesting');
     const NerifTokenFactory = await ethers.getContractFactory('NerifToken');
@@ -479,6 +479,7 @@ describe('Staking', () => {
       await staking.connect(FIRST).announceWithdrawal(announceAmount.mul(2));
 
       await setNextBlockTime(withdrawalTime.add('100').toNumber());
+      await dkg.setSigner(startEpochId.add('1'), OWNER.address);
 
       await dkg.updateAllValidators();
 
