@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import "@solarity/solidity-lib/contracts-registry/AbstractDependant.sol";
 
 import "../interfaces/core/IContractsRegistry.sol";
+import "../interfaces/system/IDKG.sol";
+import "../interfaces/system/IStaking.sol";
 
 import "./Staking.sol";
 import "../common/Globals.sol";
@@ -14,7 +16,8 @@ contract RewardDistributionPool is AbstractDependant {
         uint256 lastRewardPoints;
     }
 
-    Staking internal _staking;
+    IDKG internal _dkg;
+    IStaking internal _staking;
 
     uint256 public collectedRewards;
     uint256 public totalRewardPoints;
@@ -30,7 +33,8 @@ contract RewardDistributionPool is AbstractDependant {
     function setDependencies(address _contractsRegistryAddr, bytes memory) public override dependant {
         IContractsRegistry contractsRegistry = IContractsRegistry(_contractsRegistryAddr);
 
-        _staking = Staking(contractsRegistry.getStakingContract());
+        _dkg = IDKG(contractsRegistry.getDKGContract());
+        _staking = IStaking(contractsRegistry.getStakingContract());
     }
 
     // solhint-disable-next-line ordering
@@ -76,7 +80,7 @@ contract RewardDistributionPool is AbstractDependant {
     }
 
     function _updateLastRewardPoints() private {
-        address[] memory validators = _staking.getValidators();
+        address[] memory validators = _dkg.getActiveValidators();
 
         for (uint256 i = 0; i < validators.length; i++) {
             rewardPositions[validators[i]].lastRewardPoints = totalRewardPoints;

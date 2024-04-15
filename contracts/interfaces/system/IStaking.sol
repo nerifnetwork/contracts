@@ -13,32 +13,28 @@ interface IStaking {
         ValidatorStatus status;
     }
 
-    struct ValidatorInfo {
-        address validatorAddr;
-        ValidatorData validatorData;
+    struct UserStakeInfo {
+        address userAddr;
+        uint256 userStakedAmount;
     }
 
     struct WithdrawalAnnouncement {
-        uint256 amount;
-        uint256 time;
+        uint256 tokensAmount;
+        uint256 withdrawalTime;
     }
 
     event MinimalStakeUpdated(uint256 minimalStake);
-    event WithdrawalPeriodUpdated(uint256 withdrawalPeriod);
     event TokensStaked(address indexed tokensSender, address indexed tokensRecipient, uint256 stakeAmount);
+    event WithdrawalAnnounced(address indexed userAddr, uint256 tokensAmount, uint256 withdrawalTime);
     event TokensWithdrawn(address indexed userAddr, uint256 tokensAmount);
 
     function setMinimalStake(uint256 _minimalStake) external;
 
-    function setWithdrawalPeriod(uint256 _withdrawalPeriod) external;
+    function updateWhitelistedUsers(address[] calldata _usersToUpdate, bool _isAdding) external;
 
     function addRewardsToStake(address _validator, uint256 _amount) external;
 
-    function slash(address _validator) external;
-
     function announceWithdrawal(uint256 _amount) external;
-
-    function revokeWithdrawal() external;
 
     function withdraw() external;
 
@@ -54,25 +50,18 @@ interface IStaking {
 
     function minimalStake() external view returns (uint256);
 
-    function withdrawalPeriod() external view returns (uint256);
-
     function totalStake() external view returns (uint256);
 
-    function getValidators() external view returns (address[] memory);
-
-    function getValidatorsCount() external view returns (uint256);
-
-    function getValidatorsInfo(uint256 _offset, uint256 _limit) external view returns (ValidatorInfo[] memory);
+    function getUsersStakeInfo(
+        uint256 _offset,
+        uint256 _limit
+    ) external view returns (UserStakeInfo[] memory _usersStakeInfoArr);
 
     function getStake(address _validator) external view returns (uint256);
 
     function getWithdrawalAnnouncement(address _userAddr) external view returns (WithdrawalAnnouncement memory);
 
-    function isValidatorActive(address _validator) external view returns (bool);
-
-    function isValidatorSlashed(address _validator) external view returns (bool);
-
-    function getValidatorStatus(address _validator) external view returns (ValidatorStatus);
+    function isUserWhitelisted(address _userAddr) external view returns (bool);
 
     function hasWithdrawalAnnouncement(address _userAddr) external view returns (bool);
 }

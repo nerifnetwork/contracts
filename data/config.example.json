@@ -24,11 +24,15 @@
     ]
   },
   "systemContractsInitParams": {
-    "dkgDeadlinePeriod": "1000",
+    "dkgInitParams": {
+      "updatesCollectionEpochDuration": "7200",
+      "dkgGenerationEpochDuration": "600",
+      "guaranteedWorkingEpochDuration": "14400"
+    },
     "stakingInitParams": {
       "stakingTokenAddr": "",
       "minimalStake": "1000000000000000000",
-      "withdrawalPeriod": "3600"
+      "whitelistedUsers": []
     },
     "slashingVotingInitParams": {
       "epochPeriod": "1000",

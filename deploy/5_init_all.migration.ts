@@ -62,7 +62,11 @@ export = async (deployer: Deployer) => {
       await contractsRegistry.getRewardsDistributionPoolContract()
     );
 
-    await dkg.initialize(systemContractsInitParams.dkgDeadlinePeriod);
+    await dkg.initialize(
+      systemContractsInitParams.dkgInitParams.updatesCollectionEpochDuration,
+      systemContractsInitParams.dkgInitParams.dkgGenerationEpochDuration,
+      systemContractsInitParams.dkgInitParams.guaranteedWorkingEpochDuration
+    );
 
     let stakeTokenAddr: string;
 
@@ -75,7 +79,7 @@ export = async (deployer: Deployer) => {
     await staking.initialize(
       stakeTokenAddr,
       systemContractsInitParams.stakingInitParams.minimalStake,
-      systemContractsInitParams.stakingInitParams.withdrawalPeriod
+      systemContractsInitParams.stakingInitParams.whitelistedUsers
     );
     await slashingVoting.initialize(
       systemContractsInitParams.slashingVotingInitParams.epochPeriod,
