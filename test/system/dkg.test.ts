@@ -15,6 +15,7 @@ describe('DKG', () => {
   let SECOND: SignerWithAddress;
   let THIRD: SignerWithAddress;
   let STAKING: SignerWithAddress;
+  let SLASHING_VOTING: SignerWithAddress;
 
   let contractsRegistry: ContractsRegistry;
   let dkg: TestDKG;
@@ -47,7 +48,7 @@ describe('DKG', () => {
   }
 
   before(async () => {
-    [OWNER, FIRST, SECOND, THIRD, STAKING] = await ethers.getSigners();
+    [OWNER, FIRST, SECOND, THIRD, STAKING, SLASHING_VOTING] = await ethers.getSigners();
 
     const ERC1967ProxyFactory = await ethers.getContractFactory('ERC1967Proxy');
     const ContractsRegistryFactory = await ethers.getContractFactory('ContractsRegistry');
@@ -64,6 +65,7 @@ describe('DKG', () => {
 
     await contractsRegistry.addProxyContract(await contractsRegistry.DKG_NAME(), dkgImpl.address);
     await contractsRegistry.addContract(await contractsRegistry.STAKING_NAME(), STAKING.address);
+    await contractsRegistry.addContract(await contractsRegistry.SLASHING_VOTING_NAME(), SLASHING_VOTING.address);
 
     dkg = DKGFactory.attach(await contractsRegistry.getDKGContract());
 
@@ -95,7 +97,7 @@ describe('DKG', () => {
 
       const epochInfo = await dkg.getDKGEpochInfo(startEpochId);
 
-      expect(epochInfo.epochStartTime).to.be.eq(startTime);
+      expect(epochInfo.mainEpochInfo.epochStartTime).to.be.eq(startTime);
       expect(epochInfo.epochSigner).to.be.eq(OWNER.address);
       expect(epochInfo.epochStatus).to.be.eq(2);
     });
@@ -181,8 +183,9 @@ describe('DKG', () => {
 
       const dkgEpochInfo = await dkg.getDKGEpochInfo(newEpochId);
 
-      expect(dkgEpochInfo.epochId).to.be.eq(newEpochId);
-      expect(dkgEpochInfo.epochStartTime).to.be.eq(newEpochStartTime);
+      expect(dkgEpochInfo.mainEpochInfo.epochId).to.be.eq(newEpochId);
+      expect(dkgEpochInfo.mainEpochInfo.epochStartTime).to.be.eq(newEpochStartTime);
+      expect(dkgEpochInfo.mainEpochInfo.dkgGenPeriodEndTime).to.be.eq(getEndDKGPeriodTime(newEpochStartTime));
       expect(dkgEpochInfo.epochStatus).to.be.eq(2);
 
       const expectedStartValidationTime = newEpochStartTime
@@ -223,8 +226,8 @@ describe('DKG', () => {
 
       const dkgEpochInfo = await dkg.getDKGEpochInfo(newEpochId);
 
-      expect(dkgEpochInfo.epochId).to.be.eq(newEpochId);
-      expect(dkgEpochInfo.epochStartTime).to.be.eq(newEpochStartTime);
+      expect(dkgEpochInfo.mainEpochInfo.epochId).to.be.eq(newEpochId);
+      expect(dkgEpochInfo.mainEpochInfo.epochStartTime).to.be.eq(newEpochStartTime);
       expect(dkgEpochInfo.epochStatus).to.be.eq(1);
 
       const expectedStartValidationTime = newEpochStartTime
@@ -268,8 +271,8 @@ describe('DKG', () => {
 
       const dkgEpochInfo = await dkg.getDKGEpochInfo(newEpochId);
 
-      expect(dkgEpochInfo.epochId).to.be.eq(newEpochId);
-      expect(dkgEpochInfo.epochStartTime).to.be.eq(newEpochStartTime);
+      expect(dkgEpochInfo.mainEpochInfo.epochId).to.be.eq(newEpochId);
+      expect(dkgEpochInfo.mainEpochInfo.epochStartTime).to.be.eq(newEpochStartTime);
       expect(dkgEpochInfo.epochStatus).to.be.eq(1);
 
       const expectedStartValidationTime = newEpochStartTime
@@ -313,8 +316,8 @@ describe('DKG', () => {
 
       const dkgEpochInfo = await dkg.getDKGEpochInfo(newEpochId);
 
-      expect(dkgEpochInfo.epochId).to.be.eq(newEpochId);
-      expect(dkgEpochInfo.epochStartTime).to.be.eq(newEpochStartTime);
+      expect(dkgEpochInfo.mainEpochInfo.epochId).to.be.eq(newEpochId);
+      expect(dkgEpochInfo.mainEpochInfo.epochStartTime).to.be.eq(newEpochStartTime);
       expect(dkgEpochInfo.epochStatus).to.be.eq(1);
 
       const tx = await dkg.connect(STAKING).addValidator(SECOND.address);

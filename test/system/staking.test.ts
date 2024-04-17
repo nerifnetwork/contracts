@@ -30,7 +30,7 @@ describe('Staking', () => {
   const defDKGGenerationEpochDuration = wei('600', 0);
   const defGuaranteedWorkingEpochDuration = wei('14400', 0);
 
-  const startTime = wei('20000', 0);
+  const startTime = wei('30000', 0);
   const startEpochId = wei('1', 0);
 
   function getEndDKGPeriodTime(startEpochTime: BigNumber) {
@@ -72,6 +72,7 @@ describe('Staking', () => {
     const ContractsRegistryFactory = await ethers.getContractFactory('ContractsRegistry');
     const StakingFactory = await ethers.getContractFactory('TestStaking');
     const DKGFactory = await ethers.getContractFactory('TestDKG');
+    const SlashingVotingFactory = await ethers.getContractFactory('SlashingVoting');
     const RewardDistributionPoolFactory = await ethers.getContractFactory('RewardDistributionPool');
     const TokensVestingFactory = await ethers.getContractFactory('TokensVesting');
     const NerifTokenFactory = await ethers.getContractFactory('NerifToken');
@@ -81,6 +82,7 @@ describe('Staking', () => {
 
     const stakingImpl = await StakingFactory.deploy();
     const dkgImpl = await DKGFactory.deploy();
+    const slashingVotingImpl = await SlashingVotingFactory.deploy();
     const rewardsDistributionPoolImpl = await RewardDistributionPoolFactory.deploy();
     const nerifTokenImpl = await NerifTokenFactory.deploy();
 
@@ -92,6 +94,10 @@ describe('Staking', () => {
 
     await contractsRegistry.addProxyContract(await contractsRegistry.DKG_NAME(), dkgImpl.address);
     await contractsRegistry.addProxyContract(await contractsRegistry.STAKING_NAME(), stakingImpl.address);
+    await contractsRegistry.addProxyContract(
+      await contractsRegistry.SLASHING_VOTING_NAME(),
+      slashingVotingImpl.address
+    );
     await contractsRegistry.addProxyContract(
       await contractsRegistry.REWARDS_DISTRIBUTION_POOL_NAME(),
       rewardsDistributionPoolImpl.address

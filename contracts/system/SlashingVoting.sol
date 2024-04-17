@@ -31,8 +31,8 @@ contract SlashingVoting is ISlashingVoting, Initializable, AbstractDependant {
         _;
     }
 
-    modifier onlyValidator() {
-        _onlyValidator();
+    modifier onlyActiveValidator() {
+        _onlyActiveValidator();
         _;
     }
 
@@ -49,12 +49,15 @@ contract SlashingVoting is ISlashingVoting, Initializable, AbstractDependant {
     }
 
     // solhint-disable-next-line ordering
-    function setVotingThresholdPercentage(uint256 _votingThresholdPercentage) external onlySigner {
+    function setVotingThresholdPercentage(uint256 _votingThresholdPercentage) external override onlySigner {
         votingThresholdPercentage = _votingThresholdPercentage;
     }
 
-    function createProposal(address _validatorAddr, string calldata _reason) external onlyValidator returns (uint256) {
-        require(_dkg.isActiveValidator(_validatorAddr), "SlashingVoting: Target is not active validator");
+    function createProposal(
+        address _validatorAddr,
+        string calldata _reason
+    ) external override onlyActiveValidator returns (uint256) {
+        require(_dkg.isActiveValidator(_validatorAddr), "SlashingVoting: Target is not an active validator");
         require(!hasPendingSlashingProposal(_validatorAddr), "SlashingVoting: Validator already has pending proposal");
 
         uint256 newProposalId = ++lastProposalId;
@@ -76,31 +79,70 @@ contract SlashingVoting is ISlashingVoting, Initializable, AbstractDependant {
             _vote(newProposalId);
         }
 
+        emit ProposalCreated(newProposalId, _validatorAddr);
+
         return newProposalId;
     }
 
-    function vote(uint256 _proposalId) external onlyValidator {
+    function vote(uint256 _proposalId) external override onlyActiveValidator {
         _vote(_proposalId);
     }
 
-    function hasPendingSlashingProposal(address _userAddr) public view returns (bool) {
-        return _pendingSlashingProposals[_userAddr] != 0;
+    function getDetailedProposalInfo(uint256 _proposalId) external view override returns (DetailedProposalInfo memory) {
+        SlashingProposalData storage proposalData = _proposalsData[_proposalId];
+
+        return
+            DetailedProposalInfo(
+                getBaseProposalInfo(_proposalId),
+                proposalData.isExecuted,
+                proposalData.votedValidatorsSet.values()
+            );
+    }
+
+    function getBaseProposalInfo(uint256 _proposalId) public view override returns (BaseProposalInfo memory) {
+        SlashingProposalData storage proposalData = _proposalsData[_proposalId];
+
+        return
+            BaseProposalInfo(
+                proposalData.validator,
+                proposalData.reason,
+                proposalData.epochId,
+                proposalData.votingStartTime,
+                proposalData.votingEndTime
+            );
+    }
+
+    function isProposalExecuted(uint256 _proposalId) public view override returns (bool) {
+        return _proposalsData[_proposalId].isExecuted;
+    }
+
+    function hasPendingSlashingProposal(address _userAddr) public view override returns (bool) {
+        uint256 pendingProposalId = _pendingSlashingProposals[_userAddr];
+
+        return pendingProposalId != 0 && _proposalsData[pendingProposalId].votingEndTime > block.timestamp;
+    }
+
+    function getValidatorsPercentage(uint256 _currentVotes) public view override returns (uint256) {
+        return (_currentVotes * PERCENTAGE_100) / _dkg.getActiveValidatorsCount();
     }
 
     function _vote(uint256 _proposalId) internal {
         SlashingProposalData storage proposalData = _proposalsData[_proposalId];
 
-        require(proposalData.votingStartTime <= block.timestamp, "SlashingVoting: Voting hasn't started yet");
+        require(!proposalData.isExecuted, "SlashingVoting: Proposal has already executed");
+        require(
+            proposalData.votingStartTime <= block.timestamp && block.timestamp < proposalData.votingEndTime,
+            "SlashingVoting: Voting hasn't started yet or finished"
+        );
         require(proposalData.votedValidatorsSet.add(msg.sender), "SlashingVoting: Validator has already voted");
 
-        uint256 currentVotesCount = ++proposalData.slashingProposalVotesCount;
-
-        if (_getValidatorsPercentage(currentVotesCount) >= votingThresholdPercentage) {
+        if (getValidatorsPercentage(proposalData.votedValidatorsSet.length()) >= votingThresholdPercentage) {
             address validatorAddr = proposalData.validator;
 
             _dkg.slashValidator(validatorAddr);
             _staking.slashValidator(validatorAddr);
 
+            proposalData.isExecuted = true;
             delete _pendingSlashingProposals[validatorAddr];
 
             emit ProposalExecuted(_proposalId, validatorAddr);
@@ -109,15 +151,11 @@ contract SlashingVoting is ISlashingVoting, Initializable, AbstractDependant {
         emit ProposalVoted(_proposalId, msg.sender);
     }
 
-    function _getValidatorsPercentage(uint256 _currentVotes) internal view returns (uint256) {
-        return (_currentVotes * PERCENTAGE_100) / _dkg.getActiveValidatorsCount();
-    }
-
     function _onlySigner() internal view {
         require(_contractsRegistry.getSigner() == msg.sender, "SlashingVoting: Not a signer");
     }
 
-    function _onlyValidator() internal view {
+    function _onlyActiveValidator() internal view {
         require(_dkg.isActiveValidator(msg.sender), "SlashingVoting: Not an active system validator");
     }
 }
