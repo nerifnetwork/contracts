@@ -123,7 +123,7 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       // Testnets
-      polygonAmoy: process.env.POLYGONAMOY_API_KEY || '',
+      polygonAmoy: process.env.POLYGONAMOYSCAN_API_KEY || '',
       polygonZkEVMTestnet: process.env.ZKEVMTESTNETSCAN_API_KEY || '',
       goerli: process.env.ETHERGOERLISCAN_API_KEY || '',
       bscTestnet: process.env.BSCTESTNETSCAN_API_KEY || '',
