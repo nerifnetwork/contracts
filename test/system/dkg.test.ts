@@ -607,6 +607,73 @@ describe('DKG', () => {
     });
   });
 
+  describe('createProposal', () => {
+    it('should return correct info without new epoch creation', async () => {
+      const mainEpochInfo = await dkg.connect(SLASHING_VOTING).callStatic.createProposal();
+
+      expect(mainEpochInfo.epochId).to.be.eq(startEpochId);
+      expect(mainEpochInfo.epochStartTime).to.be.eq(startTime);
+      expect(mainEpochInfo.dkgGenPeriodEndTime).to.be.eq(getEndDKGPeriodTime(startTime));
+    });
+
+    it('should return correct info with new epoch creation', async () => {
+      await setTime(getEndDKGPeriodTime(startTime).add('10').toNumber());
+
+      const mainEpochInfo = await dkg.connect(SLASHING_VOTING).callStatic.createProposal();
+      const tx = await dkg.connect(SLASHING_VOTING).createProposal();
+
+      const newEpochId = startEpochId.add('1');
+      const newEpochStartTime = getEpochEndTime(startTime);
+
+      expect(mainEpochInfo.epochId).to.be.eq(newEpochId);
+      expect(mainEpochInfo.epochStartTime).to.be.eq(newEpochStartTime);
+      expect(mainEpochInfo.dkgGenPeriodEndTime).to.be.eq(getEndDKGPeriodTime(newEpochStartTime));
+
+      expect((await tx.wait()).events?.length).to.be.eq(1);
+      await expect(tx).emit(dkg, 'NewEpochCreated').withArgs(newEpochId, newEpochStartTime);
+    });
+
+    it('should get exception if not a slashing voting address tried to call this function', async () => {
+      const reason = 'DKG: Not a slashing voting address';
+
+      await expect(dkg.createProposal()).to.be.revertedWith(reason);
+    });
+  });
+
+  describe('slashValidator', () => {
+    it('should correctly slash validator', async () => {
+      await dkg.connect(STAKING).addValidator(FIRST.address);
+
+      await dkg.setSigner(startEpochId, OWNER.address);
+      await setTime(getEpochEndTime(startTime).toNumber());
+
+      expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(true);
+      expect(await dkg.isValidatorSlashed(FIRST.address)).to.be.eq(false);
+
+      const tx = await dkg.connect(SLASHING_VOTING).slashValidator(FIRST.address);
+
+      expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(false);
+      expect(await dkg.isValidatorSlashed(FIRST.address)).to.be.eq(true);
+
+      expect((await tx.wait()).events?.length).to.be.eq(1);
+      await expect(tx).emit(dkg, 'ValidatorSlashed').withArgs(FIRST.address);
+    });
+
+    it('should get exception if not a slashing voting address tried to call this function', async () => {
+      const reason = 'DKG: Not a slashing voting address';
+
+      await expect(dkg.slashValidator(FIRST.address)).to.be.revertedWith(reason);
+    });
+
+    it('should get exception if validator has already slashed', async () => {
+      const reason = 'DKG: Validator has already slashed';
+
+      await dkg.connect(SLASHING_VOTING).slashValidator(FIRST.address);
+
+      await expect(dkg.connect(SLASHING_VOTING).slashValidator(FIRST.address)).to.be.revertedWith(reason);
+    });
+  });
+
   describe('updateAllValidators', async () => {
     it('should correctly update active validators', async () => {
       await dkg.connect(STAKING).addValidator(FIRST.address);
