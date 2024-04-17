@@ -57,8 +57,8 @@ const mainnets = {
 }
 
 const testnets = {
-  polygonMumbai: {
-    url: `https://polygon-mumbai.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
+  polygonAmoy: {
+    url: `https://polygon-amoy.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
     accounts,
     gasMultiplier: 1.2,
   },
@@ -123,7 +123,7 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       // Testnets
-      polygonMumbai: process.env.POLYGONMUMBAISCAN_API_KEY || '',
+      polygonAmoy: process.env.POLYGONAMOY_API_KEY || '',
       polygonZkEVMTestnet: process.env.ZKEVMTESTNETSCAN_API_KEY || '',
       goerli: process.env.ETHERGOERLISCAN_API_KEY || '',
       bscTestnet: process.env.BSCTESTNETSCAN_API_KEY || '',
@@ -139,6 +139,15 @@ const config: HardhatUserConfig = {
       linea: process.env.LINEASCAN_API_KEY || '',
     },
     customChains: [
+      // Testnets
+      {
+        network: "polygonAmoy",
+        chainId: 80002,
+        urls: {
+          apiURL: "https://api-amoy.polygonscan.com/api",
+          browserURL: "https://amoy.polygonscan.com"
+        }
+      },
       {
         network: "lineaTestnet",
         chainId: 59140,
