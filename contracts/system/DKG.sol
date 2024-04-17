@@ -12,6 +12,7 @@ import "@solarity/solidity-lib/libs/data-structures/memory/Vector.sol";
 import "../interfaces/core/IContractsRegistry.sol";
 import "../interfaces/system/IDKG.sol";
 import "../interfaces/system/IStaking.sol";
+import "../interfaces/system/ISlashingVoting.sol";
 import "../interfaces/ISignerAddress.sol";
 
 import "hardhat/console.sol";
@@ -22,6 +23,7 @@ contract DKG is IDKG, Initializable, AbstractDependant {
     using ECDSA for *;
 
     IStaking internal _staking;
+    ISlashingVoting internal _slashingVoting;
 
     uint256 public updatesCollectionEpochDuration;
     uint256 public dkgGenerationEpochDuration;
@@ -34,6 +36,7 @@ contract DKG is IDKG, Initializable, AbstractDependant {
 
     mapping(uint256 => DKGEpochData) internal _dkgEpochsData;
     mapping(address => ValidatorData) internal _validatorsData;
+    mapping(address => bool) internal _slashedValidators;
 
     modifier onlyActiveValidator() {
         _onlyActiveValidator();
@@ -42,6 +45,11 @@ contract DKG is IDKG, Initializable, AbstractDependant {
 
     modifier onlyStaking() {
         _onlyStaking();
+        _;
+    }
+
+    modifier onlySlashingVoting() {
+        _onlySlashingVoting();
         _;
     }
 
@@ -72,6 +80,7 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         IContractsRegistry contractsRegistry = IContractsRegistry(_contractsRegistryAddr);
 
         _staking = IStaking(contractsRegistry.getStakingContract());
+        _slashingVoting = ISlashingVoting(contractsRegistry.getSlashingVotingContract());
     }
 
     // solhint-disable-next-line ordering
@@ -118,6 +127,18 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         );
 
         _removeValidator(_validatorToRemove);
+    }
+
+    function createProposal() external override onlySlashingVoting returns (MainEpochInfo memory) {
+        return getMainEpochInfo(_createEpoch());
+    }
+
+    function slashValidator(address _validatorAddr) external override onlySlashingVoting {
+        require(!_slashedValidators[_validatorAddr], "DKG: Validator has already slashed");
+
+        _slashedValidators[_validatorAddr] = true;
+
+        emit ValidatorSlashed(_validatorAddr);
     }
 
     function voteSigner(
@@ -172,7 +193,7 @@ contract DKG is IDKG, Initializable, AbstractDependant {
     function getDKGEpochInfo(uint256 _epochId) external view override returns (DKGEpochInfo memory) {
         DKGEpochData storage epochData = _dkgEpochsData[_epochId];
 
-        return DKGEpochInfo(_epochId, epochData.epochStartTime, epochData.epochSigner, getEpochStatus(_epochId));
+        return DKGEpochInfo(getMainEpochInfo(_epochId), epochData.epochSigner, getEpochStatus(_epochId));
     }
 
     function getValidatorInfo(address _validator) external view override returns (ValidatorInfo memory) {
@@ -221,6 +242,10 @@ contract DKG is IDKG, Initializable, AbstractDependant {
                 _activeValidatorsCount++;
             }
         }
+    }
+
+    function getMainEpochInfo(uint256 _epochId) public view returns (MainEpochInfo memory) {
+        return MainEpochInfo(_epochId, _dkgEpochsData[_epochId].epochStartTime, getDKGPeriodEndTime(_epochId));
     }
 
     function getCurrentEpochStatus() public view override returns (DKGEpochStatuses) {
@@ -293,48 +318,48 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         bool endValidationTimeCheck = !isDKGGenSuccessful(validatorData.endValidationData.validationEpoch) ||
             validatorData.endValidationData.validationTime > block.timestamp;
 
-        return startValidationTimeCheck && endValidationTimeCheck;
+        return !_slashedValidators[_validatorAddr] && startValidationTimeCheck && endValidationTimeCheck;
     }
 
     function isValidator(address _validatorAddr) public view override returns (bool) {
         return _validators.contains(_validatorAddr);
     }
 
+    function isValidatorSlashed(address _validatorAddr) public view returns (bool) {
+        return _slashedValidators[_validatorAddr];
+    }
+
     function isDKGGenSuccessful(uint256 _epochId) public view override returns (bool) {
         return _dkgEpochsData[_epochId].epochSigner != address(0);
     }
 
-    function _createEpoch() internal returns (ValidationData memory) {
-        uint256 currentEpochId = getCurrentEpochId();
+    function _createEpoch() internal returns (uint256 _epochId) {
+        uint256 currentEpochId = _epochId = getCurrentEpochId();
         DKGEpochStatuses currentEpochStatus = getEpochStatus(currentEpochId);
 
-        uint256 epochId = currentEpochId;
-
         if (currentEpochStatus != DKGEpochStatuses.UPDATES_COLLECTION) {
-            epochId = _lastEpochId;
+            _epochId = _lastEpochId;
 
             if (isLastEpoch(currentEpochId)) {
                 uint256 nextEpochStartTime = block.timestamp;
 
                 if (currentEpochStatus != DKGEpochStatuses.ACTIVE) {
-                    nextEpochStartTime = getEpochEndTime(epochId);
+                    nextEpochStartTime = getEpochEndTime(_epochId);
                 }
 
-                epochId = ++_lastEpochId;
+                _epochId = ++_lastEpochId;
 
-                _dkgEpochsData[epochId].epochStartTime = nextEpochStartTime;
+                _dkgEpochsData[_epochId].epochStartTime = nextEpochStartTime;
 
-                emit NewEpochCreated(epochId, nextEpochStartTime);
+                emit NewEpochCreated(_epochId, nextEpochStartTime);
             }
         }
-
-        return ValidationData(getDKGPeriodEndTime(epochId), epochId);
     }
 
     function _createEpochEndUpdateValidators() internal returns (ValidationData memory _validationData) {
         uint256 currentLastEpochId = _lastEpochId;
 
-        _validationData = _createEpoch();
+        _validationData = _getValidationData(_createEpoch());
 
         if (_validationData.validationEpoch != currentLastEpochId) {
             updateAllValidators();
@@ -343,7 +368,7 @@ contract DKG is IDKG, Initializable, AbstractDependant {
 
     function _updateValidationData(ValidationData storage _validationData) internal {
         if (_validationData.validationTime <= block.timestamp && !isDKGGenSuccessful(_validationData.validationEpoch)) {
-            ValidationData memory validationData = _createEpoch();
+            ValidationData memory validationData = _getValidationData(_createEpoch());
 
             _validationData.validationTime = validationData.validationTime;
             _validationData.validationEpoch = validationData.validationEpoch;
@@ -357,11 +382,19 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         emit ValidatorRemoved(_validatorToRemove);
     }
 
+    function _getValidationData(uint256 _epochId) internal view returns (ValidationData memory) {
+        return ValidationData(getDKGPeriodEndTime(_epochId), _epochId);
+    }
+
     function _onlyActiveValidator() internal view {
         require(isActiveValidator(msg.sender), "DKG: Not an active validator");
     }
 
     function _onlyStaking() internal view {
         require(msg.sender == address(_staking), "DKG: Not a staking address");
+    }
+
+    function _onlySlashingVoting() internal view {
+        require(msg.sender == address(_slashingVoting), "DKG: Not a slashing voting address");
     }
 }

@@ -32,6 +32,8 @@ interface IStaking {
 
     function updateWhitelistedUsers(address[] calldata _usersToUpdate, bool _isAdding) external;
 
+    function slashValidator(address _validator) external;
+
     function addRewardsToStake(address _validator, uint256 _amount) external;
 
     function announceWithdrawal(uint256 _amount) external;

@@ -20,14 +20,11 @@ interface IDKG {
 
     /**
      * @dev Struct containing information about a DKG epoch
-     * @param epochId The unique identifier of the epoch
-     * @param epochStartTime The start time of the epoch
      * @param epochSigner The address of the signer for the epoch
      * @param epochStatus The status of the epoch
      */
     struct DKGEpochInfo {
-        uint256 epochId;
-        uint256 epochStartTime;
+        MainEpochInfo mainEpochInfo;
         address epochSigner;
         DKGEpochStatuses epochStatus;
     }
@@ -42,6 +39,12 @@ interface IDKG {
         address validator;
         ValidationData startValidationData;
         ValidationData endValidationData;
+    }
+
+    struct MainEpochInfo {
+        uint256 epochId;
+        uint256 epochStartTime;
+        uint256 dkgGenPeriodEndTime;
     }
 
     /**
@@ -107,6 +110,8 @@ interface IDKG {
      */
     event ValidatorRemoved(address indexed validatorAddr);
 
+    event ValidatorSlashed(address indexed validatorAddr);
+
     /**
      * @notice Emitted when a signer vote is cast
      * @param epochId The epoch id of the vote
@@ -140,6 +145,10 @@ interface IDKG {
      * @param _validatorToRemove The address of the validator to remove
      */
     function removeValidator(address _validatorToRemove) external;
+
+    function createProposal() external returns (MainEpochInfo memory);
+
+    function slashValidator(address _validatorAddr) external;
 
     /**
      * @notice Casts a vote for a signer
@@ -287,6 +296,8 @@ interface IDKG {
      * @return True if the address is a validator, otherwise false
      */
     function isValidator(address _validatorAddr) external view returns (bool);
+
+    function isValidatorSlashed(address _validatorAddr) external view returns (bool);
 
     /**
      * @notice Checks if DKG generation was successful for a specific epoch

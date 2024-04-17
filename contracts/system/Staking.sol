@@ -12,8 +12,9 @@ import "@solarity/solidity-lib/libs/arrays/Paginator.sol";
 import "@solarity/solidity-lib/libs/arrays/SetHelper.sol";
 
 import "../interfaces/core/IContractsRegistry.sol";
-import "../interfaces/system/IStaking.sol";
 import "../interfaces/system/IDKG.sol";
+import "../interfaces/system/IStaking.sol";
+import "../interfaces/system/ISlashingVoting.sol";
 
 import "./RewardDistributionPool.sol";
 
@@ -24,6 +25,7 @@ contract Staking is IStaking, Initializable, AbstractDependant {
 
     IContractsRegistry internal _contractsRegistry;
     IDKG internal _dkg;
+    ISlashingVoting internal _slashingVoting;
     RewardDistributionPool internal _rewardsDistributionPool;
 
     IERC20 public stakeToken;
@@ -38,6 +40,11 @@ contract Staking is IStaking, Initializable, AbstractDependant {
 
     modifier onlySigner() {
         _onlySigner();
+        _;
+    }
+
+    modifier onlysSlashingVoting() {
+        _onlySlashingVoting();
         _;
     }
 
@@ -67,6 +74,7 @@ contract Staking is IStaking, Initializable, AbstractDependant {
 
         _contractsRegistry = contractsRegistry;
         _dkg = IDKG(contractsRegistry.getDKGContract());
+        _slashingVoting = ISlashingVoting(contractsRegistry.getSlashingVotingContract());
         _rewardsDistributionPool = RewardDistributionPool(
             payable(contractsRegistry.getRewardsDistributionPoolContract())
         );
@@ -77,12 +85,16 @@ contract Staking is IStaking, Initializable, AbstractDependant {
         _setMinimalStake(_minimalStake);
     }
 
-    function updateWhitelistedUsers(address[] calldata _usersToUpdate, bool _isAdding) external onlySigner {
+    function updateWhitelistedUsers(address[] calldata _usersToUpdate, bool _isAdding) external override onlySigner {
         if (_isAdding) {
             _usersWhitelist.add(_usersToUpdate);
         } else {
             _usersWhitelist.remove(_usersToUpdate);
         }
+    }
+
+    function slashValidator(address _validator) external override onlysSlashingVoting {
+        // TODO: Add validator slashing logic
     }
 
     function addRewardsToStake(address _validator, uint256 _amount) external override onlyRewardDistributionPool {
@@ -219,7 +231,11 @@ contract Staking is IStaking, Initializable, AbstractDependant {
     }
 
     function _onlySigner() internal view {
-        require(_contractsRegistry.getSigner() == msg.sender, "Staking: Not a signer");
+        require(msg.sender == _contractsRegistry.getSigner(), "Staking: Not a signer");
+    }
+
+    function _onlySlashingVoting() internal view {
+        require(msg.sender == address(_slashingVoting), "Staking: Not a slashing voting address");
     }
 
     function _onlyWhitelistedUser() internal view {
