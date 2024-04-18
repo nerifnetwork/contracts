@@ -114,8 +114,6 @@ describe('Staking', () => {
     await nerifToken.initialize(tokensAmount, 'NERIF', 'NERIF');
     await staking.initialize(nerifToken.address, defMinimalStake, [OWNER.address]);
 
-    await setNextBlockTime(startTime.toNumber());
-
     await dkg.initialize(
       defUpdateCollectionsEpochDuration,
       defDKGGenerationEpochDuration,
@@ -126,6 +124,13 @@ describe('Staking', () => {
     await contractsRegistry.injectDependencies(await contractsRegistry.STAKING_NAME());
     await contractsRegistry.injectDependencies(await contractsRegistry.REWARDS_DISTRIBUTION_POOL_NAME());
     await contractsRegistry.injectDependencies(await contractsRegistry.NERIF_TOKEN_NAME());
+
+    await setNextBlockTime(startTime.toNumber());
+
+    await nerifToken.approve(staking.address, tokensAmount);
+    await staking.stake(defMinimalStake);
+
+    await dkg.setSigner(startEpochId, OWNER.address);
 
     await reverter.snapshot();
   });
@@ -225,20 +230,24 @@ describe('Staking', () => {
 
       await expect(tx).to.emit(staking, 'TokensStaked').withArgs(FIRST.address, FIRST.address, stakeAmount);
 
-      expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(false);
+      expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(true);
       expect(await dkg.isValidator(FIRST.address)).to.be.eq(true);
       expect(await dkg.isLastEpoch(startEpochId)).to.be.eq(true);
       expect(await dkg.isCurrentEpoch(startEpochId)).to.be.eq(true);
 
-      expect(await staking.totalStake()).to.be.eq(stakeAmount);
+      let totalStake = stakeAmount.add(defMinimalStake);
+
+      expect(await staking.totalStake()).to.be.eq(totalStake);
       expect(await staking.getStake(FIRST.address)).to.be.eq(stakeAmount);
 
       expect(await nerifToken.balanceOf(FIRST.address)).to.be.eq(tokensAmount.sub(stakeAmount));
-      expect(await nerifToken.balanceOf(staking.address)).to.be.eq(stakeAmount);
+      expect(await nerifToken.balanceOf(staking.address)).to.be.eq(totalStake);
 
       await staking.connect(FIRST).stake(stakeAmount);
 
-      expect(await staking.totalStake()).to.be.eq(stakeAmount.mul(2));
+      totalStake = totalStake.add(stakeAmount);
+
+      expect(await staking.totalStake()).to.be.eq(totalStake);
       expect(await staking.getStake(FIRST.address)).to.be.eq(stakeAmount.mul(2));
 
       expect(await dkg.isLastEpoch(startEpochId)).to.be.eq(true);
@@ -252,7 +261,7 @@ describe('Staking', () => {
 
       expect(await dkg.isValidator(FIRST.address)).to.be.eq(false);
 
-      expect(await staking.totalStake()).to.be.eq(stakeAmount.div(2));
+      expect(await staking.totalStake()).to.be.eq(stakeAmount.div(2).add(defMinimalStake));
       expect(await staking.getStake(FIRST.address)).to.be.eq(stakeAmount.div(2));
     });
 
@@ -310,10 +319,10 @@ describe('Staking', () => {
 
       await expect(tx).to.emit(staking, 'TokensStaked').withArgs(FIRST.address, FIRST.address, stakeAmount);
 
-      expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(false);
+      expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(true);
       expect(await dkg.isValidator(FIRST.address)).to.be.eq(true);
 
-      expect(await staking.totalStake()).to.be.eq(stakeAmount);
+      expect(await staking.totalStake()).to.be.eq(stakeAmount.add(defMinimalStake));
       expect(await staking.getStake(FIRST.address)).to.be.eq(stakeAmount);
     });
 
@@ -456,13 +465,15 @@ describe('Staking', () => {
       expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(false);
       expect(await dkg.isValidator(FIRST.address)).to.be.eq(false);
 
-      expect(await staking.totalStake()).to.be.eq(stakeAmount.sub(announceAmount.mul(2)));
+      const totalStake = stakeAmount.add(defMinimalStake).sub(announceAmount.mul(2));
+
+      expect(await staking.totalStake()).to.be.eq(totalStake);
       expect(await staking.getStake(FIRST.address)).to.be.eq(stakeAmount.sub(announceAmount.mul(2)));
 
       expect(await nerifToken.balanceOf(FIRST.address)).to.be.eq(
         tokensAmount.sub(stakeAmount).add(announceAmount.mul(2))
       );
-      expect(await nerifToken.balanceOf(staking.address)).to.be.eq(stakeAmount.sub(announceAmount.mul(2)));
+      expect(await nerifToken.balanceOf(staking.address)).to.be.eq(totalStake);
     });
 
     it('should correctly withdraw tokens without removing from the validators list', async () => {
@@ -525,11 +536,14 @@ describe('Staking', () => {
       await staking.updateWhitelistedUsers([FIRST.address, SECOND.address], true);
 
       const expectedValidatorsArr = [OWNER, FIRST, SECOND];
+      const expectedValidatorsStakeArr = [defMinimalStake];
 
-      for (let i = 0; i < expectedValidatorsArr.length; i++) {
+      for (let i = 1; i < expectedValidatorsArr.length; i++) {
         await nerifToken.ownerMint(expectedValidatorsArr[i].address, stakeAmount.mul(i + 1));
         await nerifToken.connect(expectedValidatorsArr[i]).approve(staking.address, stakeAmount.mul(i + 1));
         await staking.connect(expectedValidatorsArr[i]).stake(stakeAmount.mul(i + 1));
+
+        expectedValidatorsStakeArr.push(stakeAmount.mul(i + 1));
       }
       expect(await dkg.getAllValidatorsCount()).to.be.eq(expectedValidatorsArr.length);
 
@@ -537,7 +551,7 @@ describe('Staking', () => {
 
       for (let i = 0; i < userStakesInfo.length; i++) {
         expect(userStakesInfo[i].userAddr).to.be.eq(expectedValidatorsArr[i].address);
-        expect(userStakesInfo[i].userStakedAmount).to.be.eq(stakeAmount.mul(i + 1));
+        expect(userStakesInfo[i].userStakedAmount).to.be.eq(expectedValidatorsStakeArr[i]);
       }
     });
   });

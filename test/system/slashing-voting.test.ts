@@ -111,8 +111,6 @@ describe('SlashingVoting', () => {
     await staking.initialize(nerifToken.address, defMinimalStake, [OWNER.address]);
     await slashingVoting.initialize(defVotingThresholdPercentage);
 
-    await setNextBlockTime(startTime.toNumber());
-
     await dkg.initialize(
       defUpdateCollectionsEpochDuration,
       defDKGGenerationEpochDuration,
@@ -124,6 +122,13 @@ describe('SlashingVoting', () => {
     await contractsRegistry.injectDependencies(await contractsRegistry.SLASHING_VOTING_NAME());
     await contractsRegistry.injectDependencies(await contractsRegistry.REWARDS_DISTRIBUTION_POOL_NAME());
     await contractsRegistry.injectDependencies(await contractsRegistry.NERIF_TOKEN_NAME());
+
+    await setNextBlockTime(startTime.toNumber());
+
+    await nerifToken.approve(staking.address, tokensAmount);
+    await staking.stake(defMinimalStake);
+
+    await dkg.setSigner(startEpochId, OWNER.address);
 
     await reverter.snapshot();
   });

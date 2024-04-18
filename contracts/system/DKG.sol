@@ -22,6 +22,8 @@ contract DKG is IDKG, Initializable, AbstractDependant {
     using Vector for Vector.AddressVector;
     using ECDSA for *;
 
+    uint256 public constant FIRST_EPOCH_ID = 1;
+
     IStaking internal _staking;
     ISlashingVoting internal _slashingVoting;
 
@@ -61,19 +63,6 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         updatesCollectionEpochDuration = _updatesCollectionEpochDuration;
         dkgGenerationEpochDuration = _dkgGenerationEpochDuration;
         guaranteedWorkingEpochDuration = _guaranteedWorkingEpochDuration;
-
-        uint256 epochId = ++_lastEpochId;
-
-        _activeSigner = msg.sender;
-
-        _dkgEpochsData[epochId].epochSigner = msg.sender;
-        _dkgEpochsData[epochId].epochStartTime = block.timestamp;
-
-        _validators.add(msg.sender);
-        _validatorsData[msg.sender] = ValidatorData(
-            ValidationData(block.timestamp, epochId),
-            ValidationData(type(uint256).max, 0)
-        );
     }
 
     function setDependencies(address _contractsRegistryAddr, bytes memory) public override dependant {
@@ -259,7 +248,7 @@ contract DKG is IDKG, Initializable, AbstractDependant {
 
         uint256 epochStartTime = _dkgEpochsData[_epochId].epochStartTime;
 
-        if (isLastEpoch(_epochId) && epochStartTime > block.timestamp) {
+        if (isLastEpoch(_epochId) && (epochStartTime > block.timestamp || epochStartTime == 0)) {
             return DKGEpochStatuses.NOT_STARTED;
         }
 
@@ -313,7 +302,8 @@ contract DKG is IDKG, Initializable, AbstractDependant {
     function isActiveValidator(address _validatorAddr) public view override returns (bool) {
         ValidatorData memory validatorData = _validatorsData[_validatorAddr];
 
-        bool startValidationTimeCheck = isDKGGenSuccessful(validatorData.startValidationData.validationEpoch) &&
+        bool startValidationTimeCheck = (validatorData.startValidationData.validationEpoch == FIRST_EPOCH_ID ||
+            isDKGGenSuccessful(validatorData.startValidationData.validationEpoch)) &&
             validatorData.startValidationData.validationTime <= block.timestamp;
         bool endValidationTimeCheck = !isDKGGenSuccessful(validatorData.endValidationData.validationEpoch) ||
             validatorData.endValidationData.validationTime > block.timestamp;
@@ -343,7 +333,9 @@ contract DKG is IDKG, Initializable, AbstractDependant {
             if (isLastEpoch(currentEpochId)) {
                 uint256 nextEpochStartTime = block.timestamp;
 
-                if (currentEpochStatus != DKGEpochStatuses.ACTIVE) {
+                if (
+                    currentEpochStatus != DKGEpochStatuses.ACTIVE && currentEpochStatus != DKGEpochStatuses.NOT_STARTED
+                ) {
                     nextEpochStartTime = getEpochEndTime(_epochId);
                 }
 
@@ -358,11 +350,16 @@ contract DKG is IDKG, Initializable, AbstractDependant {
 
     function _createEpochEndUpdateValidators() internal returns (ValidationData memory _validationData) {
         uint256 currentLastEpochId = _lastEpochId;
+        uint256 epochId = _createEpoch();
 
-        _validationData = _getValidationData(_createEpoch());
+        if (epochId != FIRST_EPOCH_ID) {
+            _validationData = _getValidationData(epochId);
 
-        if (_validationData.validationEpoch != currentLastEpochId) {
-            updateAllValidators();
+            if (_validationData.validationEpoch != currentLastEpochId) {
+                updateAllValidators();
+            }
+        } else {
+            _validationData = ValidationData(block.timestamp, epochId);
         }
     }
 
