@@ -123,7 +123,7 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       // Testnets
-      polygonAmoy: process.env.POLYGONMUMBAISCAN_API_KEY || '',
+      polygonAmoy: process.env.POLYGONAMOYSCAN_API_KEY || '',
       polygonZkEVMTestnet: process.env.ZKEVMTESTNETSCAN_API_KEY || '',
       sepolia: process.env.ETHERSCAN_API_KEY || '',
       bscTestnet: process.env.BSCTESTNETSCAN_API_KEY || '',
@@ -139,20 +139,21 @@ const config: HardhatUserConfig = {
       linea: process.env.LINEASCAN_API_KEY || '',
     },
     customChains: [
+      // Testnets
+      {
+        network: "polygonAmoy",
+        chainId: 80002,
+        urls: {
+          apiURL: "https://api-amoy.polygonscan.com/api",
+          browserURL: "https://amoy.polygonscan.com"
+        }
+      },
       {
         network: "lineaTestnet",
         chainId: 59140,
         urls: {
           apiURL: "https://api-goerli.lineascan.build/api",
           browserURL: "https://goerli.lineascan.build"
-        }
-      },
-      {
-        network: "polygonAmoy",
-        chainId: 80002,
-        urls: {
-          apiURL: "https://api-amoy.polygonscan.com//api",
-          browserURL: "https://amoy.polygonscan.com/"
         }
       },
 

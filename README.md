@@ -77,10 +77,10 @@ $ npm run test
 
 ## Deployment
 
-The current hardhat configuration supports 3 ENV-compatible networks: Goerli, Mumbai, BSC Testnet.
+The current hardhat configuration supports 3 ENV-compatible networks: Goerli, Amoy, BSC Testnet.
 More networks could be added if needed.
 
-In this example, `mumbai` is going to be a mainchain.
+In this example, `polygonAmoy` is going to be a mainchain.
 That means this network is going to be used for system contracts deployment as well as operational ones.
 Other sidechains include operational contracts only. 
 
