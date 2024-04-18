@@ -29,10 +29,37 @@ var (
 	_ = abi.ConvertType
 )
 
+// IDKGDKGEpochInfo is an auto generated low-level Go binding around an user-defined struct.
+type IDKGDKGEpochInfo struct {
+	MainEpochInfo IDKGMainEpochInfo
+	EpochSigner   common.Address
+	EpochStatus   uint8
+}
+
+// IDKGMainEpochInfo is an auto generated low-level Go binding around an user-defined struct.
+type IDKGMainEpochInfo struct {
+	EpochId             *big.Int
+	EpochStartTime      *big.Int
+	DkgGenPeriodEndTime *big.Int
+}
+
+// IDKGValidationData is an auto generated low-level Go binding around an user-defined struct.
+type IDKGValidationData struct {
+	ValidationTime  *big.Int
+	ValidationEpoch *big.Int
+}
+
+// IDKGValidatorInfo is an auto generated low-level Go binding around an user-defined struct.
+type IDKGValidatorInfo struct {
+	Validator           common.Address
+	StartValidationData IDKGValidationData
+	EndValidationData   IDKGValidationData
+}
+
 // DKGMetaData contains all meta data concerning the DKG contract.
 var DKGMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"generation\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"}],\"name\":\"RoundDataFilled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"generation\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"}],\"name\":\"RoundDataProvided\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"generation\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"signerAddress\",\"type\":\"address\"}],\"name\":\"SignerAddressUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"generation\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"collectiveSigner\",\"type\":\"address\"}],\"name\":\"SignerVoted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"signer\",\"type\":\"address\"}],\"name\":\"ThresholdSignerUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"generation\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address[]\",\"name\":\"validators\",\"type\":\"address[]\"}],\"name\":\"ValidatorsUpdated\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"deadlinePeriod\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"generations\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"signer\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"deadline\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getCurrentValidators\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getGenerationsCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getInjector\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"injector_\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_generation\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_round\",\"type\":\"uint256\"}],\"name\":\"getRoundBroadcastCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_generation\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_round\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_validator\",\"type\":\"address\"}],\"name\":\"getRoundBroadcastData\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getSignerAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_generation\",\"type\":\"uint256\"}],\"name\":\"getStatus\",\"outputs\":[{\"internalType\":\"enumDKG.GenerationStatus\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_generation\",\"type\":\"uint256\"}],\"name\":\"getValidators\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_generation\",\"type\":\"uint256\"}],\"name\":\"getValidatorsCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_deadlinePeriod\",\"type\":\"uint256\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validator\",\"type\":\"address\"}],\"name\":\"isCurrentValidator\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_generation\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_round\",\"type\":\"uint256\"}],\"name\":\"isRoundFilled\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_generation\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_validator\",\"type\":\"address\"}],\"name\":\"isValidator\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastActiveGeneration\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_generation\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_round\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_rawData\",\"type\":\"bytes\"}],\"name\":\"roundBroadcast\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_deadlinePeriod\",\"type\":\"uint256\"}],\"name\":\"setDeadlinePeriod\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_contractsRegistryAddr\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"name\":\"setDependencies\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"injector_\",\"type\":\"address\"}],\"name\":\"setInjector\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"signerToGeneration\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"updateGeneration\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_generation\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_signerAddress\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"_signature\",\"type\":\"bytes\"}],\"name\":\"voteSigner\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
-	Bin: "0x608060405234801561001057600080fd5b506122d2806100206000396000f3fe608060405234801561001057600080fd5b506004361061014d5760003560e01c806369130451116100c3578063b32805c31161007c578063b32805c3146102fd578063c1718e5314610305578063c5f9dff014610318578063c88bc06714610320578063cd5fcd1514610333578063fe4b84df1461034657600080fd5b806369130451146102695780636db242621461027c57806382651c0d146102855780638cb941cc14610298578063ad51db6a146102ab578063ad8b0e94146102cb57600080fd5b806323f2a73f1161011557806323f2a73f146101cb5780633e3b5b19146101ee578063471f40fb1461020357806350c8548f1461022357806355614fcc146102365780635c622a0e1461024957600080fd5b8063100c11c31461015257806311af0a2014610167578063130b9702146101835780631a296e02146101a35780631ea0f036146101c3575b600080fd5b610165610160366004611c75565b610359565b005b61017060045481565b6040519081526020015b60405180910390f35b610196610191366004611cda565b610715565b60405161017a9190611d37565b6101ab6107f0565b6040516001600160a01b03909116815260200161017a565b600354610170565b6101de6101d9366004611d6a565b610826565b604051901515815260200161017a565b60008051602061227d833981519152546101ab565b610216610211366004611d9a565b610883565b60405161017a9190611df7565b610170610231366004611e0a565b610909565b6101de610244366004611e2c565b610945565b61025c610257366004611d9a565b6109b8565b60405161017a9190611e5f565b610165610277366004611e79565b610a39565b61017060055481565b610165610293366004611d9a565b610b6a565b6101656102a6366004611e2c565b610bec565b6101706102b9366004611e2c565b60026020526000908152604090205481565b6102de6102d9366004611d9a565b610c0d565b604080516001600160a01b03909316835260208301919091520161017a565b610165610c45565b6101de610313366004611e0a565b610fef565b610216611055565b61016561032e366004611ec9565b6110e8565b610170610341366004611d9a565b6114c9565b610165610354366004611d9a565b6114f8565b60035483908110801561039e57506003818154811061037a5761037a611f0c565b600091825260208083203384526003600790930201919091019052604090205460ff165b6103e65760405162461bcd60e51b81526020600482015260146024820152732225a39d103737ba1030903b30b634b230ba37b960611b60448201526064015b60405180910390fd5b836103f2600185611f38565b80158061045757506003828154811061040d5761040d611f0c565b9060005260206000209060070201600101805490506003838154811061043557610435611f0c565b6000918252602080832085845260066007909302019190910190526040902054145b61049f5760405162461bcd60e51b81526020600482015260196024820152781112d1ce881c9bdd5b99081dd85cc81b9bdd08199a5b1b1959603a1b60448201526064016103dd565b8585600382815481106104b4576104b4611f0c565b6000918252602080832084845260066007909302019190910181526040808320338452600101909152902080546104ea90611f4b565b1590506105395760405162461bcd60e51b815260206004820181905260248201527f444b473a20726f756e64206461746120616c72656164792070726f766964656460448201526064016103dd565b876000610545826109b8565b600281111561055657610556611e49565b146105a35760405162461bcd60e51b815260206004820152601d60248201527f444b473a206e6f7420612070656e64696e672067656e65726174696f6e00000060448201526064016103dd565b600389815481106105b6576105b6611f0c565b600091825260208083208b84526006600790930201919091019052604081208054916105e183611f85565b91905055508660038a815481106105fa576105fa611f0c565b600091825260208083208c8452600660079093020191909101815260408083203384526001019091529020906106309082611fed565b50604080518a8152602081018a9052338183015290517fca56b6e939787236f062daae635dc1afa2b46ad9a24ad09aa98833c6370096069181900360600190a16003898154811061068357610683611f0c565b90600052602060002090600702016001018054905060038a815481106106ab576106ab611f0c565b600091825260208083208c8452600660079093020191909101905260409020540361070a57604080518a8152602081018a90527fab74ab6fc458020cf5d6116f5c013ebf3c0ad518f10de1391427c225f75db5f9910160405180910390a15b505050505050505050565b60606003848154811061072a5761072a611f0c565b60009182526020808320868452600660079093020191909101815260408083206001600160a01b03861684526001019091529020805461076990611f4b565b80601f016020809104026020016040519081016040528092919081815260200182805461079590611f4b565b80156107e25780601f106107b7576101008083540402835291602001916107e2565b820191906000526020600020905b8154815290600101906020018083116107c557829003601f168201915b505050505090509392505050565b600060036004548154811061080757610807611f0c565b60009182526020909120600790910201546001600160a01b0316919050565b600354600090831015610879576003838154811061084657610846611f0c565b600091825260208083206001600160a01b03861684526003600790930201919091019052604090205460ff16905061087d565b5060005b92915050565b60606003828154811061089857610898611f0c565b90600052602060002090600702016001018054806020026020016040519081016040528092919081815260200182805480156108fd57602002820191906000526020600020905b81546001600160a01b031681526001909101906020018083116108df575b50505050509050919050565b60006003838154811061091e5761091e611f0c565b60009182526020808320948352600791909102909301600601909252506040902054919050565b600480546040516323f2a73f60e01b8152918201526001600160a01b038216602482015260009030906323f2a73f90604401602060405180830381865afa158015610994573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061087d91906120ad565b6000806001600160a01b0316600383815481106109d7576109d7611f0c565b60009182526020909120600790910201546001600160a01b0316146109fe57506002919050565b4360038381548110610a1257610a12611f0c565b90600052602060002090600702016002015410610a3157506000919050565b506001919050565b610a41611663565b6000829050806001600160a01b0316638e68dce46040518163ffffffff1660e01b8152600401602060405180830381865afa158015610a84573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610aa891906120cf565b600060026101000a8154816001600160a01b0302191690836001600160a01b03160217905550806001600160a01b031663fb9d9ac56040518163ffffffff1660e01b8152600401602060405180830381865afa158015610b0c573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610b3091906120cf565b600180546001600160a01b0319166001600160a01b0392909216919091179055503360008051602061227d833981519152555050565b5050565b600360045481548110610b7f57610b7f611f0c565b60009182526020909120600790910201546001600160a01b03163314610be75760405162461bcd60e51b815260206004820152601860248201527f444b473a206e6f74206120616374697665207369676e6572000000000000000060448201526064016103dd565b600555565b610bf4611663565b610c0a8160008051602061227d83398151915255565b50565b60038181548110610c1d57600080fd5b6000918252602090912060079091020180546002909101546001600160a01b03909116915082565b6003805490600090610c58600184611f38565b81548110610c6857610c68611f0c565b9060005260206000209060070201905060008060008060029054906101000a90046001600160a01b03166001600160a01b031663b7ab4db56040518163ffffffff1660e01b8152600401600060405180830381865afa158015610ccf573d6000803e3d6000fd5b505050506040513d6000823e601f3d908101601f19168201604052610cf791908101906120ec565b90506000815167ffffffffffffffff811115610d1557610d15611bbe565b604051908082528060200260200182016040528015610d3e578160200160208202803683370190505b50905060005b8251811015610e05576000838281518110610d6157610d61611f0c565b60200260200101519050610d768160016116e7565b80610d875750610d878160026116e7565b15610d925750610df3565b6001600160a01b038116600090815260038801602052604090205460ff16610db957600194505b80838781518110610dcc57610dcc611f0c565b6001600160a01b039092166020928302919091019091015285610dee81611f85565b965050505b80610dfd81611f85565b915050610d44565b5060018501546002851080610e2257508085148015610e22575083155b15610e305750505050505050565b60038054600101815560009081525b85811015610f395760038881548110610e5a57610e5a611f0c565b9060005260206000209060070201600101838281518110610e7d57610e7d611f0c565b60209081029190910181015182546001808201855560009485529290932090920180546001600160a01b0319166001600160a01b0390931692909217909155600380548a908110610ed057610ed0611f0c565b90600052602060002090600702016003016000858481518110610ef557610ef5611f0c565b6020908102919091018101516001600160a01b03168252810191909152604001600020805460ff191691151591909117905580610f3181611f85565b915050610e3f565b50600554610f47904361219e565b60038881548110610f5a57610f5a611f0c565b600091825260209091206002600790920201015560048790556040517feadf82e9da8b1722bf1769001bdd6d52bb429e0745d9116f69495cedc7db8a9590610fa590899085906121b1565b60405180910390a160408051888152600060208201527fab74ab6fc458020cf5d6116f5c013ebf3c0ad518f10de1391427c225f75db5f9910160405180910390a150505050505050565b60006003838154811061100457611004611f0c565b9060005260206000209060070201600101805490506003848154811061102c5761102c611f0c565b600091825260208083208684526006600790930201919091019052604090205414905092915050565b600380546060919061106990600190611f38565b8154811061107957611079611f0c565b90600052602060002090600702016001018054806020026020016040519081016040528092919081815260200182805480156110de57602002820191906000526020600020905b81546001600160a01b031681526001909101906020018083116110c0575b5050505050905090565b60035483908110801561112d57506003818154811061110957611109611f0c565b600091825260208083203384526003600790930201919091019052604090205460ff165b6111705760405162461bcd60e51b81526020600482015260146024820152732225a39d103737ba1030903b30b634b230ba37b960611b60448201526064016103dd565b83600380828154811061118557611185611f0c565b906000526020600020906007020160010180549050600383815481106111ad576111ad611f0c565b6000918252602080832085845260066007909302019190910190526040902054146112165760405162461bcd60e51b81526020600482015260196024820152781112d1ce881c9bdd5b99081dd85cc81b9bdd08199a5b1b1959603a1b60448201526064016103dd565b60006003878154811061122b5761122b611f0c565b9060005260206000209060070201905043816002015410156112865760405162461bcd60e51b81526020600482015260146024820152731112d1ce881d9bdd1a5b99c81a5cc8195b99195960621b60448201526064016103dd565b60006112b9866112b36040518060400160405280600681526020016576657269667960d01b815250611762565b9061179d565b9050866001600160a01b0316816001600160a01b03161461131c5760405162461bcd60e51b815260206004820152601960248201527f444b473a207369676e617475726520697320696e76616c69640000000000000060448201526064016103dd565b3360009081526004830160205260409020546001600160a01b0316156113795760405162461bcd60e51b81526020600482015260126024820152711112d1ce88185b1c9958591e481d9bdd195960721b60448201526064016103dd565b336000908152600483016020908152604080832080546001600160a01b0319166001600160a01b038c1690811790915583526005850190915281208054916113c083611f85565b9091555050604080518981523360208201526001600160a01b0389168183015290517f4686ba7a5df3cb2d9979ee16ec58c7ea0b92273d836278488fb07c732cf8ec199181900360600190a16001600160a01b0387166000908152600583016020526040812054611432908a906117c1565b83549091506001600160a01b03898116911614158180156114505750805b156114bd5783546001600160a01b0319166001600160a01b038a1690811785556000818152600260209081526040918290208d905581518d8152908101929092527fa6d3de2b2ccbce3cf736f5f8e515fdad82235d0d1f1ff8a0ad14f98c48af0a46910160405180910390a15b50505050505050505050565b6000600382815481106114de576114de611f0c565b600091825260209091206001600790920201015492915050565b600054610100900460ff16158080156115185750600054600160ff909116105b806115325750303b158015611532575060005460ff166001145b6115955760405162461bcd60e51b815260206004820152602e60248201527f496e697469616c697a61626c653a20636f6e747261637420697320616c72656160448201526d191e481a5b9a5d1a585b1a5e995960921b60648201526084016103dd565b6000805460ff1916600117905580156115b8576000805461ff0019166101001790555b6003805460010180825560008281523392916115d6576115d6611f0c565b6000918252602080832060079290920290910180546001600160a01b0319166001600160a01b0394909416939093179092553381526002909152604081205560058290558015610b66576000805461ff0019169055604051600181527f7f26b83ff96e1f2b6a682f133852f6798a09c465da95921460cefb38474024989060200160405180910390a15050565b600061167b60008051602061227d8339815191525490565b90506001600160a01b038116158061169b57506001600160a01b03811633145b610c0a5760405162461bcd60e51b815260206004820152601a60248201527f446570656e64616e743a206e6f7420616e20696e6a6563746f7200000000000060448201526064016103dd565b600154604051633b4b682b60e21b81526000916001600160a01b03169063ed2da0ac9061171a90869086906004016121d2565b602060405180830381865afa158015611737573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061175b91906120ad565b9392505050565b600061176e8251611800565b826040516020016117809291906121ff565b604051602081830303815290604052805190602001209050919050565b60008060006117ac8585611893565b915091506117b9816118d8565b509392505050565b60006002600384815481106117d8576117d8611f0c565b9060005260206000209060070201600101805490506117f7919061225a565b90911192915050565b6060600061180d83611a22565b600101905060008167ffffffffffffffff81111561182d5761182d611bbe565b6040519080825280601f01601f191660200182016040528015611857576020820181803683370190505b5090508181016020015b600019016f181899199a1a9b1b9c1cb0b131b232b360811b600a86061a8153600a850494508461186157509392505050565b60008082516041036118c95760208301516040840151606085015160001a6118bd87828585611afa565b945094505050506118d1565b506000905060025b9250929050565b60008160048111156118ec576118ec611e49565b036118f45750565b600181600481111561190857611908611e49565b036119555760405162461bcd60e51b815260206004820152601860248201527f45434453413a20696e76616c6964207369676e6174757265000000000000000060448201526064016103dd565b600281600481111561196957611969611e49565b036119b65760405162461bcd60e51b815260206004820152601f60248201527f45434453413a20696e76616c6964207369676e6174757265206c656e6774680060448201526064016103dd565b60038160048111156119ca576119ca611e49565b03610c0a5760405162461bcd60e51b815260206004820152602260248201527f45434453413a20696e76616c6964207369676e6174757265202773272076616c604482015261756560f01b60648201526084016103dd565b60008072184f03e93ff9f4daa797ed6e38ed64bf6a1f0160401b8310611a615772184f03e93ff9f4daa797ed6e38ed64bf6a1f0160401b830492506040015b6d04ee2d6d415b85acef81000000008310611a8d576d04ee2d6d415b85acef8100000000830492506020015b662386f26fc100008310611aab57662386f26fc10000830492506010015b6305f5e1008310611ac3576305f5e100830492506008015b6127108310611ad757612710830492506004015b60648310611ae9576064830492506002015b600a831061087d5760010192915050565b6000807f7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0831115611b315750600090506003611bb5565b6040805160008082526020820180845289905260ff881692820192909252606081018690526080810185905260019060a0016020604051602081039080840390855afa158015611b85573d6000803e3d6000fd5b5050604051601f1901519150506001600160a01b038116611bae57600060019250925050611bb5565b9150600090505b94509492505050565b634e487b7160e01b600052604160045260246000fd5b604051601f8201601f1916810167ffffffffffffffff81118282101715611bfd57611bfd611bbe565b604052919050565b600082601f830112611c1657600080fd5b813567ffffffffffffffff811115611c3057611c30611bbe565b611c43601f8201601f1916602001611bd4565b818152846020838601011115611c5857600080fd5b816020850160208301376000918101602001919091529392505050565b600080600060608486031215611c8a57600080fd5b8335925060208401359150604084013567ffffffffffffffff811115611caf57600080fd5b611cbb86828701611c05565b9150509250925092565b6001600160a01b0381168114610c0a57600080fd5b600080600060608486031215611cef57600080fd5b83359250602084013591506040840135611d0881611cc5565b809150509250925092565b60005b83811015611d2e578181015183820152602001611d16565b50506000910152565b6020815260008251806020840152611d56816040850160208701611d13565b601f01601f19169190910160400192915050565b60008060408385031215611d7d57600080fd5b823591506020830135611d8f81611cc5565b809150509250929050565b600060208284031215611dac57600080fd5b5035919050565b600081518084526020808501945080840160005b83811015611dec5781516001600160a01b031687529582019590820190600101611dc7565b509495945050505050565b60208152600061175b6020830184611db3565b60008060408385031215611e1d57600080fd5b50508035926020909101359150565b600060208284031215611e3e57600080fd5b813561175b81611cc5565b634e487b7160e01b600052602160045260246000fd5b6020810160038310611e7357611e73611e49565b91905290565b60008060408385031215611e8c57600080fd5b8235611e9781611cc5565b9150602083013567ffffffffffffffff811115611eb357600080fd5b611ebf85828601611c05565b9150509250929050565b600080600060608486031215611ede57600080fd5b833592506020840135611ef081611cc5565b9150604084013567ffffffffffffffff811115611caf57600080fd5b634e487b7160e01b600052603260045260246000fd5b634e487b7160e01b600052601160045260246000fd5b8181038181111561087d5761087d611f22565b600181811c90821680611f5f57607f821691505b602082108103611f7f57634e487b7160e01b600052602260045260246000fd5b50919050565b600060018201611f9757611f97611f22565b5060010190565b601f821115611fe857600081815260208120601f850160051c81016020861015611fc55750805b601f850160051c820191505b81811015611fe457828155600101611fd1565b5050505b505050565b815167ffffffffffffffff81111561200757612007611bbe565b61201b816120158454611f4b565b84611f9e565b602080601f83116001811461205057600084156120385750858301515b600019600386901b1c1916600185901b178555611fe4565b600085815260208120601f198616915b8281101561207f57888601518255948401946001909101908401612060565b508582101561209d5787850151600019600388901b60f8161c191681555b5050505050600190811b01905550565b6000602082840312156120bf57600080fd5b8151801515811461175b57600080fd5b6000602082840312156120e157600080fd5b815161175b81611cc5565b600060208083850312156120ff57600080fd5b825167ffffffffffffffff8082111561211757600080fd5b818501915085601f83011261212b57600080fd5b81518181111561213d5761213d611bbe565b8060051b915061214e848301611bd4565b818152918301840191848101908884111561216857600080fd5b938501935b83851015612192578451925061218283611cc5565b828252938501939085019061216d565b98975050505050505050565b8082018082111561087d5761087d611f22565b8281526040602082015260006121ca6040830184611db3565b949350505050565b6001600160a01b038316815260408101600583106121f2576121f2611e49565b8260208301529392505050565b7f19457468657265756d205369676e6564204d6573736167653a0a00000000000081526000835161223781601a850160208801611d13565b83519083019061224e81601a840160208801611d13565b01601a01949350505050565b60008261227757634e487b7160e01b600052601260045260246000fd5b50049056fe3d1f25f1ac447e55e7fec744471c4dab1c6a2b6ffb897825f9ea3d2e8c9be583a26469706673582212209cd27fad1f03081e5e691248c14e0d6916bc0ce3e0bb1c6c96287349f90e7ddc64736f6c63430008120033",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"epochId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"epochStartTime\",\"type\":\"uint256\"}],\"name\":\"NewEpochCreated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"validatorAddr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"startValidationTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"startValidationEpoch\",\"type\":\"uint256\"}],\"name\":\"NewValidatorAdded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"epochId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"signerAddress\",\"type\":\"address\"}],\"name\":\"SignerAddressUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"epochId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"collectiveSigner\",\"type\":\"address\"}],\"name\":\"SignerVoted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"validatorAddr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"endValidationTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"endValidationEpoch\",\"type\":\"uint256\"}],\"name\":\"ValidatorExitAnnounced\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"validatorAddr\",\"type\":\"address\"}],\"name\":\"ValidatorRemoved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"validatorAddr\",\"type\":\"address\"}],\"name\":\"ValidatorSlashed\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"FIRST_EPOCH_ID\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validatorToAdd\",\"type\":\"address\"}],\"name\":\"addValidator\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validatorToExit\",\"type\":\"address\"}],\"name\":\"announceValidatorExit\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"createProposal\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"epochId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"epochStartTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"dkgGenPeriodEndTime\",\"type\":\"uint256\"}],\"internalType\":\"structIDKG.MainEpochInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"dkgGenerationEpochDuration\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getActiveValidators\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getActiveValidatorsCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"_activeValidatorsCount\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getAllValidators\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getAllValidatorsCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getCurrentEpochId\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"_currentEpochId\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getCurrentEpochStatus\",\"outputs\":[{\"internalType\":\"enumIDKG.DKGEpochStatuses\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"getDKGEpochInfo\",\"outputs\":[{\"components\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"epochId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"epochStartTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"dkgGenPeriodEndTime\",\"type\":\"uint256\"}],\"internalType\":\"structIDKG.MainEpochInfo\",\"name\":\"mainEpochInfo\",\"type\":\"tuple\"},{\"internalType\":\"address\",\"name\":\"epochSigner\",\"type\":\"address\"},{\"internalType\":\"enumIDKG.DKGEpochStatuses\",\"name\":\"epochStatus\",\"type\":\"uint8\"}],\"internalType\":\"structIDKG.DKGEpochInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"getDKGPeriodEndTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"getEpochEndTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"getEpochStatus\",\"outputs\":[{\"internalType\":\"enumIDKG.DKGEpochStatuses\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getInjector\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"injector_\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getLastEpochId\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"getMainEpochInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"epochId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"epochStartTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"dkgGenPeriodEndTime\",\"type\":\"uint256\"}],\"internalType\":\"structIDKG.MainEpochInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getSignerAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_signerAddr\",\"type\":\"address\"}],\"name\":\"getSignerVotesCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"getUpdatedCollectionPeriodEndTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validator\",\"type\":\"address\"}],\"name\":\"getValidatorInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"validationTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"validationEpoch\",\"type\":\"uint256\"}],\"internalType\":\"structIDKG.ValidationData\",\"name\":\"startValidationData\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"validationTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"validationEpoch\",\"type\":\"uint256\"}],\"internalType\":\"structIDKG.ValidationData\",\"name\":\"endValidationData\",\"type\":\"tuple\"}],\"internalType\":\"structIDKG.ValidatorInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_validatorAddr\",\"type\":\"address\"}],\"name\":\"getValidatorVote\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"guaranteedWorkingEpochDuration\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_updatesCollectionEpochDuration\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_dkgGenerationEpochDuration\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_guaranteedWorkingEpochDuration\",\"type\":\"uint256\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validatorAddr\",\"type\":\"address\"}],\"name\":\"isActiveValidator\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"isCurrentEpoch\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"isDKGGenSuccessful\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"isLastEpoch\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validatorAddr\",\"type\":\"address\"}],\"name\":\"isValidator\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validatorAddr\",\"type\":\"address\"}],\"name\":\"isValidatorSlashed\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validatorToRemove\",\"type\":\"address\"}],\"name\":\"removeValidator\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_contractsRegistryAddr\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"name\":\"setDependencies\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"injector_\",\"type\":\"address\"}],\"name\":\"setInjector\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validatorAddr\",\"type\":\"address\"}],\"name\":\"slashValidator\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"updateAllValidators\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"updatesCollectionEpochDuration\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_signerAddress\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"_signature\",\"type\":\"bytes\"}],\"name\":\"voteSigner\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	Bin: "0x608060405234801561001057600080fd5b50612570806100206000396000f3fe608060405234801561001057600080fd5b50600436106102325760003560e01c806372ef10b211610130578063c3125405116100b8578063f072ec081161007c578063f072ec08146104e0578063f3513a37146104e9578063f7897c07146104f1578063f9cf0dd81461052b578063facd743b1461053e57600080fd5b8063c31254051461047f578063c88bc06714610487578063ca1583481461049a578063d4ee9f8d146104ba578063e80f6534146104cd57600080fd5b80639de70258116100ff5780639de7025814610410578063a29a839f14610425578063ac4fe5ab1461042d578063b2d5258c14610459578063c04747531461046c57600080fd5b806372ef10b2146103c157806380d85911146103ca5780638a11d7c9146103dd5780638cb941cc146103fd57600080fd5b80633e15d5be116101be5780634711f586116101825780634711f586146103775780634d238c8e1461038a578063691304511461039d578063696f2959146103b05780636c8fbb64146103b957600080fd5b80633e15d5be1461032a5780633e3b5b191461033257806340550a1c1461034757806340a141ff1461035a5780634666a62b1461036f57600080fd5b8063202016681161020557806320201668146102ad578063214e6a56146102bf57806331147c30146102e457806336503f42146102ec5780633ae0725a146102ff57600080fd5b8063124e3ffa1461023757806315accc9214610267578063180fd87f146102875780631a296e021461029c575b600080fd5b61024a610245366004612098565b610551565b6040516001600160a01b0390911681526020015b60405180910390f35b61027a6102753660046120c8565b610583565b60405161025e9190612119565b61028f61064e565b60405161025e9190612127565b6006546001600160a01b031661024a565b6005545b60405190815260200161025e565b6102d46102cd3660046120c8565b6005541490565b604051901515815260200161025e565b6102b161068b565b6102b16102fa3660046120c8565b6106db565b6102d461030d3660046120c8565b6000908152600960205260409020546001600160a01b0316151590565b6102b1600181565b60008051602061251b8339815191525461024a565b6102d4610355366004612148565b6106fb565b61036d610368366004612148565b610812565b005b61027a6108f9565b61036d610385366004612148565b610906565b61036d610398366004612148565b6109ce565b61036d6103ab366004612208565b610aec565b6102b160045481565b61036d610c1d565b6102b160025481565b61036d6103d8366004612258565b610cf8565b6103f06103eb366004612148565b610e13565b60405161025e9190612284565b61036d61040b366004612148565b610e7c565b610418610e9a565b60405161025e91906122c7565b6102b1610f13565b6102d461043b366004612148565b6001600160a01b03166000908152600b602052604090205460ff1690565b61028f6104673660046120c8565b610f3f565b6102b161047a3660046120c8565b610fa1565b6102b1610fb9565b61036d610495366004612314565b610fc5565b6104ad6104a83660046120c8565b611276565b60405161025e919061236d565b6102b16104c83660046120c8565b6112da565b6102d46104db3660046120c8565b6112e8565b6102b160035481565b6104186112fa565b6102b16104ff366004612098565b60008281526009602090815260408083206001600160a01b038516845260020190915290205492915050565b6102b1610539366004612148565b611306565b6102d461054c366004612148565b61146a565b60008281526009602090815260408083206001600160a01b038086168552600390910190925290912054165b92915050565b600060055482111561059757506000919050565b600082815260096020526040902060010154600554831480156105c15750428111806105c1575080155b156105cf5750600192915050565b6105d8836112e8565b6105e55750600692915050565b42600254826105f491906123c3565b915081106106055750600292915050565b426003548261061491906123c3565b915081106106255750600392915050565b426004548261063491906123c3565b915081106106455750600492915050565b50600592915050565b61067260405180606001604052806000815260200160008152602001600081525090565b61067a611477565b6106856104676114de565b90505b90565b60008061069860076115d1565b905060005b818110156106d6576106b36103556007836115db565b156106c657826106c2816123d6565b9350505b6106cf816123d6565b905061069d565b505090565b600254600082815260096020526040812060010154909161057d916123c3565b6001600160a01b0381166000908152600a60209081526040808320815160808101835281548184019081526001808401546060840152908252835180850190945260028301548452600390920154838501528084019290925281519092015190918391148061078c575081516020015161078c906000908152600960205260409020546001600160a01b0316151590565b801561079a57508151514210155b905060006107c78360200151602001516000908152600960205260409020546001600160a01b0316151590565b15806107d7575060208301515142105b6001600160a01b0386166000908152600b602052604090205490915060ff161580156108005750815b80156108095750805b95945050505050565b61081a6115ee565b61082560078261164e565b6108765760405162461bcd60e51b815260206004820152601d60248201527f444b473a2056616c696461746f7220646f6573206e6f7420657869737400000060448201526064015b60405180910390fd5b6001600160a01b0381166000908152600a60205260409020600201544210156108ed5760405162461bcd60e51b815260206004820152602360248201527f444b473a2056616c696461746f722063616e27742062652072656d6f766564206044820152621e595d60ea1b606482015260840161086d565b6108f681611670565b50565b6000610685610275610f13565b61090e611477565b6001600160a01b0381166000908152600b602052604090205460ff16156109825760405162461bcd60e51b815260206004820152602260248201527f444b473a2056616c696461746f722068617320616c726561647920736c617368604482015261195960f21b606482015260840161086d565b6001600160a01b0381166000818152600b6020526040808220805460ff19166001179055517f1647efd0ce9727dc31dc201c9d8d35ac687f7370adcacbd454afc6485ddabfda9190a250565b6109d66115ee565b6109df8161146a565b15610a2c5760405162461bcd60e51b815260206004820152601d60248201527f444b473a2056616c696461746f7220616c726561647920657869737473000000604482015260640161086d565b6000610a366116d4565b604080518082018252828152815180830183526000198152600060208281018290528084019283526001600160a01b0388168252600a815293902091518051835583015160018301555180516002830155909101516003909101559050610a9e600783611739565b50805160208083015160408051938452918301526001600160a01b038416917fcd38d7f8bcd459fe58ab4e4f5ba2ee51418a1a0cf207a6747f61bb7945e62b41910160405180910390a25050565b610af461174e565b6000829050806001600160a01b0316638e68dce46040518163ffffffff1660e01b8152600401602060405180830381865afa158015610b37573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610b5b91906123ef565b600060026101000a8154816001600160a01b0302191690836001600160a01b03160217905550806001600160a01b031663fb9d9ac56040518163ffffffff1660e01b8152600401602060405180830381865afa158015610bbf573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610be391906123ef565b600180546001600160a01b0319166001600160a01b0392909216919091179055503360008051602061251b833981519152555050565b5050565b6000610c2960076117d2565b905060005b8151811015610c19576000600a6000848481518110610c4f57610c4f61240c565b60200260200101516001600160a01b03166001600160a01b031681526020019081526020016000209050610c9b838381518110610c8e57610c8e61240c565b60200260200101516106fb565b15610cb157610cac816002016117df565b610cba565b610cba816117df565b60028101544210610ce757610ce7838381518110610cda57610cda61240c565b6020026020010151611670565b50610cf1816123d6565b9050610c2e565b600054610100900460ff1615808015610d185750600054600160ff909116105b80610d325750303b158015610d32575060005460ff166001145b610d955760405162461bcd60e51b815260206004820152602e60248201527f496e697469616c697a61626c653a20636f6e747261637420697320616c72656160448201526d191e481a5b9a5d1a585b1a5e995960921b606482015260840161086d565b6000805460ff191660011790558015610db8576000805461ff0019166101001790555b6002849055600383905560048290558015610e0d576000805461ff0019169055604051600181527f7f26b83ff96e1f2b6a682f133852f6798a09c465da95921460cefb38474024989060200160405180910390a15b50505050565b610e1b611fe1565b506001600160a01b03166000818152600a602090815260409182902082516060810184529384528251808401845281548152600182015481840152848301528251808401845260028201548152600390910154918101919091529082015290565b610e8461174e565b6108f68160008051602061251b83398151915255565b60606000610ea6611832565b90506000610eb460076115d1565b905060005b81811015610ef9576000610ece6007836115db565b9050610ed9816106fb565b15610ee857610ee88482611859565b50610ef2816123d6565b9050610eb9565b50610f0c8280516020015160609061057d565b9250505090565b6005546000818152600960205260409020600101544210156106885780610f3981612422565b91505090565b610f6360405180606001604052806000815260200160008152602001600081525090565b604051806060016040528083815260200160096000858152602001908152602001600020600101548152602001610f9984610fa1565b905292915050565b6000600354610faf836106db565b61057d91906123c3565b600061068560076115d1565b610fcd61186e565b6003610fd884610583565b6006811115610fe957610fe96120e1565b146110365760405162461bcd60e51b815260206004820181905260248201527f444b473a204e6f74206120444b472067656e65726174696f6e20706572696f64604482015260640161086d565b6000611069826110636040518060400160405280600681526020016576657269667960d01b8152506118c3565b906118fe565b9050826001600160a01b0316816001600160a01b0316146110cc5760405162461bcd60e51b815260206004820152601960248201527f444b473a205369676e617475726520697320696e76616c696400000000000000604482015260640161086d565b600084815260096020908152604080832033845260038101909252909120546001600160a01b0316156111365760405162461bcd60e51b81526020600482015260126024820152711112d1ce88105b1c9958591e481d9bdd195960721b604482015260640161086d565b6001600160a01b038416600090815260028201602052604081208054829061115d906123d6565b918290555033600081815260038501602090815260409182902080546001600160a01b0319166001600160a01b038b1690811790915582518b815291820193909352908101919091529091507f4686ba7a5df3cb2d9979ee16ec58c7ea0b92273d836278488fb07c732cf8ec199060600160405180910390a160026111e061068b565b6111ea9190612439565b8111801561120657506006546001600160a01b03868116911614155b1561126e5781546001600160a01b0386166001600160a01b0319918216811784556006805490921681179091556040805188815260208101929092527fa6d3de2b2ccbce3cf736f5f8e515fdad82235d0d1f1ff8a0ad14f98c48af0a46910160405180910390a15b505050505050565b61127e612040565b6000828152600960205260409081902081516060810190925290806112a285610f3f565b815282546001600160a01b031660208201526040016112c085610583565b60068111156112d1576112d16120e1565b90529392505050565b6000600454610faf83610fa1565b6000816112f3610f13565b1492915050565b606061068560076117d2565b60006113106115ee565b611319826106fb565b6113655760405162461bcd60e51b815260206004820152601c60248201527f444b473a2056616c696461746f72206973206e6f742061637469766500000000604482015260640161086d565b6001600160a01b0382166000908152600a6020526040902060020154600019146113ef5760405162461bcd60e51b815260206004820152603560248201527f444b473a2045786974206f66207468652076616c696461746f722068617320616044820152741b1c9958591e481899595b88185b9b9bdd5b98d959605a1b606482015260840161086d565b60006113f96116d4565b6001600160a01b0384166000818152600a602090815260409182902084516002820181905585830151600390920182905583519081529182015292935090917fd75af7adb28dda89e53e18c225f03e4aee3f0132f19eaff0a642b1f88433baad910160405180910390a25192915050565b600061057d60078361164e565b6001546001600160a01b031633146114dc5760405162461bcd60e51b815260206004820152602260248201527f444b473a204e6f74206120736c617368696e6720766f74696e67206164647265604482015261737360f01b606482015260840161086d565b565b6000806114e9610f13565b915081905060006114f982610583565b9050600281600681111561150f5761150f6120e1565b146106d65760055492508183036106d657426005826006811115611535576115356120e1565b1415801561155557506001826006811115611552576115526120e1565b14155b1561156657611563846112da565b90505b600560008154611575906123d6565b918290555060008181526009602090815260409182902060010184905581518381529081018490529195507ff27e0ff471920cfae653a7a16cf64784b13fafb16b991f9af7860027c1b475d7910160405180910390a150505090565b600061057d825490565b60006115e78383611922565b9392505050565b6000546201000090046001600160a01b031633146114dc5760405162461bcd60e51b815260206004820152601a60248201527f444b473a204e6f742061207374616b696e672061646472657373000000000000604482015260640161086d565b6001600160a01b038116600090815260018301602052604081205415156115e7565b61167b60078261194c565b506001600160a01b0381166000818152600a60205260408082208281556001810183905560028101839055600301829055517fe1434e25d6611e0db941968fdc97811c982ac1602e951637d206f5fdda9dd8f19190a250565b604080518082019091526000808252602082015260055460006116f56114de565b90506001811461171d5761170881611961565b9250818360200151146106d6576106d6610c1d565b6040518060400160405280428152602001828152509250505090565b60006115e7836001600160a01b038416611996565b600061176660008051602061251b8339815191525490565b90506001600160a01b038116158061178657506001600160a01b03811633145b6108f65760405162461bcd60e51b815260206004820152601a60248201527f446570656e64616e743a206e6f7420616e20696e6a6563746f72000000000000604482015260640161086d565b606060006115e7836119e5565b8054421080159061180a575060018101546000908152600960205260409020546001600160a01b0316155b156108f657600061182161181c6114de565b611961565b805183556020015160018301555050565b6040805160608101825260006020820181815292820152908152611854611a41565b815290565b8151610c19906001600160a01b038316611a75565b611877336106fb565b6114dc5760405162461bcd60e51b815260206004820152601c60248201527f444b473a204e6f7420616e206163746976652076616c696461746f7200000000604482015260640161086d565b60006118cf8251611ac6565b826040516020016118e192919061247f565b604051602081830303815290604052805190602001209050919050565b600080600061190d8585611b59565b9150915061191a81611b9e565b509392505050565b60008260000182815481106119395761193961240c565b9060005260206000200154905092915050565b60006115e7836001600160a01b038416611ce8565b6040805180820190915260008082526020820152604051806040016040528061198984610fa1565b8152602001929092525090565b60008181526001830160205260408120546119dd5750815460018181018455600084815260208082209093018490558454848252828601909352604090209190915561057d565b50600061057d565b606081600001805480602002602001604051908101604052809291908181526020018280548015611a3557602002820191906000526020600020905b815481526020019060010190808311611a21575b50505050509050919050565b60408051808201825260008082526020820152815160a0810190925290611a69816001611de2565b60058252602082015290565b6000611a8383602001515190565b8351909150611a938260016123c3565b03611ab0578251611ab0908490611aab9060026124da565b611e03565b6020928301516001820181529083020190910152565b60606000611ad383611e45565b600101905060008167ffffffffffffffff811115611af357611af3612165565b6040519080825280601f01601f191660200182016040528015611b1d576020820181803683370190505b5090508181016020015b600019016f181899199a1a9b1b9c1cb0b131b232b360811b600a86061a8153600a8504945084611b2757509392505050565b6000808251604103611b8f5760208301516040840151606085015160001a611b8387828585611f1d565b94509450505050611b97565b506000905060025b9250929050565b6000816004811115611bb257611bb26120e1565b03611bba5750565b6001816004811115611bce57611bce6120e1565b03611c1b5760405162461bcd60e51b815260206004820152601860248201527f45434453413a20696e76616c6964207369676e61747572650000000000000000604482015260640161086d565b6002816004811115611c2f57611c2f6120e1565b03611c7c5760405162461bcd60e51b815260206004820152601f60248201527f45434453413a20696e76616c6964207369676e6174757265206c656e67746800604482015260640161086d565b6003816004811115611c9057611c906120e1565b036108f65760405162461bcd60e51b815260206004820152602260248201527f45434453413a20696e76616c6964207369676e6174757265202773272076616c604482015261756560f01b606482015260840161086d565b60008181526001830160205260408120548015611dd1576000611d0c6001836124f1565b8554909150600090611d20906001906124f1565b9050818114611d85576000866000018281548110611d4057611d4061240c565b9060005260206000200154905080876000018481548110611d6357611d6361240c565b6000918252602080832090910192909255918252600188019052604090208390555b8554869080611d9657611d96612504565b60019003818190600052602060002001600090559055856001016000868152602001908152602001600020600090556001935050505061057d565b600091505061057d565b5092915050565b60005b60208202811015611dfe57600083820152602001611de5565b505050565b604080516020830281019091526020830151805160005b602080830201811015611e37578281015184820152602001611e1a565b505050908252602090910152565b60008072184f03e93ff9f4daa797ed6e38ed64bf6a1f0160401b8310611e845772184f03e93ff9f4daa797ed6e38ed64bf6a1f0160401b830492506040015b6d04ee2d6d415b85acef81000000008310611eb0576d04ee2d6d415b85acef8100000000830492506020015b662386f26fc100008310611ece57662386f26fc10000830492506010015b6305f5e1008310611ee6576305f5e100830492506008015b6127108310611efa57612710830492506004015b60648310611f0c576064830492506002015b600a831061057d5760010192915050565b6000807f7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0831115611f545750600090506003611fd8565b6040805160008082526020820180845289905260ff881692820192909252606081018690526080810185905260019060a0016020604051602081039080840390855afa158015611fa8573d6000803e3d6000fd5b5050604051601f1901519150506001600160a01b038116611fd157600060019250925050611fd8565b9150600090505b94509492505050565b604051806060016040528060006001600160a01b03168152602001612019604051806040016040528060008152602001600081525090565b815260200161203b604051806040016040528060008152602001600081525090565b905290565b604051806060016040528061206f60405180606001604052806000815260200160008152602001600081525090565b815260006020820181905260409091015290565b6001600160a01b03811681146108f657600080fd5b600080604083850312156120ab57600080fd5b8235915060208301356120bd81612083565b809150509250929050565b6000602082840312156120da57600080fd5b5035919050565b634e487b7160e01b600052602160045260246000fd5b6007811061211557634e487b7160e01b600052602160045260246000fd5b9052565b6020810161057d82846120f7565b8151815260208083015190820152604080830151908201526060810161057d565b60006020828403121561215a57600080fd5b81356115e781612083565b634e487b7160e01b600052604160045260246000fd5b600082601f83011261218c57600080fd5b813567ffffffffffffffff808211156121a7576121a7612165565b604051601f8301601f19908116603f011681019082821181831017156121cf576121cf612165565b816040528381528660208588010111156121e857600080fd5b836020870160208301376000602085830101528094505050505092915050565b6000806040838503121561221b57600080fd5b823561222681612083565b9150602083013567ffffffffffffffff81111561224257600080fd5b61224e8582860161217b565b9150509250929050565b60008060006060848603121561226d57600080fd5b505081359360208301359350604090920135919050565b81516001600160a01b0316815260208083015180518284015290810151604083015260a08201905060408301518051606084015260208101516080840152611ddb565b6020808252825182820181905260009190848201906040850190845b818110156123085783516001600160a01b0316835292840192918401916001016122e3565b50909695505050505050565b60008060006060848603121561232957600080fd5b83359250602084013561233b81612083565b9150604084013567ffffffffffffffff81111561235757600080fd5b6123638682870161217b565b9150509250925092565b81518051825260208082015181840152604091820151828401528301516001600160a01b0316606083015282015160a0820190611ddb60808401826120f7565b634e487b7160e01b600052601160045260246000fd5b8082018082111561057d5761057d6123ad565b6000600182016123e8576123e86123ad565b5060010190565b60006020828403121561240157600080fd5b81516115e781612083565b634e487b7160e01b600052603260045260246000fd5b600081612431576124316123ad565b506000190190565b60008261245657634e487b7160e01b600052601260045260246000fd5b500490565b60005b8381101561247657818101518382015260200161245e565b50506000910152565b7f19457468657265756d205369676e6564204d6573736167653a0a0000000000008152600083516124b781601a85016020880161245b565b8351908301906124ce81601a84016020880161245b565b01601a01949350505050565b808202811582820484141761057d5761057d6123ad565b8181038181111561057d5761057d6123ad565b634e487b7160e01b600052603160045260246000fdfe3d1f25f1ac447e55e7fec744471c4dab1c6a2b6ffb897825f9ea3d2e8c9be583a26469706673582212205a34170a3a04f24e9ff5a5522fa0f0866073b53ab016f51ac8eed770de7f22dc64736f6c63430008120033",
 }
 
 // DKGABI is the input ABI used to generate the binding from.
@@ -202,12 +229,12 @@ func (_DKG *DKGTransactorRaw) Transact(opts *bind.TransactOpts, method string, p
 	return _DKG.Contract.contract.Transact(opts, method, params...)
 }
 
-// DeadlinePeriod is a free data retrieval call binding the contract method 0x6db24262.
+// FIRSTEPOCHID is a free data retrieval call binding the contract method 0x3e15d5be.
 //
-// Solidity: function deadlinePeriod() view returns(uint256)
-func (_DKG *DKGCaller) DeadlinePeriod(opts *bind.CallOpts) (*big.Int, error) {
+// Solidity: function FIRST_EPOCH_ID() view returns(uint256)
+func (_DKG *DKGCaller) FIRSTEPOCHID(opts *bind.CallOpts) (*big.Int, error) {
 	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "deadlinePeriod")
+	err := _DKG.contract.Call(opts, &out, "FIRST_EPOCH_ID")
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -219,71 +246,57 @@ func (_DKG *DKGCaller) DeadlinePeriod(opts *bind.CallOpts) (*big.Int, error) {
 
 }
 
-// DeadlinePeriod is a free data retrieval call binding the contract method 0x6db24262.
+// FIRSTEPOCHID is a free data retrieval call binding the contract method 0x3e15d5be.
 //
-// Solidity: function deadlinePeriod() view returns(uint256)
-func (_DKG *DKGSession) DeadlinePeriod() (*big.Int, error) {
-	return _DKG.Contract.DeadlinePeriod(&_DKG.CallOpts)
+// Solidity: function FIRST_EPOCH_ID() view returns(uint256)
+func (_DKG *DKGSession) FIRSTEPOCHID() (*big.Int, error) {
+	return _DKG.Contract.FIRSTEPOCHID(&_DKG.CallOpts)
 }
 
-// DeadlinePeriod is a free data retrieval call binding the contract method 0x6db24262.
+// FIRSTEPOCHID is a free data retrieval call binding the contract method 0x3e15d5be.
 //
-// Solidity: function deadlinePeriod() view returns(uint256)
-func (_DKG *DKGCallerSession) DeadlinePeriod() (*big.Int, error) {
-	return _DKG.Contract.DeadlinePeriod(&_DKG.CallOpts)
+// Solidity: function FIRST_EPOCH_ID() view returns(uint256)
+func (_DKG *DKGCallerSession) FIRSTEPOCHID() (*big.Int, error) {
+	return _DKG.Contract.FIRSTEPOCHID(&_DKG.CallOpts)
 }
 
-// Generations is a free data retrieval call binding the contract method 0xad8b0e94.
+// DkgGenerationEpochDuration is a free data retrieval call binding the contract method 0xf072ec08.
 //
-// Solidity: function generations(uint256 ) view returns(address signer, uint256 deadline)
-func (_DKG *DKGCaller) Generations(opts *bind.CallOpts, arg0 *big.Int) (struct {
-	Signer   common.Address
-	Deadline *big.Int
-}, error) {
+// Solidity: function dkgGenerationEpochDuration() view returns(uint256)
+func (_DKG *DKGCaller) DkgGenerationEpochDuration(opts *bind.CallOpts) (*big.Int, error) {
 	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "generations", arg0)
+	err := _DKG.contract.Call(opts, &out, "dkgGenerationEpochDuration")
 
-	outstruct := new(struct {
-		Signer   common.Address
-		Deadline *big.Int
-	})
 	if err != nil {
-		return *outstruct, err
+		return *new(*big.Int), err
 	}
 
-	outstruct.Signer = *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-	outstruct.Deadline = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
 
-	return *outstruct, err
+	return out0, err
 
 }
 
-// Generations is a free data retrieval call binding the contract method 0xad8b0e94.
+// DkgGenerationEpochDuration is a free data retrieval call binding the contract method 0xf072ec08.
 //
-// Solidity: function generations(uint256 ) view returns(address signer, uint256 deadline)
-func (_DKG *DKGSession) Generations(arg0 *big.Int) (struct {
-	Signer   common.Address
-	Deadline *big.Int
-}, error) {
-	return _DKG.Contract.Generations(&_DKG.CallOpts, arg0)
+// Solidity: function dkgGenerationEpochDuration() view returns(uint256)
+func (_DKG *DKGSession) DkgGenerationEpochDuration() (*big.Int, error) {
+	return _DKG.Contract.DkgGenerationEpochDuration(&_DKG.CallOpts)
 }
 
-// Generations is a free data retrieval call binding the contract method 0xad8b0e94.
+// DkgGenerationEpochDuration is a free data retrieval call binding the contract method 0xf072ec08.
 //
-// Solidity: function generations(uint256 ) view returns(address signer, uint256 deadline)
-func (_DKG *DKGCallerSession) Generations(arg0 *big.Int) (struct {
-	Signer   common.Address
-	Deadline *big.Int
-}, error) {
-	return _DKG.Contract.Generations(&_DKG.CallOpts, arg0)
+// Solidity: function dkgGenerationEpochDuration() view returns(uint256)
+func (_DKG *DKGCallerSession) DkgGenerationEpochDuration() (*big.Int, error) {
+	return _DKG.Contract.DkgGenerationEpochDuration(&_DKG.CallOpts)
 }
 
-// GetCurrentValidators is a free data retrieval call binding the contract method 0xc5f9dff0.
+// GetActiveValidators is a free data retrieval call binding the contract method 0x9de70258.
 //
-// Solidity: function getCurrentValidators() view returns(address[])
-func (_DKG *DKGCaller) GetCurrentValidators(opts *bind.CallOpts) ([]common.Address, error) {
+// Solidity: function getActiveValidators() view returns(address[])
+func (_DKG *DKGCaller) GetActiveValidators(opts *bind.CallOpts) ([]common.Address, error) {
 	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "getCurrentValidators")
+	err := _DKG.contract.Call(opts, &out, "getActiveValidators")
 
 	if err != nil {
 		return *new([]common.Address), err
@@ -295,26 +308,26 @@ func (_DKG *DKGCaller) GetCurrentValidators(opts *bind.CallOpts) ([]common.Addre
 
 }
 
-// GetCurrentValidators is a free data retrieval call binding the contract method 0xc5f9dff0.
+// GetActiveValidators is a free data retrieval call binding the contract method 0x9de70258.
 //
-// Solidity: function getCurrentValidators() view returns(address[])
-func (_DKG *DKGSession) GetCurrentValidators() ([]common.Address, error) {
-	return _DKG.Contract.GetCurrentValidators(&_DKG.CallOpts)
+// Solidity: function getActiveValidators() view returns(address[])
+func (_DKG *DKGSession) GetActiveValidators() ([]common.Address, error) {
+	return _DKG.Contract.GetActiveValidators(&_DKG.CallOpts)
 }
 
-// GetCurrentValidators is a free data retrieval call binding the contract method 0xc5f9dff0.
+// GetActiveValidators is a free data retrieval call binding the contract method 0x9de70258.
 //
-// Solidity: function getCurrentValidators() view returns(address[])
-func (_DKG *DKGCallerSession) GetCurrentValidators() ([]common.Address, error) {
-	return _DKG.Contract.GetCurrentValidators(&_DKG.CallOpts)
+// Solidity: function getActiveValidators() view returns(address[])
+func (_DKG *DKGCallerSession) GetActiveValidators() ([]common.Address, error) {
+	return _DKG.Contract.GetActiveValidators(&_DKG.CallOpts)
 }
 
-// GetGenerationsCount is a free data retrieval call binding the contract method 0x1ea0f036.
+// GetActiveValidatorsCount is a free data retrieval call binding the contract method 0x31147c30.
 //
-// Solidity: function getGenerationsCount() view returns(uint256)
-func (_DKG *DKGCaller) GetGenerationsCount(opts *bind.CallOpts) (*big.Int, error) {
+// Solidity: function getActiveValidatorsCount() view returns(uint256 _activeValidatorsCount)
+func (_DKG *DKGCaller) GetActiveValidatorsCount(opts *bind.CallOpts) (*big.Int, error) {
 	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "getGenerationsCount")
+	err := _DKG.contract.Call(opts, &out, "getActiveValidatorsCount")
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -326,18 +339,266 @@ func (_DKG *DKGCaller) GetGenerationsCount(opts *bind.CallOpts) (*big.Int, error
 
 }
 
-// GetGenerationsCount is a free data retrieval call binding the contract method 0x1ea0f036.
+// GetActiveValidatorsCount is a free data retrieval call binding the contract method 0x31147c30.
 //
-// Solidity: function getGenerationsCount() view returns(uint256)
-func (_DKG *DKGSession) GetGenerationsCount() (*big.Int, error) {
-	return _DKG.Contract.GetGenerationsCount(&_DKG.CallOpts)
+// Solidity: function getActiveValidatorsCount() view returns(uint256 _activeValidatorsCount)
+func (_DKG *DKGSession) GetActiveValidatorsCount() (*big.Int, error) {
+	return _DKG.Contract.GetActiveValidatorsCount(&_DKG.CallOpts)
 }
 
-// GetGenerationsCount is a free data retrieval call binding the contract method 0x1ea0f036.
+// GetActiveValidatorsCount is a free data retrieval call binding the contract method 0x31147c30.
 //
-// Solidity: function getGenerationsCount() view returns(uint256)
-func (_DKG *DKGCallerSession) GetGenerationsCount() (*big.Int, error) {
-	return _DKG.Contract.GetGenerationsCount(&_DKG.CallOpts)
+// Solidity: function getActiveValidatorsCount() view returns(uint256 _activeValidatorsCount)
+func (_DKG *DKGCallerSession) GetActiveValidatorsCount() (*big.Int, error) {
+	return _DKG.Contract.GetActiveValidatorsCount(&_DKG.CallOpts)
+}
+
+// GetAllValidators is a free data retrieval call binding the contract method 0xf3513a37.
+//
+// Solidity: function getAllValidators() view returns(address[])
+func (_DKG *DKGCaller) GetAllValidators(opts *bind.CallOpts) ([]common.Address, error) {
+	var out []interface{}
+	err := _DKG.contract.Call(opts, &out, "getAllValidators")
+
+	if err != nil {
+		return *new([]common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]common.Address)).(*[]common.Address)
+
+	return out0, err
+
+}
+
+// GetAllValidators is a free data retrieval call binding the contract method 0xf3513a37.
+//
+// Solidity: function getAllValidators() view returns(address[])
+func (_DKG *DKGSession) GetAllValidators() ([]common.Address, error) {
+	return _DKG.Contract.GetAllValidators(&_DKG.CallOpts)
+}
+
+// GetAllValidators is a free data retrieval call binding the contract method 0xf3513a37.
+//
+// Solidity: function getAllValidators() view returns(address[])
+func (_DKG *DKGCallerSession) GetAllValidators() ([]common.Address, error) {
+	return _DKG.Contract.GetAllValidators(&_DKG.CallOpts)
+}
+
+// GetAllValidatorsCount is a free data retrieval call binding the contract method 0xc3125405.
+//
+// Solidity: function getAllValidatorsCount() view returns(uint256)
+func (_DKG *DKGCaller) GetAllValidatorsCount(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _DKG.contract.Call(opts, &out, "getAllValidatorsCount")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// GetAllValidatorsCount is a free data retrieval call binding the contract method 0xc3125405.
+//
+// Solidity: function getAllValidatorsCount() view returns(uint256)
+func (_DKG *DKGSession) GetAllValidatorsCount() (*big.Int, error) {
+	return _DKG.Contract.GetAllValidatorsCount(&_DKG.CallOpts)
+}
+
+// GetAllValidatorsCount is a free data retrieval call binding the contract method 0xc3125405.
+//
+// Solidity: function getAllValidatorsCount() view returns(uint256)
+func (_DKG *DKGCallerSession) GetAllValidatorsCount() (*big.Int, error) {
+	return _DKG.Contract.GetAllValidatorsCount(&_DKG.CallOpts)
+}
+
+// GetCurrentEpochId is a free data retrieval call binding the contract method 0xa29a839f.
+//
+// Solidity: function getCurrentEpochId() view returns(uint256 _currentEpochId)
+func (_DKG *DKGCaller) GetCurrentEpochId(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _DKG.contract.Call(opts, &out, "getCurrentEpochId")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// GetCurrentEpochId is a free data retrieval call binding the contract method 0xa29a839f.
+//
+// Solidity: function getCurrentEpochId() view returns(uint256 _currentEpochId)
+func (_DKG *DKGSession) GetCurrentEpochId() (*big.Int, error) {
+	return _DKG.Contract.GetCurrentEpochId(&_DKG.CallOpts)
+}
+
+// GetCurrentEpochId is a free data retrieval call binding the contract method 0xa29a839f.
+//
+// Solidity: function getCurrentEpochId() view returns(uint256 _currentEpochId)
+func (_DKG *DKGCallerSession) GetCurrentEpochId() (*big.Int, error) {
+	return _DKG.Contract.GetCurrentEpochId(&_DKG.CallOpts)
+}
+
+// GetCurrentEpochStatus is a free data retrieval call binding the contract method 0x4666a62b.
+//
+// Solidity: function getCurrentEpochStatus() view returns(uint8)
+func (_DKG *DKGCaller) GetCurrentEpochStatus(opts *bind.CallOpts) (uint8, error) {
+	var out []interface{}
+	err := _DKG.contract.Call(opts, &out, "getCurrentEpochStatus")
+
+	if err != nil {
+		return *new(uint8), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(uint8)).(*uint8)
+
+	return out0, err
+
+}
+
+// GetCurrentEpochStatus is a free data retrieval call binding the contract method 0x4666a62b.
+//
+// Solidity: function getCurrentEpochStatus() view returns(uint8)
+func (_DKG *DKGSession) GetCurrentEpochStatus() (uint8, error) {
+	return _DKG.Contract.GetCurrentEpochStatus(&_DKG.CallOpts)
+}
+
+// GetCurrentEpochStatus is a free data retrieval call binding the contract method 0x4666a62b.
+//
+// Solidity: function getCurrentEpochStatus() view returns(uint8)
+func (_DKG *DKGCallerSession) GetCurrentEpochStatus() (uint8, error) {
+	return _DKG.Contract.GetCurrentEpochStatus(&_DKG.CallOpts)
+}
+
+// GetDKGEpochInfo is a free data retrieval call binding the contract method 0xca158348.
+//
+// Solidity: function getDKGEpochInfo(uint256 _epochId) view returns(((uint256,uint256,uint256),address,uint8))
+func (_DKG *DKGCaller) GetDKGEpochInfo(opts *bind.CallOpts, _epochId *big.Int) (IDKGDKGEpochInfo, error) {
+	var out []interface{}
+	err := _DKG.contract.Call(opts, &out, "getDKGEpochInfo", _epochId)
+
+	if err != nil {
+		return *new(IDKGDKGEpochInfo), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(IDKGDKGEpochInfo)).(*IDKGDKGEpochInfo)
+
+	return out0, err
+
+}
+
+// GetDKGEpochInfo is a free data retrieval call binding the contract method 0xca158348.
+//
+// Solidity: function getDKGEpochInfo(uint256 _epochId) view returns(((uint256,uint256,uint256),address,uint8))
+func (_DKG *DKGSession) GetDKGEpochInfo(_epochId *big.Int) (IDKGDKGEpochInfo, error) {
+	return _DKG.Contract.GetDKGEpochInfo(&_DKG.CallOpts, _epochId)
+}
+
+// GetDKGEpochInfo is a free data retrieval call binding the contract method 0xca158348.
+//
+// Solidity: function getDKGEpochInfo(uint256 _epochId) view returns(((uint256,uint256,uint256),address,uint8))
+func (_DKG *DKGCallerSession) GetDKGEpochInfo(_epochId *big.Int) (IDKGDKGEpochInfo, error) {
+	return _DKG.Contract.GetDKGEpochInfo(&_DKG.CallOpts, _epochId)
+}
+
+// GetDKGPeriodEndTime is a free data retrieval call binding the contract method 0xc0474753.
+//
+// Solidity: function getDKGPeriodEndTime(uint256 _epochId) view returns(uint256)
+func (_DKG *DKGCaller) GetDKGPeriodEndTime(opts *bind.CallOpts, _epochId *big.Int) (*big.Int, error) {
+	var out []interface{}
+	err := _DKG.contract.Call(opts, &out, "getDKGPeriodEndTime", _epochId)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// GetDKGPeriodEndTime is a free data retrieval call binding the contract method 0xc0474753.
+//
+// Solidity: function getDKGPeriodEndTime(uint256 _epochId) view returns(uint256)
+func (_DKG *DKGSession) GetDKGPeriodEndTime(_epochId *big.Int) (*big.Int, error) {
+	return _DKG.Contract.GetDKGPeriodEndTime(&_DKG.CallOpts, _epochId)
+}
+
+// GetDKGPeriodEndTime is a free data retrieval call binding the contract method 0xc0474753.
+//
+// Solidity: function getDKGPeriodEndTime(uint256 _epochId) view returns(uint256)
+func (_DKG *DKGCallerSession) GetDKGPeriodEndTime(_epochId *big.Int) (*big.Int, error) {
+	return _DKG.Contract.GetDKGPeriodEndTime(&_DKG.CallOpts, _epochId)
+}
+
+// GetEpochEndTime is a free data retrieval call binding the contract method 0xd4ee9f8d.
+//
+// Solidity: function getEpochEndTime(uint256 _epochId) view returns(uint256)
+func (_DKG *DKGCaller) GetEpochEndTime(opts *bind.CallOpts, _epochId *big.Int) (*big.Int, error) {
+	var out []interface{}
+	err := _DKG.contract.Call(opts, &out, "getEpochEndTime", _epochId)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// GetEpochEndTime is a free data retrieval call binding the contract method 0xd4ee9f8d.
+//
+// Solidity: function getEpochEndTime(uint256 _epochId) view returns(uint256)
+func (_DKG *DKGSession) GetEpochEndTime(_epochId *big.Int) (*big.Int, error) {
+	return _DKG.Contract.GetEpochEndTime(&_DKG.CallOpts, _epochId)
+}
+
+// GetEpochEndTime is a free data retrieval call binding the contract method 0xd4ee9f8d.
+//
+// Solidity: function getEpochEndTime(uint256 _epochId) view returns(uint256)
+func (_DKG *DKGCallerSession) GetEpochEndTime(_epochId *big.Int) (*big.Int, error) {
+	return _DKG.Contract.GetEpochEndTime(&_DKG.CallOpts, _epochId)
+}
+
+// GetEpochStatus is a free data retrieval call binding the contract method 0x15accc92.
+//
+// Solidity: function getEpochStatus(uint256 _epochId) view returns(uint8)
+func (_DKG *DKGCaller) GetEpochStatus(opts *bind.CallOpts, _epochId *big.Int) (uint8, error) {
+	var out []interface{}
+	err := _DKG.contract.Call(opts, &out, "getEpochStatus", _epochId)
+
+	if err != nil {
+		return *new(uint8), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(uint8)).(*uint8)
+
+	return out0, err
+
+}
+
+// GetEpochStatus is a free data retrieval call binding the contract method 0x15accc92.
+//
+// Solidity: function getEpochStatus(uint256 _epochId) view returns(uint8)
+func (_DKG *DKGSession) GetEpochStatus(_epochId *big.Int) (uint8, error) {
+	return _DKG.Contract.GetEpochStatus(&_DKG.CallOpts, _epochId)
+}
+
+// GetEpochStatus is a free data retrieval call binding the contract method 0x15accc92.
+//
+// Solidity: function getEpochStatus(uint256 _epochId) view returns(uint8)
+func (_DKG *DKGCallerSession) GetEpochStatus(_epochId *big.Int) (uint8, error) {
+	return _DKG.Contract.GetEpochStatus(&_DKG.CallOpts, _epochId)
 }
 
 // GetInjector is a free data retrieval call binding the contract method 0x3e3b5b19.
@@ -371,12 +632,12 @@ func (_DKG *DKGCallerSession) GetInjector() (common.Address, error) {
 	return _DKG.Contract.GetInjector(&_DKG.CallOpts)
 }
 
-// GetRoundBroadcastCount is a free data retrieval call binding the contract method 0x50c8548f.
+// GetLastEpochId is a free data retrieval call binding the contract method 0x20201668.
 //
-// Solidity: function getRoundBroadcastCount(uint256 _generation, uint256 _round) view returns(uint256)
-func (_DKG *DKGCaller) GetRoundBroadcastCount(opts *bind.CallOpts, _generation *big.Int, _round *big.Int) (*big.Int, error) {
+// Solidity: function getLastEpochId() view returns(uint256)
+func (_DKG *DKGCaller) GetLastEpochId(opts *bind.CallOpts) (*big.Int, error) {
 	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "getRoundBroadcastCount", _generation, _round)
+	err := _DKG.contract.Call(opts, &out, "getLastEpochId")
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -388,49 +649,49 @@ func (_DKG *DKGCaller) GetRoundBroadcastCount(opts *bind.CallOpts, _generation *
 
 }
 
-// GetRoundBroadcastCount is a free data retrieval call binding the contract method 0x50c8548f.
+// GetLastEpochId is a free data retrieval call binding the contract method 0x20201668.
 //
-// Solidity: function getRoundBroadcastCount(uint256 _generation, uint256 _round) view returns(uint256)
-func (_DKG *DKGSession) GetRoundBroadcastCount(_generation *big.Int, _round *big.Int) (*big.Int, error) {
-	return _DKG.Contract.GetRoundBroadcastCount(&_DKG.CallOpts, _generation, _round)
+// Solidity: function getLastEpochId() view returns(uint256)
+func (_DKG *DKGSession) GetLastEpochId() (*big.Int, error) {
+	return _DKG.Contract.GetLastEpochId(&_DKG.CallOpts)
 }
 
-// GetRoundBroadcastCount is a free data retrieval call binding the contract method 0x50c8548f.
+// GetLastEpochId is a free data retrieval call binding the contract method 0x20201668.
 //
-// Solidity: function getRoundBroadcastCount(uint256 _generation, uint256 _round) view returns(uint256)
-func (_DKG *DKGCallerSession) GetRoundBroadcastCount(_generation *big.Int, _round *big.Int) (*big.Int, error) {
-	return _DKG.Contract.GetRoundBroadcastCount(&_DKG.CallOpts, _generation, _round)
+// Solidity: function getLastEpochId() view returns(uint256)
+func (_DKG *DKGCallerSession) GetLastEpochId() (*big.Int, error) {
+	return _DKG.Contract.GetLastEpochId(&_DKG.CallOpts)
 }
 
-// GetRoundBroadcastData is a free data retrieval call binding the contract method 0x130b9702.
+// GetMainEpochInfo is a free data retrieval call binding the contract method 0xb2d5258c.
 //
-// Solidity: function getRoundBroadcastData(uint256 _generation, uint256 _round, address _validator) view returns(bytes)
-func (_DKG *DKGCaller) GetRoundBroadcastData(opts *bind.CallOpts, _generation *big.Int, _round *big.Int, _validator common.Address) ([]byte, error) {
+// Solidity: function getMainEpochInfo(uint256 _epochId) view returns((uint256,uint256,uint256))
+func (_DKG *DKGCaller) GetMainEpochInfo(opts *bind.CallOpts, _epochId *big.Int) (IDKGMainEpochInfo, error) {
 	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "getRoundBroadcastData", _generation, _round, _validator)
+	err := _DKG.contract.Call(opts, &out, "getMainEpochInfo", _epochId)
 
 	if err != nil {
-		return *new([]byte), err
+		return *new(IDKGMainEpochInfo), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new([]byte)).(*[]byte)
+	out0 := *abi.ConvertType(out[0], new(IDKGMainEpochInfo)).(*IDKGMainEpochInfo)
 
 	return out0, err
 
 }
 
-// GetRoundBroadcastData is a free data retrieval call binding the contract method 0x130b9702.
+// GetMainEpochInfo is a free data retrieval call binding the contract method 0xb2d5258c.
 //
-// Solidity: function getRoundBroadcastData(uint256 _generation, uint256 _round, address _validator) view returns(bytes)
-func (_DKG *DKGSession) GetRoundBroadcastData(_generation *big.Int, _round *big.Int, _validator common.Address) ([]byte, error) {
-	return _DKG.Contract.GetRoundBroadcastData(&_DKG.CallOpts, _generation, _round, _validator)
+// Solidity: function getMainEpochInfo(uint256 _epochId) view returns((uint256,uint256,uint256))
+func (_DKG *DKGSession) GetMainEpochInfo(_epochId *big.Int) (IDKGMainEpochInfo, error) {
+	return _DKG.Contract.GetMainEpochInfo(&_DKG.CallOpts, _epochId)
 }
 
-// GetRoundBroadcastData is a free data retrieval call binding the contract method 0x130b9702.
+// GetMainEpochInfo is a free data retrieval call binding the contract method 0xb2d5258c.
 //
-// Solidity: function getRoundBroadcastData(uint256 _generation, uint256 _round, address _validator) view returns(bytes)
-func (_DKG *DKGCallerSession) GetRoundBroadcastData(_generation *big.Int, _round *big.Int, _validator common.Address) ([]byte, error) {
-	return _DKG.Contract.GetRoundBroadcastData(&_DKG.CallOpts, _generation, _round, _validator)
+// Solidity: function getMainEpochInfo(uint256 _epochId) view returns((uint256,uint256,uint256))
+func (_DKG *DKGCallerSession) GetMainEpochInfo(_epochId *big.Int) (IDKGMainEpochInfo, error) {
+	return _DKG.Contract.GetMainEpochInfo(&_DKG.CallOpts, _epochId)
 }
 
 // GetSignerAddress is a free data retrieval call binding the contract method 0x1a296e02.
@@ -464,74 +725,12 @@ func (_DKG *DKGCallerSession) GetSignerAddress() (common.Address, error) {
 	return _DKG.Contract.GetSignerAddress(&_DKG.CallOpts)
 }
 
-// GetStatus is a free data retrieval call binding the contract method 0x5c622a0e.
+// GetSignerVotesCount is a free data retrieval call binding the contract method 0xf7897c07.
 //
-// Solidity: function getStatus(uint256 _generation) view returns(uint8)
-func (_DKG *DKGCaller) GetStatus(opts *bind.CallOpts, _generation *big.Int) (uint8, error) {
+// Solidity: function getSignerVotesCount(uint256 _epochId, address _signerAddr) view returns(uint256)
+func (_DKG *DKGCaller) GetSignerVotesCount(opts *bind.CallOpts, _epochId *big.Int, _signerAddr common.Address) (*big.Int, error) {
 	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "getStatus", _generation)
-
-	if err != nil {
-		return *new(uint8), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(uint8)).(*uint8)
-
-	return out0, err
-
-}
-
-// GetStatus is a free data retrieval call binding the contract method 0x5c622a0e.
-//
-// Solidity: function getStatus(uint256 _generation) view returns(uint8)
-func (_DKG *DKGSession) GetStatus(_generation *big.Int) (uint8, error) {
-	return _DKG.Contract.GetStatus(&_DKG.CallOpts, _generation)
-}
-
-// GetStatus is a free data retrieval call binding the contract method 0x5c622a0e.
-//
-// Solidity: function getStatus(uint256 _generation) view returns(uint8)
-func (_DKG *DKGCallerSession) GetStatus(_generation *big.Int) (uint8, error) {
-	return _DKG.Contract.GetStatus(&_DKG.CallOpts, _generation)
-}
-
-// GetValidators is a free data retrieval call binding the contract method 0x471f40fb.
-//
-// Solidity: function getValidators(uint256 _generation) view returns(address[])
-func (_DKG *DKGCaller) GetValidators(opts *bind.CallOpts, _generation *big.Int) ([]common.Address, error) {
-	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "getValidators", _generation)
-
-	if err != nil {
-		return *new([]common.Address), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([]common.Address)).(*[]common.Address)
-
-	return out0, err
-
-}
-
-// GetValidators is a free data retrieval call binding the contract method 0x471f40fb.
-//
-// Solidity: function getValidators(uint256 _generation) view returns(address[])
-func (_DKG *DKGSession) GetValidators(_generation *big.Int) ([]common.Address, error) {
-	return _DKG.Contract.GetValidators(&_DKG.CallOpts, _generation)
-}
-
-// GetValidators is a free data retrieval call binding the contract method 0x471f40fb.
-//
-// Solidity: function getValidators(uint256 _generation) view returns(address[])
-func (_DKG *DKGCallerSession) GetValidators(_generation *big.Int) ([]common.Address, error) {
-	return _DKG.Contract.GetValidators(&_DKG.CallOpts, _generation)
-}
-
-// GetValidatorsCount is a free data retrieval call binding the contract method 0xcd5fcd15.
-//
-// Solidity: function getValidatorsCount(uint256 _generation) view returns(uint256)
-func (_DKG *DKGCaller) GetValidatorsCount(opts *bind.CallOpts, _generation *big.Int) (*big.Int, error) {
-	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "getValidatorsCount", _generation)
+	err := _DKG.contract.Call(opts, &out, "getSignerVotesCount", _epochId, _signerAddr)
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -543,119 +742,26 @@ func (_DKG *DKGCaller) GetValidatorsCount(opts *bind.CallOpts, _generation *big.
 
 }
 
-// GetValidatorsCount is a free data retrieval call binding the contract method 0xcd5fcd15.
+// GetSignerVotesCount is a free data retrieval call binding the contract method 0xf7897c07.
 //
-// Solidity: function getValidatorsCount(uint256 _generation) view returns(uint256)
-func (_DKG *DKGSession) GetValidatorsCount(_generation *big.Int) (*big.Int, error) {
-	return _DKG.Contract.GetValidatorsCount(&_DKG.CallOpts, _generation)
+// Solidity: function getSignerVotesCount(uint256 _epochId, address _signerAddr) view returns(uint256)
+func (_DKG *DKGSession) GetSignerVotesCount(_epochId *big.Int, _signerAddr common.Address) (*big.Int, error) {
+	return _DKG.Contract.GetSignerVotesCount(&_DKG.CallOpts, _epochId, _signerAddr)
 }
 
-// GetValidatorsCount is a free data retrieval call binding the contract method 0xcd5fcd15.
+// GetSignerVotesCount is a free data retrieval call binding the contract method 0xf7897c07.
 //
-// Solidity: function getValidatorsCount(uint256 _generation) view returns(uint256)
-func (_DKG *DKGCallerSession) GetValidatorsCount(_generation *big.Int) (*big.Int, error) {
-	return _DKG.Contract.GetValidatorsCount(&_DKG.CallOpts, _generation)
+// Solidity: function getSignerVotesCount(uint256 _epochId, address _signerAddr) view returns(uint256)
+func (_DKG *DKGCallerSession) GetSignerVotesCount(_epochId *big.Int, _signerAddr common.Address) (*big.Int, error) {
+	return _DKG.Contract.GetSignerVotesCount(&_DKG.CallOpts, _epochId, _signerAddr)
 }
 
-// IsCurrentValidator is a free data retrieval call binding the contract method 0x55614fcc.
+// GetUpdatedCollectionPeriodEndTime is a free data retrieval call binding the contract method 0x36503f42.
 //
-// Solidity: function isCurrentValidator(address _validator) view returns(bool)
-func (_DKG *DKGCaller) IsCurrentValidator(opts *bind.CallOpts, _validator common.Address) (bool, error) {
+// Solidity: function getUpdatedCollectionPeriodEndTime(uint256 _epochId) view returns(uint256)
+func (_DKG *DKGCaller) GetUpdatedCollectionPeriodEndTime(opts *bind.CallOpts, _epochId *big.Int) (*big.Int, error) {
 	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "isCurrentValidator", _validator)
-
-	if err != nil {
-		return *new(bool), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
-
-	return out0, err
-
-}
-
-// IsCurrentValidator is a free data retrieval call binding the contract method 0x55614fcc.
-//
-// Solidity: function isCurrentValidator(address _validator) view returns(bool)
-func (_DKG *DKGSession) IsCurrentValidator(_validator common.Address) (bool, error) {
-	return _DKG.Contract.IsCurrentValidator(&_DKG.CallOpts, _validator)
-}
-
-// IsCurrentValidator is a free data retrieval call binding the contract method 0x55614fcc.
-//
-// Solidity: function isCurrentValidator(address _validator) view returns(bool)
-func (_DKG *DKGCallerSession) IsCurrentValidator(_validator common.Address) (bool, error) {
-	return _DKG.Contract.IsCurrentValidator(&_DKG.CallOpts, _validator)
-}
-
-// IsRoundFilled is a free data retrieval call binding the contract method 0xc1718e53.
-//
-// Solidity: function isRoundFilled(uint256 _generation, uint256 _round) view returns(bool)
-func (_DKG *DKGCaller) IsRoundFilled(opts *bind.CallOpts, _generation *big.Int, _round *big.Int) (bool, error) {
-	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "isRoundFilled", _generation, _round)
-
-	if err != nil {
-		return *new(bool), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
-
-	return out0, err
-
-}
-
-// IsRoundFilled is a free data retrieval call binding the contract method 0xc1718e53.
-//
-// Solidity: function isRoundFilled(uint256 _generation, uint256 _round) view returns(bool)
-func (_DKG *DKGSession) IsRoundFilled(_generation *big.Int, _round *big.Int) (bool, error) {
-	return _DKG.Contract.IsRoundFilled(&_DKG.CallOpts, _generation, _round)
-}
-
-// IsRoundFilled is a free data retrieval call binding the contract method 0xc1718e53.
-//
-// Solidity: function isRoundFilled(uint256 _generation, uint256 _round) view returns(bool)
-func (_DKG *DKGCallerSession) IsRoundFilled(_generation *big.Int, _round *big.Int) (bool, error) {
-	return _DKG.Contract.IsRoundFilled(&_DKG.CallOpts, _generation, _round)
-}
-
-// IsValidator is a free data retrieval call binding the contract method 0x23f2a73f.
-//
-// Solidity: function isValidator(uint256 _generation, address _validator) view returns(bool)
-func (_DKG *DKGCaller) IsValidator(opts *bind.CallOpts, _generation *big.Int, _validator common.Address) (bool, error) {
-	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "isValidator", _generation, _validator)
-
-	if err != nil {
-		return *new(bool), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
-
-	return out0, err
-
-}
-
-// IsValidator is a free data retrieval call binding the contract method 0x23f2a73f.
-//
-// Solidity: function isValidator(uint256 _generation, address _validator) view returns(bool)
-func (_DKG *DKGSession) IsValidator(_generation *big.Int, _validator common.Address) (bool, error) {
-	return _DKG.Contract.IsValidator(&_DKG.CallOpts, _generation, _validator)
-}
-
-// IsValidator is a free data retrieval call binding the contract method 0x23f2a73f.
-//
-// Solidity: function isValidator(uint256 _generation, address _validator) view returns(bool)
-func (_DKG *DKGCallerSession) IsValidator(_generation *big.Int, _validator common.Address) (bool, error) {
-	return _DKG.Contract.IsValidator(&_DKG.CallOpts, _generation, _validator)
-}
-
-// LastActiveGeneration is a free data retrieval call binding the contract method 0x11af0a20.
-//
-// Solidity: function lastActiveGeneration() view returns(uint256)
-func (_DKG *DKGCaller) LastActiveGeneration(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "lastActiveGeneration")
+	err := _DKG.contract.Call(opts, &out, "getUpdatedCollectionPeriodEndTime", _epochId)
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -667,26 +773,88 @@ func (_DKG *DKGCaller) LastActiveGeneration(opts *bind.CallOpts) (*big.Int, erro
 
 }
 
-// LastActiveGeneration is a free data retrieval call binding the contract method 0x11af0a20.
+// GetUpdatedCollectionPeriodEndTime is a free data retrieval call binding the contract method 0x36503f42.
 //
-// Solidity: function lastActiveGeneration() view returns(uint256)
-func (_DKG *DKGSession) LastActiveGeneration() (*big.Int, error) {
-	return _DKG.Contract.LastActiveGeneration(&_DKG.CallOpts)
+// Solidity: function getUpdatedCollectionPeriodEndTime(uint256 _epochId) view returns(uint256)
+func (_DKG *DKGSession) GetUpdatedCollectionPeriodEndTime(_epochId *big.Int) (*big.Int, error) {
+	return _DKG.Contract.GetUpdatedCollectionPeriodEndTime(&_DKG.CallOpts, _epochId)
 }
 
-// LastActiveGeneration is a free data retrieval call binding the contract method 0x11af0a20.
+// GetUpdatedCollectionPeriodEndTime is a free data retrieval call binding the contract method 0x36503f42.
 //
-// Solidity: function lastActiveGeneration() view returns(uint256)
-func (_DKG *DKGCallerSession) LastActiveGeneration() (*big.Int, error) {
-	return _DKG.Contract.LastActiveGeneration(&_DKG.CallOpts)
+// Solidity: function getUpdatedCollectionPeriodEndTime(uint256 _epochId) view returns(uint256)
+func (_DKG *DKGCallerSession) GetUpdatedCollectionPeriodEndTime(_epochId *big.Int) (*big.Int, error) {
+	return _DKG.Contract.GetUpdatedCollectionPeriodEndTime(&_DKG.CallOpts, _epochId)
 }
 
-// SignerToGeneration is a free data retrieval call binding the contract method 0xad51db6a.
+// GetValidatorInfo is a free data retrieval call binding the contract method 0x8a11d7c9.
 //
-// Solidity: function signerToGeneration(address ) view returns(uint256)
-func (_DKG *DKGCaller) SignerToGeneration(opts *bind.CallOpts, arg0 common.Address) (*big.Int, error) {
+// Solidity: function getValidatorInfo(address _validator) view returns((address,(uint256,uint256),(uint256,uint256)))
+func (_DKG *DKGCaller) GetValidatorInfo(opts *bind.CallOpts, _validator common.Address) (IDKGValidatorInfo, error) {
 	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "signerToGeneration", arg0)
+	err := _DKG.contract.Call(opts, &out, "getValidatorInfo", _validator)
+
+	if err != nil {
+		return *new(IDKGValidatorInfo), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(IDKGValidatorInfo)).(*IDKGValidatorInfo)
+
+	return out0, err
+
+}
+
+// GetValidatorInfo is a free data retrieval call binding the contract method 0x8a11d7c9.
+//
+// Solidity: function getValidatorInfo(address _validator) view returns((address,(uint256,uint256),(uint256,uint256)))
+func (_DKG *DKGSession) GetValidatorInfo(_validator common.Address) (IDKGValidatorInfo, error) {
+	return _DKG.Contract.GetValidatorInfo(&_DKG.CallOpts, _validator)
+}
+
+// GetValidatorInfo is a free data retrieval call binding the contract method 0x8a11d7c9.
+//
+// Solidity: function getValidatorInfo(address _validator) view returns((address,(uint256,uint256),(uint256,uint256)))
+func (_DKG *DKGCallerSession) GetValidatorInfo(_validator common.Address) (IDKGValidatorInfo, error) {
+	return _DKG.Contract.GetValidatorInfo(&_DKG.CallOpts, _validator)
+}
+
+// GetValidatorVote is a free data retrieval call binding the contract method 0x124e3ffa.
+//
+// Solidity: function getValidatorVote(uint256 _epochId, address _validatorAddr) view returns(address)
+func (_DKG *DKGCaller) GetValidatorVote(opts *bind.CallOpts, _epochId *big.Int, _validatorAddr common.Address) (common.Address, error) {
+	var out []interface{}
+	err := _DKG.contract.Call(opts, &out, "getValidatorVote", _epochId, _validatorAddr)
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// GetValidatorVote is a free data retrieval call binding the contract method 0x124e3ffa.
+//
+// Solidity: function getValidatorVote(uint256 _epochId, address _validatorAddr) view returns(address)
+func (_DKG *DKGSession) GetValidatorVote(_epochId *big.Int, _validatorAddr common.Address) (common.Address, error) {
+	return _DKG.Contract.GetValidatorVote(&_DKG.CallOpts, _epochId, _validatorAddr)
+}
+
+// GetValidatorVote is a free data retrieval call binding the contract method 0x124e3ffa.
+//
+// Solidity: function getValidatorVote(uint256 _epochId, address _validatorAddr) view returns(address)
+func (_DKG *DKGCallerSession) GetValidatorVote(_epochId *big.Int, _validatorAddr common.Address) (common.Address, error) {
+	return _DKG.Contract.GetValidatorVote(&_DKG.CallOpts, _epochId, _validatorAddr)
+}
+
+// GuaranteedWorkingEpochDuration is a free data retrieval call binding the contract method 0x696f2959.
+//
+// Solidity: function guaranteedWorkingEpochDuration() view returns(uint256)
+func (_DKG *DKGCaller) GuaranteedWorkingEpochDuration(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _DKG.contract.Call(opts, &out, "guaranteedWorkingEpochDuration")
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -698,81 +866,340 @@ func (_DKG *DKGCaller) SignerToGeneration(opts *bind.CallOpts, arg0 common.Addre
 
 }
 
-// SignerToGeneration is a free data retrieval call binding the contract method 0xad51db6a.
+// GuaranteedWorkingEpochDuration is a free data retrieval call binding the contract method 0x696f2959.
 //
-// Solidity: function signerToGeneration(address ) view returns(uint256)
-func (_DKG *DKGSession) SignerToGeneration(arg0 common.Address) (*big.Int, error) {
-	return _DKG.Contract.SignerToGeneration(&_DKG.CallOpts, arg0)
+// Solidity: function guaranteedWorkingEpochDuration() view returns(uint256)
+func (_DKG *DKGSession) GuaranteedWorkingEpochDuration() (*big.Int, error) {
+	return _DKG.Contract.GuaranteedWorkingEpochDuration(&_DKG.CallOpts)
 }
 
-// SignerToGeneration is a free data retrieval call binding the contract method 0xad51db6a.
+// GuaranteedWorkingEpochDuration is a free data retrieval call binding the contract method 0x696f2959.
 //
-// Solidity: function signerToGeneration(address ) view returns(uint256)
-func (_DKG *DKGCallerSession) SignerToGeneration(arg0 common.Address) (*big.Int, error) {
-	return _DKG.Contract.SignerToGeneration(&_DKG.CallOpts, arg0)
+// Solidity: function guaranteedWorkingEpochDuration() view returns(uint256)
+func (_DKG *DKGCallerSession) GuaranteedWorkingEpochDuration() (*big.Int, error) {
+	return _DKG.Contract.GuaranteedWorkingEpochDuration(&_DKG.CallOpts)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0xfe4b84df.
+// IsActiveValidator is a free data retrieval call binding the contract method 0x40550a1c.
 //
-// Solidity: function initialize(uint256 _deadlinePeriod) returns()
-func (_DKG *DKGTransactor) Initialize(opts *bind.TransactOpts, _deadlinePeriod *big.Int) (*types.Transaction, error) {
-	return _DKG.contract.Transact(opts, "initialize", _deadlinePeriod)
+// Solidity: function isActiveValidator(address _validatorAddr) view returns(bool)
+func (_DKG *DKGCaller) IsActiveValidator(opts *bind.CallOpts, _validatorAddr common.Address) (bool, error) {
+	var out []interface{}
+	err := _DKG.contract.Call(opts, &out, "isActiveValidator", _validatorAddr)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0xfe4b84df.
+// IsActiveValidator is a free data retrieval call binding the contract method 0x40550a1c.
 //
-// Solidity: function initialize(uint256 _deadlinePeriod) returns()
-func (_DKG *DKGSession) Initialize(_deadlinePeriod *big.Int) (*types.Transaction, error) {
-	return _DKG.Contract.Initialize(&_DKG.TransactOpts, _deadlinePeriod)
+// Solidity: function isActiveValidator(address _validatorAddr) view returns(bool)
+func (_DKG *DKGSession) IsActiveValidator(_validatorAddr common.Address) (bool, error) {
+	return _DKG.Contract.IsActiveValidator(&_DKG.CallOpts, _validatorAddr)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0xfe4b84df.
+// IsActiveValidator is a free data retrieval call binding the contract method 0x40550a1c.
 //
-// Solidity: function initialize(uint256 _deadlinePeriod) returns()
-func (_DKG *DKGTransactorSession) Initialize(_deadlinePeriod *big.Int) (*types.Transaction, error) {
-	return _DKG.Contract.Initialize(&_DKG.TransactOpts, _deadlinePeriod)
+// Solidity: function isActiveValidator(address _validatorAddr) view returns(bool)
+func (_DKG *DKGCallerSession) IsActiveValidator(_validatorAddr common.Address) (bool, error) {
+	return _DKG.Contract.IsActiveValidator(&_DKG.CallOpts, _validatorAddr)
 }
 
-// RoundBroadcast is a paid mutator transaction binding the contract method 0x100c11c3.
+// IsCurrentEpoch is a free data retrieval call binding the contract method 0xe80f6534.
 //
-// Solidity: function roundBroadcast(uint256 _generation, uint256 _round, bytes _rawData) returns()
-func (_DKG *DKGTransactor) RoundBroadcast(opts *bind.TransactOpts, _generation *big.Int, _round *big.Int, _rawData []byte) (*types.Transaction, error) {
-	return _DKG.contract.Transact(opts, "roundBroadcast", _generation, _round, _rawData)
+// Solidity: function isCurrentEpoch(uint256 _epochId) view returns(bool)
+func (_DKG *DKGCaller) IsCurrentEpoch(opts *bind.CallOpts, _epochId *big.Int) (bool, error) {
+	var out []interface{}
+	err := _DKG.contract.Call(opts, &out, "isCurrentEpoch", _epochId)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
 }
 
-// RoundBroadcast is a paid mutator transaction binding the contract method 0x100c11c3.
+// IsCurrentEpoch is a free data retrieval call binding the contract method 0xe80f6534.
 //
-// Solidity: function roundBroadcast(uint256 _generation, uint256 _round, bytes _rawData) returns()
-func (_DKG *DKGSession) RoundBroadcast(_generation *big.Int, _round *big.Int, _rawData []byte) (*types.Transaction, error) {
-	return _DKG.Contract.RoundBroadcast(&_DKG.TransactOpts, _generation, _round, _rawData)
+// Solidity: function isCurrentEpoch(uint256 _epochId) view returns(bool)
+func (_DKG *DKGSession) IsCurrentEpoch(_epochId *big.Int) (bool, error) {
+	return _DKG.Contract.IsCurrentEpoch(&_DKG.CallOpts, _epochId)
 }
 
-// RoundBroadcast is a paid mutator transaction binding the contract method 0x100c11c3.
+// IsCurrentEpoch is a free data retrieval call binding the contract method 0xe80f6534.
 //
-// Solidity: function roundBroadcast(uint256 _generation, uint256 _round, bytes _rawData) returns()
-func (_DKG *DKGTransactorSession) RoundBroadcast(_generation *big.Int, _round *big.Int, _rawData []byte) (*types.Transaction, error) {
-	return _DKG.Contract.RoundBroadcast(&_DKG.TransactOpts, _generation, _round, _rawData)
+// Solidity: function isCurrentEpoch(uint256 _epochId) view returns(bool)
+func (_DKG *DKGCallerSession) IsCurrentEpoch(_epochId *big.Int) (bool, error) {
+	return _DKG.Contract.IsCurrentEpoch(&_DKG.CallOpts, _epochId)
 }
 
-// SetDeadlinePeriod is a paid mutator transaction binding the contract method 0x82651c0d.
+// IsDKGGenSuccessful is a free data retrieval call binding the contract method 0x3ae0725a.
 //
-// Solidity: function setDeadlinePeriod(uint256 _deadlinePeriod) returns()
-func (_DKG *DKGTransactor) SetDeadlinePeriod(opts *bind.TransactOpts, _deadlinePeriod *big.Int) (*types.Transaction, error) {
-	return _DKG.contract.Transact(opts, "setDeadlinePeriod", _deadlinePeriod)
+// Solidity: function isDKGGenSuccessful(uint256 _epochId) view returns(bool)
+func (_DKG *DKGCaller) IsDKGGenSuccessful(opts *bind.CallOpts, _epochId *big.Int) (bool, error) {
+	var out []interface{}
+	err := _DKG.contract.Call(opts, &out, "isDKGGenSuccessful", _epochId)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
 }
 
-// SetDeadlinePeriod is a paid mutator transaction binding the contract method 0x82651c0d.
+// IsDKGGenSuccessful is a free data retrieval call binding the contract method 0x3ae0725a.
 //
-// Solidity: function setDeadlinePeriod(uint256 _deadlinePeriod) returns()
-func (_DKG *DKGSession) SetDeadlinePeriod(_deadlinePeriod *big.Int) (*types.Transaction, error) {
-	return _DKG.Contract.SetDeadlinePeriod(&_DKG.TransactOpts, _deadlinePeriod)
+// Solidity: function isDKGGenSuccessful(uint256 _epochId) view returns(bool)
+func (_DKG *DKGSession) IsDKGGenSuccessful(_epochId *big.Int) (bool, error) {
+	return _DKG.Contract.IsDKGGenSuccessful(&_DKG.CallOpts, _epochId)
 }
 
-// SetDeadlinePeriod is a paid mutator transaction binding the contract method 0x82651c0d.
+// IsDKGGenSuccessful is a free data retrieval call binding the contract method 0x3ae0725a.
 //
-// Solidity: function setDeadlinePeriod(uint256 _deadlinePeriod) returns()
-func (_DKG *DKGTransactorSession) SetDeadlinePeriod(_deadlinePeriod *big.Int) (*types.Transaction, error) {
-	return _DKG.Contract.SetDeadlinePeriod(&_DKG.TransactOpts, _deadlinePeriod)
+// Solidity: function isDKGGenSuccessful(uint256 _epochId) view returns(bool)
+func (_DKG *DKGCallerSession) IsDKGGenSuccessful(_epochId *big.Int) (bool, error) {
+	return _DKG.Contract.IsDKGGenSuccessful(&_DKG.CallOpts, _epochId)
+}
+
+// IsLastEpoch is a free data retrieval call binding the contract method 0x214e6a56.
+//
+// Solidity: function isLastEpoch(uint256 _epochId) view returns(bool)
+func (_DKG *DKGCaller) IsLastEpoch(opts *bind.CallOpts, _epochId *big.Int) (bool, error) {
+	var out []interface{}
+	err := _DKG.contract.Call(opts, &out, "isLastEpoch", _epochId)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// IsLastEpoch is a free data retrieval call binding the contract method 0x214e6a56.
+//
+// Solidity: function isLastEpoch(uint256 _epochId) view returns(bool)
+func (_DKG *DKGSession) IsLastEpoch(_epochId *big.Int) (bool, error) {
+	return _DKG.Contract.IsLastEpoch(&_DKG.CallOpts, _epochId)
+}
+
+// IsLastEpoch is a free data retrieval call binding the contract method 0x214e6a56.
+//
+// Solidity: function isLastEpoch(uint256 _epochId) view returns(bool)
+func (_DKG *DKGCallerSession) IsLastEpoch(_epochId *big.Int) (bool, error) {
+	return _DKG.Contract.IsLastEpoch(&_DKG.CallOpts, _epochId)
+}
+
+// IsValidator is a free data retrieval call binding the contract method 0xfacd743b.
+//
+// Solidity: function isValidator(address _validatorAddr) view returns(bool)
+func (_DKG *DKGCaller) IsValidator(opts *bind.CallOpts, _validatorAddr common.Address) (bool, error) {
+	var out []interface{}
+	err := _DKG.contract.Call(opts, &out, "isValidator", _validatorAddr)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// IsValidator is a free data retrieval call binding the contract method 0xfacd743b.
+//
+// Solidity: function isValidator(address _validatorAddr) view returns(bool)
+func (_DKG *DKGSession) IsValidator(_validatorAddr common.Address) (bool, error) {
+	return _DKG.Contract.IsValidator(&_DKG.CallOpts, _validatorAddr)
+}
+
+// IsValidator is a free data retrieval call binding the contract method 0xfacd743b.
+//
+// Solidity: function isValidator(address _validatorAddr) view returns(bool)
+func (_DKG *DKGCallerSession) IsValidator(_validatorAddr common.Address) (bool, error) {
+	return _DKG.Contract.IsValidator(&_DKG.CallOpts, _validatorAddr)
+}
+
+// IsValidatorSlashed is a free data retrieval call binding the contract method 0xac4fe5ab.
+//
+// Solidity: function isValidatorSlashed(address _validatorAddr) view returns(bool)
+func (_DKG *DKGCaller) IsValidatorSlashed(opts *bind.CallOpts, _validatorAddr common.Address) (bool, error) {
+	var out []interface{}
+	err := _DKG.contract.Call(opts, &out, "isValidatorSlashed", _validatorAddr)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// IsValidatorSlashed is a free data retrieval call binding the contract method 0xac4fe5ab.
+//
+// Solidity: function isValidatorSlashed(address _validatorAddr) view returns(bool)
+func (_DKG *DKGSession) IsValidatorSlashed(_validatorAddr common.Address) (bool, error) {
+	return _DKG.Contract.IsValidatorSlashed(&_DKG.CallOpts, _validatorAddr)
+}
+
+// IsValidatorSlashed is a free data retrieval call binding the contract method 0xac4fe5ab.
+//
+// Solidity: function isValidatorSlashed(address _validatorAddr) view returns(bool)
+func (_DKG *DKGCallerSession) IsValidatorSlashed(_validatorAddr common.Address) (bool, error) {
+	return _DKG.Contract.IsValidatorSlashed(&_DKG.CallOpts, _validatorAddr)
+}
+
+// UpdatesCollectionEpochDuration is a free data retrieval call binding the contract method 0x72ef10b2.
+//
+// Solidity: function updatesCollectionEpochDuration() view returns(uint256)
+func (_DKG *DKGCaller) UpdatesCollectionEpochDuration(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _DKG.contract.Call(opts, &out, "updatesCollectionEpochDuration")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// UpdatesCollectionEpochDuration is a free data retrieval call binding the contract method 0x72ef10b2.
+//
+// Solidity: function updatesCollectionEpochDuration() view returns(uint256)
+func (_DKG *DKGSession) UpdatesCollectionEpochDuration() (*big.Int, error) {
+	return _DKG.Contract.UpdatesCollectionEpochDuration(&_DKG.CallOpts)
+}
+
+// UpdatesCollectionEpochDuration is a free data retrieval call binding the contract method 0x72ef10b2.
+//
+// Solidity: function updatesCollectionEpochDuration() view returns(uint256)
+func (_DKG *DKGCallerSession) UpdatesCollectionEpochDuration() (*big.Int, error) {
+	return _DKG.Contract.UpdatesCollectionEpochDuration(&_DKG.CallOpts)
+}
+
+// AddValidator is a paid mutator transaction binding the contract method 0x4d238c8e.
+//
+// Solidity: function addValidator(address _validatorToAdd) returns()
+func (_DKG *DKGTransactor) AddValidator(opts *bind.TransactOpts, _validatorToAdd common.Address) (*types.Transaction, error) {
+	return _DKG.contract.Transact(opts, "addValidator", _validatorToAdd)
+}
+
+// AddValidator is a paid mutator transaction binding the contract method 0x4d238c8e.
+//
+// Solidity: function addValidator(address _validatorToAdd) returns()
+func (_DKG *DKGSession) AddValidator(_validatorToAdd common.Address) (*types.Transaction, error) {
+	return _DKG.Contract.AddValidator(&_DKG.TransactOpts, _validatorToAdd)
+}
+
+// AddValidator is a paid mutator transaction binding the contract method 0x4d238c8e.
+//
+// Solidity: function addValidator(address _validatorToAdd) returns()
+func (_DKG *DKGTransactorSession) AddValidator(_validatorToAdd common.Address) (*types.Transaction, error) {
+	return _DKG.Contract.AddValidator(&_DKG.TransactOpts, _validatorToAdd)
+}
+
+// AnnounceValidatorExit is a paid mutator transaction binding the contract method 0xf9cf0dd8.
+//
+// Solidity: function announceValidatorExit(address _validatorToExit) returns(uint256)
+func (_DKG *DKGTransactor) AnnounceValidatorExit(opts *bind.TransactOpts, _validatorToExit common.Address) (*types.Transaction, error) {
+	return _DKG.contract.Transact(opts, "announceValidatorExit", _validatorToExit)
+}
+
+// AnnounceValidatorExit is a paid mutator transaction binding the contract method 0xf9cf0dd8.
+//
+// Solidity: function announceValidatorExit(address _validatorToExit) returns(uint256)
+func (_DKG *DKGSession) AnnounceValidatorExit(_validatorToExit common.Address) (*types.Transaction, error) {
+	return _DKG.Contract.AnnounceValidatorExit(&_DKG.TransactOpts, _validatorToExit)
+}
+
+// AnnounceValidatorExit is a paid mutator transaction binding the contract method 0xf9cf0dd8.
+//
+// Solidity: function announceValidatorExit(address _validatorToExit) returns(uint256)
+func (_DKG *DKGTransactorSession) AnnounceValidatorExit(_validatorToExit common.Address) (*types.Transaction, error) {
+	return _DKG.Contract.AnnounceValidatorExit(&_DKG.TransactOpts, _validatorToExit)
+}
+
+// CreateProposal is a paid mutator transaction binding the contract method 0x180fd87f.
+//
+// Solidity: function createProposal() returns((uint256,uint256,uint256))
+func (_DKG *DKGTransactor) CreateProposal(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _DKG.contract.Transact(opts, "createProposal")
+}
+
+// CreateProposal is a paid mutator transaction binding the contract method 0x180fd87f.
+//
+// Solidity: function createProposal() returns((uint256,uint256,uint256))
+func (_DKG *DKGSession) CreateProposal() (*types.Transaction, error) {
+	return _DKG.Contract.CreateProposal(&_DKG.TransactOpts)
+}
+
+// CreateProposal is a paid mutator transaction binding the contract method 0x180fd87f.
+//
+// Solidity: function createProposal() returns((uint256,uint256,uint256))
+func (_DKG *DKGTransactorSession) CreateProposal() (*types.Transaction, error) {
+	return _DKG.Contract.CreateProposal(&_DKG.TransactOpts)
+}
+
+// Initialize is a paid mutator transaction binding the contract method 0x80d85911.
+//
+// Solidity: function initialize(uint256 _updatesCollectionEpochDuration, uint256 _dkgGenerationEpochDuration, uint256 _guaranteedWorkingEpochDuration) returns()
+func (_DKG *DKGTransactor) Initialize(opts *bind.TransactOpts, _updatesCollectionEpochDuration *big.Int, _dkgGenerationEpochDuration *big.Int, _guaranteedWorkingEpochDuration *big.Int) (*types.Transaction, error) {
+	return _DKG.contract.Transact(opts, "initialize", _updatesCollectionEpochDuration, _dkgGenerationEpochDuration, _guaranteedWorkingEpochDuration)
+}
+
+// Initialize is a paid mutator transaction binding the contract method 0x80d85911.
+//
+// Solidity: function initialize(uint256 _updatesCollectionEpochDuration, uint256 _dkgGenerationEpochDuration, uint256 _guaranteedWorkingEpochDuration) returns()
+func (_DKG *DKGSession) Initialize(_updatesCollectionEpochDuration *big.Int, _dkgGenerationEpochDuration *big.Int, _guaranteedWorkingEpochDuration *big.Int) (*types.Transaction, error) {
+	return _DKG.Contract.Initialize(&_DKG.TransactOpts, _updatesCollectionEpochDuration, _dkgGenerationEpochDuration, _guaranteedWorkingEpochDuration)
+}
+
+// Initialize is a paid mutator transaction binding the contract method 0x80d85911.
+//
+// Solidity: function initialize(uint256 _updatesCollectionEpochDuration, uint256 _dkgGenerationEpochDuration, uint256 _guaranteedWorkingEpochDuration) returns()
+func (_DKG *DKGTransactorSession) Initialize(_updatesCollectionEpochDuration *big.Int, _dkgGenerationEpochDuration *big.Int, _guaranteedWorkingEpochDuration *big.Int) (*types.Transaction, error) {
+	return _DKG.Contract.Initialize(&_DKG.TransactOpts, _updatesCollectionEpochDuration, _dkgGenerationEpochDuration, _guaranteedWorkingEpochDuration)
+}
+
+// RemoveValidator is a paid mutator transaction binding the contract method 0x40a141ff.
+//
+// Solidity: function removeValidator(address _validatorToRemove) returns()
+func (_DKG *DKGTransactor) RemoveValidator(opts *bind.TransactOpts, _validatorToRemove common.Address) (*types.Transaction, error) {
+	return _DKG.contract.Transact(opts, "removeValidator", _validatorToRemove)
+}
+
+// RemoveValidator is a paid mutator transaction binding the contract method 0x40a141ff.
+//
+// Solidity: function removeValidator(address _validatorToRemove) returns()
+func (_DKG *DKGSession) RemoveValidator(_validatorToRemove common.Address) (*types.Transaction, error) {
+	return _DKG.Contract.RemoveValidator(&_DKG.TransactOpts, _validatorToRemove)
+}
+
+// RemoveValidator is a paid mutator transaction binding the contract method 0x40a141ff.
+//
+// Solidity: function removeValidator(address _validatorToRemove) returns()
+func (_DKG *DKGTransactorSession) RemoveValidator(_validatorToRemove common.Address) (*types.Transaction, error) {
+	return _DKG.Contract.RemoveValidator(&_DKG.TransactOpts, _validatorToRemove)
 }
 
 // SetDependencies is a paid mutator transaction binding the contract method 0x69130451.
@@ -817,46 +1244,67 @@ func (_DKG *DKGTransactorSession) SetInjector(injector_ common.Address) (*types.
 	return _DKG.Contract.SetInjector(&_DKG.TransactOpts, injector_)
 }
 
-// UpdateGeneration is a paid mutator transaction binding the contract method 0xb32805c3.
+// SlashValidator is a paid mutator transaction binding the contract method 0x4711f586.
 //
-// Solidity: function updateGeneration() returns()
-func (_DKG *DKGTransactor) UpdateGeneration(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _DKG.contract.Transact(opts, "updateGeneration")
+// Solidity: function slashValidator(address _validatorAddr) returns()
+func (_DKG *DKGTransactor) SlashValidator(opts *bind.TransactOpts, _validatorAddr common.Address) (*types.Transaction, error) {
+	return _DKG.contract.Transact(opts, "slashValidator", _validatorAddr)
 }
 
-// UpdateGeneration is a paid mutator transaction binding the contract method 0xb32805c3.
+// SlashValidator is a paid mutator transaction binding the contract method 0x4711f586.
 //
-// Solidity: function updateGeneration() returns()
-func (_DKG *DKGSession) UpdateGeneration() (*types.Transaction, error) {
-	return _DKG.Contract.UpdateGeneration(&_DKG.TransactOpts)
+// Solidity: function slashValidator(address _validatorAddr) returns()
+func (_DKG *DKGSession) SlashValidator(_validatorAddr common.Address) (*types.Transaction, error) {
+	return _DKG.Contract.SlashValidator(&_DKG.TransactOpts, _validatorAddr)
 }
 
-// UpdateGeneration is a paid mutator transaction binding the contract method 0xb32805c3.
+// SlashValidator is a paid mutator transaction binding the contract method 0x4711f586.
 //
-// Solidity: function updateGeneration() returns()
-func (_DKG *DKGTransactorSession) UpdateGeneration() (*types.Transaction, error) {
-	return _DKG.Contract.UpdateGeneration(&_DKG.TransactOpts)
+// Solidity: function slashValidator(address _validatorAddr) returns()
+func (_DKG *DKGTransactorSession) SlashValidator(_validatorAddr common.Address) (*types.Transaction, error) {
+	return _DKG.Contract.SlashValidator(&_DKG.TransactOpts, _validatorAddr)
+}
+
+// UpdateAllValidators is a paid mutator transaction binding the contract method 0x6c8fbb64.
+//
+// Solidity: function updateAllValidators() returns()
+func (_DKG *DKGTransactor) UpdateAllValidators(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _DKG.contract.Transact(opts, "updateAllValidators")
+}
+
+// UpdateAllValidators is a paid mutator transaction binding the contract method 0x6c8fbb64.
+//
+// Solidity: function updateAllValidators() returns()
+func (_DKG *DKGSession) UpdateAllValidators() (*types.Transaction, error) {
+	return _DKG.Contract.UpdateAllValidators(&_DKG.TransactOpts)
+}
+
+// UpdateAllValidators is a paid mutator transaction binding the contract method 0x6c8fbb64.
+//
+// Solidity: function updateAllValidators() returns()
+func (_DKG *DKGTransactorSession) UpdateAllValidators() (*types.Transaction, error) {
+	return _DKG.Contract.UpdateAllValidators(&_DKG.TransactOpts)
 }
 
 // VoteSigner is a paid mutator transaction binding the contract method 0xc88bc067.
 //
-// Solidity: function voteSigner(uint256 _generation, address _signerAddress, bytes _signature) returns()
-func (_DKG *DKGTransactor) VoteSigner(opts *bind.TransactOpts, _generation *big.Int, _signerAddress common.Address, _signature []byte) (*types.Transaction, error) {
-	return _DKG.contract.Transact(opts, "voteSigner", _generation, _signerAddress, _signature)
+// Solidity: function voteSigner(uint256 _epochId, address _signerAddress, bytes _signature) returns()
+func (_DKG *DKGTransactor) VoteSigner(opts *bind.TransactOpts, _epochId *big.Int, _signerAddress common.Address, _signature []byte) (*types.Transaction, error) {
+	return _DKG.contract.Transact(opts, "voteSigner", _epochId, _signerAddress, _signature)
 }
 
 // VoteSigner is a paid mutator transaction binding the contract method 0xc88bc067.
 //
-// Solidity: function voteSigner(uint256 _generation, address _signerAddress, bytes _signature) returns()
-func (_DKG *DKGSession) VoteSigner(_generation *big.Int, _signerAddress common.Address, _signature []byte) (*types.Transaction, error) {
-	return _DKG.Contract.VoteSigner(&_DKG.TransactOpts, _generation, _signerAddress, _signature)
+// Solidity: function voteSigner(uint256 _epochId, address _signerAddress, bytes _signature) returns()
+func (_DKG *DKGSession) VoteSigner(_epochId *big.Int, _signerAddress common.Address, _signature []byte) (*types.Transaction, error) {
+	return _DKG.Contract.VoteSigner(&_DKG.TransactOpts, _epochId, _signerAddress, _signature)
 }
 
 // VoteSigner is a paid mutator transaction binding the contract method 0xc88bc067.
 //
-// Solidity: function voteSigner(uint256 _generation, address _signerAddress, bytes _signature) returns()
-func (_DKG *DKGTransactorSession) VoteSigner(_generation *big.Int, _signerAddress common.Address, _signature []byte) (*types.Transaction, error) {
-	return _DKG.Contract.VoteSigner(&_DKG.TransactOpts, _generation, _signerAddress, _signature)
+// Solidity: function voteSigner(uint256 _epochId, address _signerAddress, bytes _signature) returns()
+func (_DKG *DKGTransactorSession) VoteSigner(_epochId *big.Int, _signerAddress common.Address, _signature []byte) (*types.Transaction, error) {
+	return _DKG.Contract.VoteSigner(&_DKG.TransactOpts, _epochId, _signerAddress, _signature)
 }
 
 // DKGInitializedIterator is returned from FilterInitialized and is used to iterate over the raw logs and unpacked data for Initialized events raised by the DKG contract.
@@ -993,9 +1441,9 @@ func (_DKG *DKGFilterer) ParseInitialized(log types.Log) (*DKGInitialized, error
 	return event, nil
 }
 
-// DKGRoundDataFilledIterator is returned from FilterRoundDataFilled and is used to iterate over the raw logs and unpacked data for RoundDataFilled events raised by the DKG contract.
-type DKGRoundDataFilledIterator struct {
-	Event *DKGRoundDataFilled // Event containing the contract specifics and raw log
+// DKGNewEpochCreatedIterator is returned from FilterNewEpochCreated and is used to iterate over the raw logs and unpacked data for NewEpochCreated events raised by the DKG contract.
+type DKGNewEpochCreatedIterator struct {
+	Event *DKGNewEpochCreated // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -1009,7 +1457,7 @@ type DKGRoundDataFilledIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *DKGRoundDataFilledIterator) Next() bool {
+func (it *DKGNewEpochCreatedIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -1018,7 +1466,7 @@ func (it *DKGRoundDataFilledIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(DKGRoundDataFilled)
+			it.Event = new(DKGNewEpochCreated)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -1033,7 +1481,7 @@ func (it *DKGRoundDataFilledIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(DKGRoundDataFilled)
+		it.Event = new(DKGNewEpochCreated)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -1049,42 +1497,42 @@ func (it *DKGRoundDataFilledIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *DKGRoundDataFilledIterator) Error() error {
+func (it *DKGNewEpochCreatedIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *DKGRoundDataFilledIterator) Close() error {
+func (it *DKGNewEpochCreatedIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// DKGRoundDataFilled represents a RoundDataFilled event raised by the DKG contract.
-type DKGRoundDataFilled struct {
-	Generation *big.Int
-	Round      *big.Int
-	Raw        types.Log // Blockchain specific contextual infos
+// DKGNewEpochCreated represents a NewEpochCreated event raised by the DKG contract.
+type DKGNewEpochCreated struct {
+	EpochId        *big.Int
+	EpochStartTime *big.Int
+	Raw            types.Log // Blockchain specific contextual infos
 }
 
-// FilterRoundDataFilled is a free log retrieval operation binding the contract event 0xab74ab6fc458020cf5d6116f5c013ebf3c0ad518f10de1391427c225f75db5f9.
+// FilterNewEpochCreated is a free log retrieval operation binding the contract event 0xf27e0ff471920cfae653a7a16cf64784b13fafb16b991f9af7860027c1b475d7.
 //
-// Solidity: event RoundDataFilled(uint256 generation, uint256 round)
-func (_DKG *DKGFilterer) FilterRoundDataFilled(opts *bind.FilterOpts) (*DKGRoundDataFilledIterator, error) {
+// Solidity: event NewEpochCreated(uint256 epochId, uint256 epochStartTime)
+func (_DKG *DKGFilterer) FilterNewEpochCreated(opts *bind.FilterOpts) (*DKGNewEpochCreatedIterator, error) {
 
-	logs, sub, err := _DKG.contract.FilterLogs(opts, "RoundDataFilled")
+	logs, sub, err := _DKG.contract.FilterLogs(opts, "NewEpochCreated")
 	if err != nil {
 		return nil, err
 	}
-	return &DKGRoundDataFilledIterator{contract: _DKG.contract, event: "RoundDataFilled", logs: logs, sub: sub}, nil
+	return &DKGNewEpochCreatedIterator{contract: _DKG.contract, event: "NewEpochCreated", logs: logs, sub: sub}, nil
 }
 
-// WatchRoundDataFilled is a free log subscription operation binding the contract event 0xab74ab6fc458020cf5d6116f5c013ebf3c0ad518f10de1391427c225f75db5f9.
+// WatchNewEpochCreated is a free log subscription operation binding the contract event 0xf27e0ff471920cfae653a7a16cf64784b13fafb16b991f9af7860027c1b475d7.
 //
-// Solidity: event RoundDataFilled(uint256 generation, uint256 round)
-func (_DKG *DKGFilterer) WatchRoundDataFilled(opts *bind.WatchOpts, sink chan<- *DKGRoundDataFilled) (event.Subscription, error) {
+// Solidity: event NewEpochCreated(uint256 epochId, uint256 epochStartTime)
+func (_DKG *DKGFilterer) WatchNewEpochCreated(opts *bind.WatchOpts, sink chan<- *DKGNewEpochCreated) (event.Subscription, error) {
 
-	logs, sub, err := _DKG.contract.WatchLogs(opts, "RoundDataFilled")
+	logs, sub, err := _DKG.contract.WatchLogs(opts, "NewEpochCreated")
 	if err != nil {
 		return nil, err
 	}
@@ -1094,8 +1542,8 @@ func (_DKG *DKGFilterer) WatchRoundDataFilled(opts *bind.WatchOpts, sink chan<- 
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(DKGRoundDataFilled)
-				if err := _DKG.contract.UnpackLog(event, "RoundDataFilled", log); err != nil {
+				event := new(DKGNewEpochCreated)
+				if err := _DKG.contract.UnpackLog(event, "NewEpochCreated", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1116,21 +1564,21 @@ func (_DKG *DKGFilterer) WatchRoundDataFilled(opts *bind.WatchOpts, sink chan<- 
 	}), nil
 }
 
-// ParseRoundDataFilled is a log parse operation binding the contract event 0xab74ab6fc458020cf5d6116f5c013ebf3c0ad518f10de1391427c225f75db5f9.
+// ParseNewEpochCreated is a log parse operation binding the contract event 0xf27e0ff471920cfae653a7a16cf64784b13fafb16b991f9af7860027c1b475d7.
 //
-// Solidity: event RoundDataFilled(uint256 generation, uint256 round)
-func (_DKG *DKGFilterer) ParseRoundDataFilled(log types.Log) (*DKGRoundDataFilled, error) {
-	event := new(DKGRoundDataFilled)
-	if err := _DKG.contract.UnpackLog(event, "RoundDataFilled", log); err != nil {
+// Solidity: event NewEpochCreated(uint256 epochId, uint256 epochStartTime)
+func (_DKG *DKGFilterer) ParseNewEpochCreated(log types.Log) (*DKGNewEpochCreated, error) {
+	event := new(DKGNewEpochCreated)
+	if err := _DKG.contract.UnpackLog(event, "NewEpochCreated", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
 	return event, nil
 }
 
-// DKGRoundDataProvidedIterator is returned from FilterRoundDataProvided and is used to iterate over the raw logs and unpacked data for RoundDataProvided events raised by the DKG contract.
-type DKGRoundDataProvidedIterator struct {
-	Event *DKGRoundDataProvided // Event containing the contract specifics and raw log
+// DKGNewValidatorAddedIterator is returned from FilterNewValidatorAdded and is used to iterate over the raw logs and unpacked data for NewValidatorAdded events raised by the DKG contract.
+type DKGNewValidatorAddedIterator struct {
+	Event *DKGNewValidatorAdded // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -1144,7 +1592,7 @@ type DKGRoundDataProvidedIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *DKGRoundDataProvidedIterator) Next() bool {
+func (it *DKGNewValidatorAddedIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -1153,7 +1601,7 @@ func (it *DKGRoundDataProvidedIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(DKGRoundDataProvided)
+			it.Event = new(DKGNewValidatorAdded)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -1168,7 +1616,7 @@ func (it *DKGRoundDataProvidedIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(DKGRoundDataProvided)
+		it.Event = new(DKGNewValidatorAdded)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -1184,43 +1632,53 @@ func (it *DKGRoundDataProvidedIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *DKGRoundDataProvidedIterator) Error() error {
+func (it *DKGNewValidatorAddedIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *DKGRoundDataProvidedIterator) Close() error {
+func (it *DKGNewValidatorAddedIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// DKGRoundDataProvided represents a RoundDataProvided event raised by the DKG contract.
-type DKGRoundDataProvided struct {
-	Generation *big.Int
-	Round      *big.Int
-	Validator  common.Address
-	Raw        types.Log // Blockchain specific contextual infos
+// DKGNewValidatorAdded represents a NewValidatorAdded event raised by the DKG contract.
+type DKGNewValidatorAdded struct {
+	ValidatorAddr        common.Address
+	StartValidationTime  *big.Int
+	StartValidationEpoch *big.Int
+	Raw                  types.Log // Blockchain specific contextual infos
 }
 
-// FilterRoundDataProvided is a free log retrieval operation binding the contract event 0xca56b6e939787236f062daae635dc1afa2b46ad9a24ad09aa98833c637009606.
+// FilterNewValidatorAdded is a free log retrieval operation binding the contract event 0xcd38d7f8bcd459fe58ab4e4f5ba2ee51418a1a0cf207a6747f61bb7945e62b41.
 //
-// Solidity: event RoundDataProvided(uint256 generation, uint256 round, address validator)
-func (_DKG *DKGFilterer) FilterRoundDataProvided(opts *bind.FilterOpts) (*DKGRoundDataProvidedIterator, error) {
+// Solidity: event NewValidatorAdded(address indexed validatorAddr, uint256 startValidationTime, uint256 startValidationEpoch)
+func (_DKG *DKGFilterer) FilterNewValidatorAdded(opts *bind.FilterOpts, validatorAddr []common.Address) (*DKGNewValidatorAddedIterator, error) {
 
-	logs, sub, err := _DKG.contract.FilterLogs(opts, "RoundDataProvided")
+	var validatorAddrRule []interface{}
+	for _, validatorAddrItem := range validatorAddr {
+		validatorAddrRule = append(validatorAddrRule, validatorAddrItem)
+	}
+
+	logs, sub, err := _DKG.contract.FilterLogs(opts, "NewValidatorAdded", validatorAddrRule)
 	if err != nil {
 		return nil, err
 	}
-	return &DKGRoundDataProvidedIterator{contract: _DKG.contract, event: "RoundDataProvided", logs: logs, sub: sub}, nil
+	return &DKGNewValidatorAddedIterator{contract: _DKG.contract, event: "NewValidatorAdded", logs: logs, sub: sub}, nil
 }
 
-// WatchRoundDataProvided is a free log subscription operation binding the contract event 0xca56b6e939787236f062daae635dc1afa2b46ad9a24ad09aa98833c637009606.
+// WatchNewValidatorAdded is a free log subscription operation binding the contract event 0xcd38d7f8bcd459fe58ab4e4f5ba2ee51418a1a0cf207a6747f61bb7945e62b41.
 //
-// Solidity: event RoundDataProvided(uint256 generation, uint256 round, address validator)
-func (_DKG *DKGFilterer) WatchRoundDataProvided(opts *bind.WatchOpts, sink chan<- *DKGRoundDataProvided) (event.Subscription, error) {
+// Solidity: event NewValidatorAdded(address indexed validatorAddr, uint256 startValidationTime, uint256 startValidationEpoch)
+func (_DKG *DKGFilterer) WatchNewValidatorAdded(opts *bind.WatchOpts, sink chan<- *DKGNewValidatorAdded, validatorAddr []common.Address) (event.Subscription, error) {
 
-	logs, sub, err := _DKG.contract.WatchLogs(opts, "RoundDataProvided")
+	var validatorAddrRule []interface{}
+	for _, validatorAddrItem := range validatorAddr {
+		validatorAddrRule = append(validatorAddrRule, validatorAddrItem)
+	}
+
+	logs, sub, err := _DKG.contract.WatchLogs(opts, "NewValidatorAdded", validatorAddrRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1230,8 +1688,8 @@ func (_DKG *DKGFilterer) WatchRoundDataProvided(opts *bind.WatchOpts, sink chan<
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(DKGRoundDataProvided)
-				if err := _DKG.contract.UnpackLog(event, "RoundDataProvided", log); err != nil {
+				event := new(DKGNewValidatorAdded)
+				if err := _DKG.contract.UnpackLog(event, "NewValidatorAdded", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1252,12 +1710,12 @@ func (_DKG *DKGFilterer) WatchRoundDataProvided(opts *bind.WatchOpts, sink chan<
 	}), nil
 }
 
-// ParseRoundDataProvided is a log parse operation binding the contract event 0xca56b6e939787236f062daae635dc1afa2b46ad9a24ad09aa98833c637009606.
+// ParseNewValidatorAdded is a log parse operation binding the contract event 0xcd38d7f8bcd459fe58ab4e4f5ba2ee51418a1a0cf207a6747f61bb7945e62b41.
 //
-// Solidity: event RoundDataProvided(uint256 generation, uint256 round, address validator)
-func (_DKG *DKGFilterer) ParseRoundDataProvided(log types.Log) (*DKGRoundDataProvided, error) {
-	event := new(DKGRoundDataProvided)
-	if err := _DKG.contract.UnpackLog(event, "RoundDataProvided", log); err != nil {
+// Solidity: event NewValidatorAdded(address indexed validatorAddr, uint256 startValidationTime, uint256 startValidationEpoch)
+func (_DKG *DKGFilterer) ParseNewValidatorAdded(log types.Log) (*DKGNewValidatorAdded, error) {
+	event := new(DKGNewValidatorAdded)
+	if err := _DKG.contract.UnpackLog(event, "NewValidatorAdded", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -1333,14 +1791,14 @@ func (it *DKGSignerAddressUpdatedIterator) Close() error {
 
 // DKGSignerAddressUpdated represents a SignerAddressUpdated event raised by the DKG contract.
 type DKGSignerAddressUpdated struct {
-	Generation    *big.Int
+	EpochId       *big.Int
 	SignerAddress common.Address
 	Raw           types.Log // Blockchain specific contextual infos
 }
 
 // FilterSignerAddressUpdated is a free log retrieval operation binding the contract event 0xa6d3de2b2ccbce3cf736f5f8e515fdad82235d0d1f1ff8a0ad14f98c48af0a46.
 //
-// Solidity: event SignerAddressUpdated(uint256 generation, address signerAddress)
+// Solidity: event SignerAddressUpdated(uint256 epochId, address signerAddress)
 func (_DKG *DKGFilterer) FilterSignerAddressUpdated(opts *bind.FilterOpts) (*DKGSignerAddressUpdatedIterator, error) {
 
 	logs, sub, err := _DKG.contract.FilterLogs(opts, "SignerAddressUpdated")
@@ -1352,7 +1810,7 @@ func (_DKG *DKGFilterer) FilterSignerAddressUpdated(opts *bind.FilterOpts) (*DKG
 
 // WatchSignerAddressUpdated is a free log subscription operation binding the contract event 0xa6d3de2b2ccbce3cf736f5f8e515fdad82235d0d1f1ff8a0ad14f98c48af0a46.
 //
-// Solidity: event SignerAddressUpdated(uint256 generation, address signerAddress)
+// Solidity: event SignerAddressUpdated(uint256 epochId, address signerAddress)
 func (_DKG *DKGFilterer) WatchSignerAddressUpdated(opts *bind.WatchOpts, sink chan<- *DKGSignerAddressUpdated) (event.Subscription, error) {
 
 	logs, sub, err := _DKG.contract.WatchLogs(opts, "SignerAddressUpdated")
@@ -1389,7 +1847,7 @@ func (_DKG *DKGFilterer) WatchSignerAddressUpdated(opts *bind.WatchOpts, sink ch
 
 // ParseSignerAddressUpdated is a log parse operation binding the contract event 0xa6d3de2b2ccbce3cf736f5f8e515fdad82235d0d1f1ff8a0ad14f98c48af0a46.
 //
-// Solidity: event SignerAddressUpdated(uint256 generation, address signerAddress)
+// Solidity: event SignerAddressUpdated(uint256 epochId, address signerAddress)
 func (_DKG *DKGFilterer) ParseSignerAddressUpdated(log types.Log) (*DKGSignerAddressUpdated, error) {
 	event := new(DKGSignerAddressUpdated)
 	if err := _DKG.contract.UnpackLog(event, "SignerAddressUpdated", log); err != nil {
@@ -1468,7 +1926,7 @@ func (it *DKGSignerVotedIterator) Close() error {
 
 // DKGSignerVoted represents a SignerVoted event raised by the DKG contract.
 type DKGSignerVoted struct {
-	Generation       *big.Int
+	EpochId          *big.Int
 	Validator        common.Address
 	CollectiveSigner common.Address
 	Raw              types.Log // Blockchain specific contextual infos
@@ -1476,7 +1934,7 @@ type DKGSignerVoted struct {
 
 // FilterSignerVoted is a free log retrieval operation binding the contract event 0x4686ba7a5df3cb2d9979ee16ec58c7ea0b92273d836278488fb07c732cf8ec19.
 //
-// Solidity: event SignerVoted(uint256 generation, address validator, address collectiveSigner)
+// Solidity: event SignerVoted(uint256 epochId, address validator, address collectiveSigner)
 func (_DKG *DKGFilterer) FilterSignerVoted(opts *bind.FilterOpts) (*DKGSignerVotedIterator, error) {
 
 	logs, sub, err := _DKG.contract.FilterLogs(opts, "SignerVoted")
@@ -1488,7 +1946,7 @@ func (_DKG *DKGFilterer) FilterSignerVoted(opts *bind.FilterOpts) (*DKGSignerVot
 
 // WatchSignerVoted is a free log subscription operation binding the contract event 0x4686ba7a5df3cb2d9979ee16ec58c7ea0b92273d836278488fb07c732cf8ec19.
 //
-// Solidity: event SignerVoted(uint256 generation, address validator, address collectiveSigner)
+// Solidity: event SignerVoted(uint256 epochId, address validator, address collectiveSigner)
 func (_DKG *DKGFilterer) WatchSignerVoted(opts *bind.WatchOpts, sink chan<- *DKGSignerVoted) (event.Subscription, error) {
 
 	logs, sub, err := _DKG.contract.WatchLogs(opts, "SignerVoted")
@@ -1525,7 +1983,7 @@ func (_DKG *DKGFilterer) WatchSignerVoted(opts *bind.WatchOpts, sink chan<- *DKG
 
 // ParseSignerVoted is a log parse operation binding the contract event 0x4686ba7a5df3cb2d9979ee16ec58c7ea0b92273d836278488fb07c732cf8ec19.
 //
-// Solidity: event SignerVoted(uint256 generation, address validator, address collectiveSigner)
+// Solidity: event SignerVoted(uint256 epochId, address validator, address collectiveSigner)
 func (_DKG *DKGFilterer) ParseSignerVoted(log types.Log) (*DKGSignerVoted, error) {
 	event := new(DKGSignerVoted)
 	if err := _DKG.contract.UnpackLog(event, "SignerVoted", log); err != nil {
@@ -1535,9 +1993,9 @@ func (_DKG *DKGFilterer) ParseSignerVoted(log types.Log) (*DKGSignerVoted, error
 	return event, nil
 }
 
-// DKGThresholdSignerUpdatedIterator is returned from FilterThresholdSignerUpdated and is used to iterate over the raw logs and unpacked data for ThresholdSignerUpdated events raised by the DKG contract.
-type DKGThresholdSignerUpdatedIterator struct {
-	Event *DKGThresholdSignerUpdated // Event containing the contract specifics and raw log
+// DKGValidatorExitAnnouncedIterator is returned from FilterValidatorExitAnnounced and is used to iterate over the raw logs and unpacked data for ValidatorExitAnnounced events raised by the DKG contract.
+type DKGValidatorExitAnnouncedIterator struct {
+	Event *DKGValidatorExitAnnounced // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -1551,7 +2009,7 @@ type DKGThresholdSignerUpdatedIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *DKGThresholdSignerUpdatedIterator) Next() bool {
+func (it *DKGValidatorExitAnnouncedIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -1560,7 +2018,7 @@ func (it *DKGThresholdSignerUpdatedIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(DKGThresholdSignerUpdated)
+			it.Event = new(DKGValidatorExitAnnounced)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -1575,7 +2033,7 @@ func (it *DKGThresholdSignerUpdatedIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(DKGThresholdSignerUpdated)
+		it.Event = new(DKGValidatorExitAnnounced)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -1591,41 +2049,53 @@ func (it *DKGThresholdSignerUpdatedIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *DKGThresholdSignerUpdatedIterator) Error() error {
+func (it *DKGValidatorExitAnnouncedIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *DKGThresholdSignerUpdatedIterator) Close() error {
+func (it *DKGValidatorExitAnnouncedIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// DKGThresholdSignerUpdated represents a ThresholdSignerUpdated event raised by the DKG contract.
-type DKGThresholdSignerUpdated struct {
-	Signer common.Address
-	Raw    types.Log // Blockchain specific contextual infos
+// DKGValidatorExitAnnounced represents a ValidatorExitAnnounced event raised by the DKG contract.
+type DKGValidatorExitAnnounced struct {
+	ValidatorAddr      common.Address
+	EndValidationTime  *big.Int
+	EndValidationEpoch *big.Int
+	Raw                types.Log // Blockchain specific contextual infos
 }
 
-// FilterThresholdSignerUpdated is a free log retrieval operation binding the contract event 0x8559aaab9220e2f109d51f7d09a3cca9b41451f4698287d982dc4549a70808bf.
+// FilterValidatorExitAnnounced is a free log retrieval operation binding the contract event 0xd75af7adb28dda89e53e18c225f03e4aee3f0132f19eaff0a642b1f88433baad.
 //
-// Solidity: event ThresholdSignerUpdated(address signer)
-func (_DKG *DKGFilterer) FilterThresholdSignerUpdated(opts *bind.FilterOpts) (*DKGThresholdSignerUpdatedIterator, error) {
+// Solidity: event ValidatorExitAnnounced(address indexed validatorAddr, uint256 endValidationTime, uint256 endValidationEpoch)
+func (_DKG *DKGFilterer) FilterValidatorExitAnnounced(opts *bind.FilterOpts, validatorAddr []common.Address) (*DKGValidatorExitAnnouncedIterator, error) {
 
-	logs, sub, err := _DKG.contract.FilterLogs(opts, "ThresholdSignerUpdated")
+	var validatorAddrRule []interface{}
+	for _, validatorAddrItem := range validatorAddr {
+		validatorAddrRule = append(validatorAddrRule, validatorAddrItem)
+	}
+
+	logs, sub, err := _DKG.contract.FilterLogs(opts, "ValidatorExitAnnounced", validatorAddrRule)
 	if err != nil {
 		return nil, err
 	}
-	return &DKGThresholdSignerUpdatedIterator{contract: _DKG.contract, event: "ThresholdSignerUpdated", logs: logs, sub: sub}, nil
+	return &DKGValidatorExitAnnouncedIterator{contract: _DKG.contract, event: "ValidatorExitAnnounced", logs: logs, sub: sub}, nil
 }
 
-// WatchThresholdSignerUpdated is a free log subscription operation binding the contract event 0x8559aaab9220e2f109d51f7d09a3cca9b41451f4698287d982dc4549a70808bf.
+// WatchValidatorExitAnnounced is a free log subscription operation binding the contract event 0xd75af7adb28dda89e53e18c225f03e4aee3f0132f19eaff0a642b1f88433baad.
 //
-// Solidity: event ThresholdSignerUpdated(address signer)
-func (_DKG *DKGFilterer) WatchThresholdSignerUpdated(opts *bind.WatchOpts, sink chan<- *DKGThresholdSignerUpdated) (event.Subscription, error) {
+// Solidity: event ValidatorExitAnnounced(address indexed validatorAddr, uint256 endValidationTime, uint256 endValidationEpoch)
+func (_DKG *DKGFilterer) WatchValidatorExitAnnounced(opts *bind.WatchOpts, sink chan<- *DKGValidatorExitAnnounced, validatorAddr []common.Address) (event.Subscription, error) {
 
-	logs, sub, err := _DKG.contract.WatchLogs(opts, "ThresholdSignerUpdated")
+	var validatorAddrRule []interface{}
+	for _, validatorAddrItem := range validatorAddr {
+		validatorAddrRule = append(validatorAddrRule, validatorAddrItem)
+	}
+
+	logs, sub, err := _DKG.contract.WatchLogs(opts, "ValidatorExitAnnounced", validatorAddrRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1635,8 +2105,8 @@ func (_DKG *DKGFilterer) WatchThresholdSignerUpdated(opts *bind.WatchOpts, sink 
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(DKGThresholdSignerUpdated)
-				if err := _DKG.contract.UnpackLog(event, "ThresholdSignerUpdated", log); err != nil {
+				event := new(DKGValidatorExitAnnounced)
+				if err := _DKG.contract.UnpackLog(event, "ValidatorExitAnnounced", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1657,21 +2127,21 @@ func (_DKG *DKGFilterer) WatchThresholdSignerUpdated(opts *bind.WatchOpts, sink 
 	}), nil
 }
 
-// ParseThresholdSignerUpdated is a log parse operation binding the contract event 0x8559aaab9220e2f109d51f7d09a3cca9b41451f4698287d982dc4549a70808bf.
+// ParseValidatorExitAnnounced is a log parse operation binding the contract event 0xd75af7adb28dda89e53e18c225f03e4aee3f0132f19eaff0a642b1f88433baad.
 //
-// Solidity: event ThresholdSignerUpdated(address signer)
-func (_DKG *DKGFilterer) ParseThresholdSignerUpdated(log types.Log) (*DKGThresholdSignerUpdated, error) {
-	event := new(DKGThresholdSignerUpdated)
-	if err := _DKG.contract.UnpackLog(event, "ThresholdSignerUpdated", log); err != nil {
+// Solidity: event ValidatorExitAnnounced(address indexed validatorAddr, uint256 endValidationTime, uint256 endValidationEpoch)
+func (_DKG *DKGFilterer) ParseValidatorExitAnnounced(log types.Log) (*DKGValidatorExitAnnounced, error) {
+	event := new(DKGValidatorExitAnnounced)
+	if err := _DKG.contract.UnpackLog(event, "ValidatorExitAnnounced", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
 	return event, nil
 }
 
-// DKGValidatorsUpdatedIterator is returned from FilterValidatorsUpdated and is used to iterate over the raw logs and unpacked data for ValidatorsUpdated events raised by the DKG contract.
-type DKGValidatorsUpdatedIterator struct {
-	Event *DKGValidatorsUpdated // Event containing the contract specifics and raw log
+// DKGValidatorRemovedIterator is returned from FilterValidatorRemoved and is used to iterate over the raw logs and unpacked data for ValidatorRemoved events raised by the DKG contract.
+type DKGValidatorRemovedIterator struct {
+	Event *DKGValidatorRemoved // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -1685,7 +2155,7 @@ type DKGValidatorsUpdatedIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *DKGValidatorsUpdatedIterator) Next() bool {
+func (it *DKGValidatorRemovedIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -1694,7 +2164,7 @@ func (it *DKGValidatorsUpdatedIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(DKGValidatorsUpdated)
+			it.Event = new(DKGValidatorRemoved)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -1709,7 +2179,7 @@ func (it *DKGValidatorsUpdatedIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(DKGValidatorsUpdated)
+		it.Event = new(DKGValidatorRemoved)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -1725,42 +2195,51 @@ func (it *DKGValidatorsUpdatedIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *DKGValidatorsUpdatedIterator) Error() error {
+func (it *DKGValidatorRemovedIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *DKGValidatorsUpdatedIterator) Close() error {
+func (it *DKGValidatorRemovedIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// DKGValidatorsUpdated represents a ValidatorsUpdated event raised by the DKG contract.
-type DKGValidatorsUpdated struct {
-	Generation *big.Int
-	Validators []common.Address
-	Raw        types.Log // Blockchain specific contextual infos
+// DKGValidatorRemoved represents a ValidatorRemoved event raised by the DKG contract.
+type DKGValidatorRemoved struct {
+	ValidatorAddr common.Address
+	Raw           types.Log // Blockchain specific contextual infos
 }
 
-// FilterValidatorsUpdated is a free log retrieval operation binding the contract event 0xeadf82e9da8b1722bf1769001bdd6d52bb429e0745d9116f69495cedc7db8a95.
+// FilterValidatorRemoved is a free log retrieval operation binding the contract event 0xe1434e25d6611e0db941968fdc97811c982ac1602e951637d206f5fdda9dd8f1.
 //
-// Solidity: event ValidatorsUpdated(uint256 generation, address[] validators)
-func (_DKG *DKGFilterer) FilterValidatorsUpdated(opts *bind.FilterOpts) (*DKGValidatorsUpdatedIterator, error) {
+// Solidity: event ValidatorRemoved(address indexed validatorAddr)
+func (_DKG *DKGFilterer) FilterValidatorRemoved(opts *bind.FilterOpts, validatorAddr []common.Address) (*DKGValidatorRemovedIterator, error) {
 
-	logs, sub, err := _DKG.contract.FilterLogs(opts, "ValidatorsUpdated")
+	var validatorAddrRule []interface{}
+	for _, validatorAddrItem := range validatorAddr {
+		validatorAddrRule = append(validatorAddrRule, validatorAddrItem)
+	}
+
+	logs, sub, err := _DKG.contract.FilterLogs(opts, "ValidatorRemoved", validatorAddrRule)
 	if err != nil {
 		return nil, err
 	}
-	return &DKGValidatorsUpdatedIterator{contract: _DKG.contract, event: "ValidatorsUpdated", logs: logs, sub: sub}, nil
+	return &DKGValidatorRemovedIterator{contract: _DKG.contract, event: "ValidatorRemoved", logs: logs, sub: sub}, nil
 }
 
-// WatchValidatorsUpdated is a free log subscription operation binding the contract event 0xeadf82e9da8b1722bf1769001bdd6d52bb429e0745d9116f69495cedc7db8a95.
+// WatchValidatorRemoved is a free log subscription operation binding the contract event 0xe1434e25d6611e0db941968fdc97811c982ac1602e951637d206f5fdda9dd8f1.
 //
-// Solidity: event ValidatorsUpdated(uint256 generation, address[] validators)
-func (_DKG *DKGFilterer) WatchValidatorsUpdated(opts *bind.WatchOpts, sink chan<- *DKGValidatorsUpdated) (event.Subscription, error) {
+// Solidity: event ValidatorRemoved(address indexed validatorAddr)
+func (_DKG *DKGFilterer) WatchValidatorRemoved(opts *bind.WatchOpts, sink chan<- *DKGValidatorRemoved, validatorAddr []common.Address) (event.Subscription, error) {
 
-	logs, sub, err := _DKG.contract.WatchLogs(opts, "ValidatorsUpdated")
+	var validatorAddrRule []interface{}
+	for _, validatorAddrItem := range validatorAddr {
+		validatorAddrRule = append(validatorAddrRule, validatorAddrItem)
+	}
+
+	logs, sub, err := _DKG.contract.WatchLogs(opts, "ValidatorRemoved", validatorAddrRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1770,8 +2249,8 @@ func (_DKG *DKGFilterer) WatchValidatorsUpdated(opts *bind.WatchOpts, sink chan<
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(DKGValidatorsUpdated)
-				if err := _DKG.contract.UnpackLog(event, "ValidatorsUpdated", log); err != nil {
+				event := new(DKGValidatorRemoved)
+				if err := _DKG.contract.UnpackLog(event, "ValidatorRemoved", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1792,12 +2271,156 @@ func (_DKG *DKGFilterer) WatchValidatorsUpdated(opts *bind.WatchOpts, sink chan<
 	}), nil
 }
 
-// ParseValidatorsUpdated is a log parse operation binding the contract event 0xeadf82e9da8b1722bf1769001bdd6d52bb429e0745d9116f69495cedc7db8a95.
+// ParseValidatorRemoved is a log parse operation binding the contract event 0xe1434e25d6611e0db941968fdc97811c982ac1602e951637d206f5fdda9dd8f1.
 //
-// Solidity: event ValidatorsUpdated(uint256 generation, address[] validators)
-func (_DKG *DKGFilterer) ParseValidatorsUpdated(log types.Log) (*DKGValidatorsUpdated, error) {
-	event := new(DKGValidatorsUpdated)
-	if err := _DKG.contract.UnpackLog(event, "ValidatorsUpdated", log); err != nil {
+// Solidity: event ValidatorRemoved(address indexed validatorAddr)
+func (_DKG *DKGFilterer) ParseValidatorRemoved(log types.Log) (*DKGValidatorRemoved, error) {
+	event := new(DKGValidatorRemoved)
+	if err := _DKG.contract.UnpackLog(event, "ValidatorRemoved", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// DKGValidatorSlashedIterator is returned from FilterValidatorSlashed and is used to iterate over the raw logs and unpacked data for ValidatorSlashed events raised by the DKG contract.
+type DKGValidatorSlashedIterator struct {
+	Event *DKGValidatorSlashed // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *DKGValidatorSlashedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(DKGValidatorSlashed)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(DKGValidatorSlashed)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *DKGValidatorSlashedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *DKGValidatorSlashedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// DKGValidatorSlashed represents a ValidatorSlashed event raised by the DKG contract.
+type DKGValidatorSlashed struct {
+	ValidatorAddr common.Address
+	Raw           types.Log // Blockchain specific contextual infos
+}
+
+// FilterValidatorSlashed is a free log retrieval operation binding the contract event 0x1647efd0ce9727dc31dc201c9d8d35ac687f7370adcacbd454afc6485ddabfda.
+//
+// Solidity: event ValidatorSlashed(address indexed validatorAddr)
+func (_DKG *DKGFilterer) FilterValidatorSlashed(opts *bind.FilterOpts, validatorAddr []common.Address) (*DKGValidatorSlashedIterator, error) {
+
+	var validatorAddrRule []interface{}
+	for _, validatorAddrItem := range validatorAddr {
+		validatorAddrRule = append(validatorAddrRule, validatorAddrItem)
+	}
+
+	logs, sub, err := _DKG.contract.FilterLogs(opts, "ValidatorSlashed", validatorAddrRule)
+	if err != nil {
+		return nil, err
+	}
+	return &DKGValidatorSlashedIterator{contract: _DKG.contract, event: "ValidatorSlashed", logs: logs, sub: sub}, nil
+}
+
+// WatchValidatorSlashed is a free log subscription operation binding the contract event 0x1647efd0ce9727dc31dc201c9d8d35ac687f7370adcacbd454afc6485ddabfda.
+//
+// Solidity: event ValidatorSlashed(address indexed validatorAddr)
+func (_DKG *DKGFilterer) WatchValidatorSlashed(opts *bind.WatchOpts, sink chan<- *DKGValidatorSlashed, validatorAddr []common.Address) (event.Subscription, error) {
+
+	var validatorAddrRule []interface{}
+	for _, validatorAddrItem := range validatorAddr {
+		validatorAddrRule = append(validatorAddrRule, validatorAddrItem)
+	}
+
+	logs, sub, err := _DKG.contract.WatchLogs(opts, "ValidatorSlashed", validatorAddrRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(DKGValidatorSlashed)
+				if err := _DKG.contract.UnpackLog(event, "ValidatorSlashed", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseValidatorSlashed is a log parse operation binding the contract event 0x1647efd0ce9727dc31dc201c9d8d35ac687f7370adcacbd454afc6485ddabfda.
+//
+// Solidity: event ValidatorSlashed(address indexed validatorAddr)
+func (_DKG *DKGFilterer) ParseValidatorSlashed(log types.Log) (*DKGValidatorSlashed, error) {
+	event := new(DKGValidatorSlashed)
+	if err := _DKG.contract.UnpackLog(event, "ValidatorSlashed", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
