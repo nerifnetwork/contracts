@@ -20,6 +20,7 @@ interface IDKG {
 
     /**
      * @dev Struct containing information about a DKG epoch
+     * @param mainEpochInfo The main information about the epoch
      * @param epochSigner The address of the signer for the epoch
      * @param epochStatus The status of the epoch
      */
@@ -41,6 +42,12 @@ interface IDKG {
         ValidationData endValidationData;
     }
 
+    /**
+     * @dev Struct containing main information about an epoch
+     * @param epochId The ID of the epoch
+     * @param epochStartTime The start time of the epoch
+     * @param dkgGenPeriodEndTime The end time of the DKG generation period for the epoch
+     */
     struct MainEpochInfo {
         uint256 epochId;
         uint256 epochStartTime;
@@ -110,6 +117,10 @@ interface IDKG {
      */
     event ValidatorRemoved(address indexed validatorAddr);
 
+    /**
+     * @notice Emitted when a validator is slashed
+     * @param validatorAddr The address of the slashed validator
+     */
     event ValidatorSlashed(address indexed validatorAddr);
 
     /**
@@ -146,8 +157,16 @@ interface IDKG {
      */
     function removeValidator(address _validatorToRemove) external;
 
+    /**
+     * @notice Creates a slashing proposal
+     * @return The main information about the created epoch
+     */
     function createProposal() external returns (MainEpochInfo memory);
 
+    /**
+     * @notice Slashes a validator
+     * @param _validatorAddr The address of the validator to be slashed
+     */
     function slashValidator(address _validatorAddr) external;
 
     /**
