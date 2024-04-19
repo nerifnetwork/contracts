@@ -81,11 +81,7 @@ export = async (deployer: Deployer) => {
       systemContractsInitParams.stakingInitParams.minimalStake,
       systemContractsInitParams.stakingInitParams.whitelistedUsers
     );
-    await slashingVoting.initialize(
-      systemContractsInitParams.slashingVotingInitParams.epochPeriod,
-      systemContractsInitParams.slashingVotingInitParams.slashingThresold,
-      systemContractsInitParams.slashingVotingInitParams.slashingEpochs
-    );
+    await slashingVoting.initialize(systemContractsInitParams.slashingVotingInitParams.slashingThresoldPercentage);
 
     await contractsRegistry.injectDependencies(await contractsRegistry.DKG_NAME());
     await contractsRegistry.injectDependencies(await contractsRegistry.STAKING_NAME());

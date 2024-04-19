@@ -66,9 +66,7 @@ export type StakingInitParams = {
 };
 
 export type SlashingVotingInitParams = {
-  epochPeriod: BigNumber;
-  slashingThresold: BigNumber;
-  slashingEpochs: BigNumber;
+  slashingThresoldPercentage: BigNumber;
 };
 
 export type NativeDepositAssetData = {
@@ -186,9 +184,7 @@ export class ConfigParser {
   }
 
   protected validateSlashingVotingInitParams(slashingVotingInitParams: SlashingVotingInitParams) {
-    this.nonEmptyField(slashingVotingInitParams.epochPeriod, 'epochPeriod');
-    this.nonEmptyField(slashingVotingInitParams.slashingThresold, 'slashingThresold');
-    this.nonEmptyField(slashingVotingInitParams.slashingEpochs, 'slashingEpochs');
+    this.nonEmptyField(slashingVotingInitParams.slashingThresoldPercentage, 'slashingThresoldPercentage');
   }
 
   protected validateNativeDepositAssetData(nativeDepositAssetData: NativeDepositAssetData) {

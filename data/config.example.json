@@ -35,9 +35,7 @@
       "whitelistedUsers": []
     },
     "slashingVotingInitParams": {
-      "epochPeriod": "1000",
-      "slashingThresold": "10",
-      "slashingEpochs": "3"
+      "slashingThresoldPercentage": "500000000000000000000000000"
     },
     "stakingKeys": []
   },

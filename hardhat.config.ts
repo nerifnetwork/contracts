@@ -125,7 +125,7 @@ const config: HardhatUserConfig = {
       // Testnets
       polygonAmoy: process.env.POLYGONAMOYSCAN_API_KEY || '',
       polygonZkEVMTestnet: process.env.ZKEVMTESTNETSCAN_API_KEY || '',
-      goerli: process.env.ETHERGOERLISCAN_API_KEY || '',
+      sepolia: process.env.ETHERSCAN_API_KEY || '',
       bscTestnet: process.env.BSCTESTNETSCAN_API_KEY || '',
       chiado: process.env.GNOSISCHIADOSCAN_API_KEY || '',
       lineaTestnet: process.env.LINEATESTNETSCAN_API_KEY || '',
