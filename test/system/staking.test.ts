@@ -73,7 +73,6 @@ describe('Staking', () => {
     const StakingFactory = await ethers.getContractFactory('TestStaking');
     const DKGFactory = await ethers.getContractFactory('TestDKG');
     const SlashingVotingFactory = await ethers.getContractFactory('SlashingVoting');
-    const RewardDistributionPoolFactory = await ethers.getContractFactory('RewardDistributionPool');
     const TokensVestingFactory = await ethers.getContractFactory('TokensVesting');
     const NerifTokenFactory = await ethers.getContractFactory('NerifToken');
 
@@ -83,7 +82,6 @@ describe('Staking', () => {
     const stakingImpl = await StakingFactory.deploy();
     const dkgImpl = await DKGFactory.deploy();
     const slashingVotingImpl = await SlashingVotingFactory.deploy();
-    const rewardsDistributionPoolImpl = await RewardDistributionPoolFactory.deploy();
     const nerifTokenImpl = await NerifTokenFactory.deploy();
 
     const tokensVesting = await TokensVestingFactory.deploy();
@@ -97,10 +95,6 @@ describe('Staking', () => {
     await contractsRegistry.addProxyContract(
       await contractsRegistry.SLASHING_VOTING_NAME(),
       slashingVotingImpl.address
-    );
-    await contractsRegistry.addProxyContract(
-      await contractsRegistry.REWARDS_DISTRIBUTION_POOL_NAME(),
-      rewardsDistributionPoolImpl.address
     );
     await contractsRegistry.addProxyContract(await contractsRegistry.NERIF_TOKEN_NAME(), nerifTokenImpl.address);
 
@@ -122,7 +116,6 @@ describe('Staking', () => {
 
     await contractsRegistry.injectDependencies(await contractsRegistry.DKG_NAME());
     await contractsRegistry.injectDependencies(await contractsRegistry.STAKING_NAME());
-    await contractsRegistry.injectDependencies(await contractsRegistry.REWARDS_DISTRIBUTION_POOL_NAME());
     await contractsRegistry.injectDependencies(await contractsRegistry.NERIF_TOKEN_NAME());
 
     await setNextBlockTime(startTime.toNumber());
@@ -215,8 +208,16 @@ describe('Staking', () => {
     });
   });
 
+  describe('slashValidator', () => {
+    it('should get exception if not a SlashingVoting tries to call this function', async () => {
+      const reason = 'Staking: Not a slashing voting address';
+
+      await expect(staking.slashValidator(FIRST.address)).to.be.revertedWith(reason);
+    });
+  });
+
   describe('stake', () => {
-    const stakeAmount = wei('150');
+    const stakeAmount = wei('75');
 
     beforeEach('setup', async () => {
       await nerifToken.ownerMint(FIRST.address, tokensAmount);
@@ -230,10 +231,7 @@ describe('Staking', () => {
 
       await expect(tx).to.emit(staking, 'TokensStaked').withArgs(FIRST.address, FIRST.address, stakeAmount);
 
-      expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(true);
-      expect(await dkg.isValidator(FIRST.address)).to.be.eq(true);
-      expect(await dkg.isLastEpoch(startEpochId)).to.be.eq(true);
-      expect(await dkg.isCurrentEpoch(startEpochId)).to.be.eq(true);
+      expect(await dkg.isValidator(FIRST.address)).to.be.eq(false);
 
       let totalStake = stakeAmount.add(defMinimalStake);
 
@@ -250,6 +248,8 @@ describe('Staking', () => {
       expect(await staking.totalStake()).to.be.eq(totalStake);
       expect(await staking.getStake(FIRST.address)).to.be.eq(stakeAmount.mul(2));
 
+      expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(true);
+      expect(await dkg.isValidator(FIRST.address)).to.be.eq(true);
       expect(await dkg.isLastEpoch(startEpochId)).to.be.eq(true);
       expect(await dkg.isCurrentEpoch(startEpochId)).to.be.eq(true);
     });
@@ -266,17 +266,26 @@ describe('Staking', () => {
     });
 
     it('should correctly stake tokens several times with adding to the validators', async () => {
-      let tx = await staking.connect(FIRST).stake(stakeAmount.div(2));
+      let tx = await staking.connect(FIRST).stake(stakeAmount);
 
-      await expect(tx).to.emit(staking, 'TokensStaked').withArgs(FIRST.address, FIRST.address, stakeAmount.div(2));
+      await expect(tx).to.emit(staking, 'TokensStaked').withArgs(FIRST.address, FIRST.address, stakeAmount);
 
       expect(await dkg.isValidator(FIRST.address)).to.be.eq(false);
 
-      tx = await staking.connect(FIRST).stake(stakeAmount.div(2));
+      tx = await staking.connect(FIRST).stake(stakeAmount);
 
-      await expect(tx).to.emit(staking, 'TokensStaked').withArgs(FIRST.address, FIRST.address, stakeAmount.div(2));
+      await expect(tx).to.emit(staking, 'TokensStaked').withArgs(FIRST.address, FIRST.address, stakeAmount);
 
       expect(await dkg.isValidator(FIRST.address)).to.be.eq(true);
+    });
+
+    it('should get exception if user with pending announcement try to stake', async () => {
+      const reason = 'Staking: User has a withdrawal announcement';
+
+      await staking.connect(FIRST).stake(stakeAmount);
+      await staking.connect(FIRST).announceWithdrawal();
+
+      await expect(staking.connect(FIRST).stake(stakeAmount)).to.be.revertedWith(reason);
     });
 
     it('should get exception if try to stake zero amount', async () => {
@@ -291,10 +300,24 @@ describe('Staking', () => {
       await expect(staking.connect(FIRST).stake(tokensAmount.add(1))).to.be.revertedWith(reason);
     });
 
-    it('should get exception if not whitelisted validator try to stake', async () => {
+    it('should get exception if the validator tries to stake', async () => {
+      const reason = 'Staking: User is already a validator';
+
+      await expect(staking.connect(OWNER).stake(stakeAmount)).to.be.revertedWith(reason);
+    });
+
+    it('should get exception if not whitelisted validator tries to stake', async () => {
       const reason = 'Staking: Not a whitelisted user';
 
       await expect(staking.connect(SECOND).stake(stakeAmount)).to.be.revertedWith(reason);
+    });
+
+    it('should get exception if the slashed validator tries to stake', async () => {
+      const reason = 'Staking: Validator was slashed';
+
+      await dkg.setSlashedValidator(FIRST.address, true);
+
+      await expect(staking.connect(FIRST).stake(stakeAmount)).to.be.revertedWith(reason);
     });
   });
 
@@ -326,7 +349,7 @@ describe('Staking', () => {
       expect(await staking.getStake(FIRST.address)).to.be.eq(stakeAmount);
     });
 
-    it('should get exception if not whitelisted validator try to stake', async () => {
+    it('should get exception if not whitelisted validator tries to stake', async () => {
       const reason = 'Staking: Not a whitelisted user';
 
       const sig = createPermitSig(
@@ -340,6 +363,23 @@ describe('Staking', () => {
         staking.connect(SECOND).stakeWithPermit(stakeAmount, deadline, sig.v, sig.r, sig.s)
       ).to.be.revertedWith(reason);
     });
+
+    it('should get exception if the slashed validator tries to stake', async () => {
+      const reason = 'Staking: Validator was slashed';
+
+      await dkg.setSlashedValidator(FIRST.address, true);
+
+      const sig = createPermitSig(
+        await nerifToken.name(),
+        nerifToken.address,
+        deadline.toString(),
+        stakeAmount.toString()
+      );
+
+      await expect(
+        staking.connect(FIRST).stakeWithPermit(stakeAmount, deadline, sig.v, sig.r, sig.s)
+      ).to.be.revertedWith(reason);
+    });
   });
 
   describe('announceWithdrawal', () => {
@@ -350,7 +390,8 @@ describe('Staking', () => {
 
     beforeEach('setup', async () => {
       await nerifToken.ownerMint(FIRST.address, tokensAmount);
-      await staking.updateWhitelistedUsers([FIRST.address], true);
+      await nerifToken.ownerMint(SECOND.address, tokensAmount);
+      await staking.updateWhitelistedUsers([FIRST.address, SECOND.address], true);
 
       await nerifToken.connect(FIRST).approve(staking.address, stakeAmount);
       await staking.connect(FIRST).stake(stakeAmount);
@@ -363,18 +404,22 @@ describe('Staking', () => {
       expect(await dkg.getCurrentEpochStatus()).to.be.eq(5);
     });
 
-    it('should correctly announce withdrawal without removing from validators list', async () => {
+    it('should correctly announce withdrawal for non validator', async () => {
+      await nerifToken.connect(SECOND).approve(staking.address, announceAmount);
+      await staking.connect(SECOND).stake(announceAmount);
+
+      expect(await dkg.isValidator(SECOND.address)).to.be.eq(false);
+
       await setNextBlockTime(announceTime.toNumber());
-      const tx = await staking.connect(FIRST).announceWithdrawal(announceAmount);
+      const tx = await staking.connect(SECOND).announceWithdrawal();
 
-      await expect(tx).emit(staking, 'WithdrawalAnnounced').withArgs(FIRST.address, announceAmount, announceTime);
+      await expect(tx).emit(staking, 'WithdrawalAnnounced').withArgs(SECOND.address, announceAmount, announceTime);
 
-      const withdrawalInfo = await staking.getWithdrawalAnnouncement(FIRST.address);
+      const withdrawalInfo = await staking.getWithdrawalAnnouncement(SECOND.address);
 
       expect(withdrawalInfo.withdrawalTime).to.be.eq(announceTime);
       expect(withdrawalInfo.tokensAmount).to.be.eq(announceAmount);
 
-      expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(true);
       expect(await dkg.getCurrentEpochStatus()).to.be.eq(5);
     });
 
@@ -383,16 +428,18 @@ describe('Staking', () => {
       const expectedWithdrawalTime = getEndDKGPeriodTime(announceTime);
 
       await setNextBlockTime(announceTime.toNumber());
-      const tx = await staking.connect(FIRST).announceWithdrawal(announceAmount.mul(2));
+      const tx = await staking.connect(FIRST).announceWithdrawal();
+
+      expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(true);
 
       await expect(tx)
         .emit(staking, 'WithdrawalAnnounced')
-        .withArgs(FIRST.address, announceAmount.mul(2), expectedWithdrawalTime);
+        .withArgs(FIRST.address, stakeAmount, expectedWithdrawalTime);
 
       const withdrawalInfo = await staking.getWithdrawalAnnouncement(FIRST.address);
 
       expect(withdrawalInfo.withdrawalTime).to.be.eq(expectedWithdrawalTime);
-      expect(withdrawalInfo.tokensAmount).to.be.eq(announceAmount.mul(2));
+      expect(withdrawalInfo.tokensAmount).to.be.eq(stakeAmount);
 
       expect(await dkg.isLastEpoch(newEpochId)).to.be.eq(true);
       expect(await dkg.isCurrentEpoch(newEpochId)).to.be.eq(true);
@@ -400,40 +447,42 @@ describe('Staking', () => {
       expect(await dkg.getCurrentEpochStatus()).to.be.eq(2);
     });
 
-    it('should get exception if pass zero amount', async () => {
-      const reason = 'Staking: Amount must be greater than zero';
+    it('should get exception if the user has nothing to withdraw', async () => {
+      const reason = 'Staking: Nothing to withdraw';
 
-      await expect(staking.connect(FIRST).announceWithdrawal(0)).to.be.revertedWith(reason);
-    });
-
-    it('should get exception if pass amount that higher than the stake', async () => {
-      const reason = 'Staking: Not enough stake';
-
-      await expect(staking.connect(FIRST).announceWithdrawal(stakeAmount.mul(2))).to.be.revertedWith(reason);
+      await expect(staking.connect(SECOND).announceWithdrawal()).to.be.revertedWith(reason);
     });
 
     it('should get exception if the validator already has withdrawal announcement', async () => {
       const reason = 'Staking: User already has withdrawal announcement';
 
-      await staking.connect(FIRST).announceWithdrawal(announceAmount);
+      await staking.connect(FIRST).announceWithdrawal();
 
-      await expect(staking.connect(FIRST).announceWithdrawal(announceAmount)).to.be.revertedWith(reason);
+      await expect(staking.connect(FIRST).announceWithdrawal()).to.be.revertedWith(reason);
+    });
+
+    it('should get exception if the slashed validator tries to announce withdraw', async () => {
+      const reason = 'Staking: Validator was slashed';
+
+      await dkg.setSlashedValidator(FIRST.address, true);
+
+      await expect(staking.connect(FIRST).announceWithdrawal()).to.be.revertedWith(reason);
     });
   });
 
   describe('withdraw', () => {
-    const stakeAmount = wei('150');
-    const announceAmount = wei('30');
+    const stakeAmount = wei('75');
 
     let activePeriodStartTime: BigNumber;
     let announceTime: BigNumber;
 
     beforeEach('setup', async () => {
       await nerifToken.ownerMint(FIRST.address, tokensAmount);
-      await staking.updateWhitelistedUsers([FIRST.address], true);
+      await nerifToken.ownerMint(SECOND.address, tokensAmount);
+      await staking.updateWhitelistedUsers([FIRST.address, SECOND.address], true);
 
-      await nerifToken.connect(FIRST).approve(staking.address, stakeAmount);
-      await staking.connect(FIRST).stake(stakeAmount);
+      await nerifToken.connect(FIRST).approve(staking.address, stakeAmount.mul(2));
+      await staking.connect(FIRST).stake(stakeAmount.mul(2));
 
       activePeriodStartTime = (await dkg.getEpochEndTime(startEpochId)).add('100');
       announceTime = activePeriodStartTime.add('100');
@@ -445,55 +494,64 @@ describe('Staking', () => {
       await setNextBlockTime(announceTime.toNumber());
     });
 
-    it('should correctly withdraw stake tokens with removing from validators list', async () => {
-      const withdrawalTime = getEndDKGPeriodTime(announceTime);
+    it('should correctly withdraw stake tokens for non validators', async () => {
+      await nerifToken.connect(SECOND).approve(staking.address, stakeAmount);
+      await staking.connect(SECOND).stake(stakeAmount);
 
-      await staking.connect(FIRST).announceWithdrawal(announceAmount.mul(2));
+      const withdrawalTime = announceTime.add('100');
+
+      await setNextBlockTime(withdrawalTime.toNumber());
+      await staking.connect(SECOND).announceWithdrawal();
+
+      expect(await dkg.isValidator(SECOND.address)).to.be.eq(false);
+
+      expect((await staking.getWithdrawalAnnouncement(SECOND.address)).withdrawalTime).to.be.eq(withdrawalTime);
+
+      await setNextBlockTime(withdrawalTime.add('100').toNumber());
+      const tx = await staking.connect(SECOND).withdraw();
+
+      await expect(tx).to.emit(staking, 'TokensWithdrawn').withArgs(SECOND.address, stakeAmount);
+
+      const withdrawalInfo = await staking.getWithdrawalAnnouncement(SECOND.address);
+
+      expect(withdrawalInfo.withdrawalTime).to.be.eq(0);
+      expect(withdrawalInfo.tokensAmount).to.be.eq(0);
+
+      expect(await dkg.isActiveValidator(SECOND.address)).to.be.eq(false);
+      expect(await dkg.isValidator(SECOND.address)).to.be.eq(false);
+
+      const totalStake = stakeAmount.mul(2).add(defMinimalStake);
+
+      expect(await staking.totalStake()).to.be.eq(totalStake);
+      expect(await staking.getStake(SECOND.address)).to.be.eq(0);
+
+      expect(await nerifToken.balanceOf(SECOND.address)).to.be.eq(tokensAmount);
+      expect(await nerifToken.balanceOf(staking.address)).to.be.eq(totalStake);
+    });
+
+    it('should correctly withdraw tokens for validator', async () => {
+      await staking.connect(FIRST).announceWithdrawal();
+
+      const withdrawalTime = getEndDKGPeriodTime(announceTime);
 
       expect((await staking.getWithdrawalAnnouncement(FIRST.address)).withdrawalTime).to.be.eq(withdrawalTime);
 
       await setNextBlockTime(withdrawalTime.add('100').toNumber());
       const tx = await staking.connect(FIRST).withdraw();
 
-      await expect(tx).to.emit(staking, 'TokensWithdrawn').withArgs(FIRST.address, announceAmount.mul(2));
-
-      const withdrawalInfo = await staking.getWithdrawalAnnouncement(FIRST.address);
-
-      expect(withdrawalInfo.withdrawalTime).to.be.eq(0);
-      expect(withdrawalInfo.tokensAmount).to.be.eq(0);
+      await expect(tx).to.emit(staking, 'TokensWithdrawn').withArgs(FIRST.address, stakeAmount.mul(2));
 
       expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(false);
       expect(await dkg.isValidator(FIRST.address)).to.be.eq(false);
 
-      const totalStake = stakeAmount.add(defMinimalStake).sub(announceAmount.mul(2));
-
-      expect(await staking.totalStake()).to.be.eq(totalStake);
-      expect(await staking.getStake(FIRST.address)).to.be.eq(stakeAmount.sub(announceAmount.mul(2)));
-
-      expect(await nerifToken.balanceOf(FIRST.address)).to.be.eq(
-        tokensAmount.sub(stakeAmount).add(announceAmount.mul(2))
-      );
-      expect(await nerifToken.balanceOf(staking.address)).to.be.eq(totalStake);
+      expect(await staking.totalStake()).to.be.eq(defMinimalStake);
+      expect(await staking.getStake(SECOND.address)).to.be.eq(0);
     });
 
-    it('should correctly withdraw tokens without removing from the validators list', async () => {
-      await staking.connect(FIRST).announceWithdrawal(announceAmount);
-
-      expect((await staking.getWithdrawalAnnouncement(FIRST.address)).withdrawalTime).to.be.eq(announceTime);
-
-      await setNextBlockTime(announceTime.add('100').toNumber());
-      const tx = await staking.connect(FIRST).withdraw();
-
-      await expect(tx).to.emit(staking, 'TokensWithdrawn').withArgs(FIRST.address, announceAmount);
-
-      expect(await dkg.isActiveValidator(FIRST.address)).to.be.eq(true);
-      expect(await dkg.isValidator(FIRST.address)).to.be.eq(true);
-    });
-
-    it('should correctly withdraw tokens with stake < min and validator not in the validators list', async () => {
+    it('should correctly withdraw when the validator not in the validators list', async () => {
       const withdrawalTime = getEndDKGPeriodTime(announceTime);
 
-      await staking.connect(FIRST).announceWithdrawal(announceAmount.mul(2));
+      await staking.connect(FIRST).announceWithdrawal();
 
       await setNextBlockTime(withdrawalTime.add('100').toNumber());
       await dkg.setSigner(startEpochId.add('1'), OWNER.address);
@@ -506,12 +564,15 @@ describe('Staking', () => {
       await setNextBlockTime(withdrawalTime.add('110').toNumber());
       const tx = await staking.connect(FIRST).withdraw();
 
-      await expect(tx).to.emit(staking, 'TokensWithdrawn').withArgs(FIRST.address, announceAmount.mul(2));
+      await expect(tx).to.emit(staking, 'TokensWithdrawn').withArgs(FIRST.address, stakeAmount.mul(2));
 
       const withdrawalInfo = await staking.getWithdrawalAnnouncement(FIRST.address);
 
       expect(withdrawalInfo.withdrawalTime).to.be.eq(0);
       expect(withdrawalInfo.tokensAmount).to.be.eq(0);
+
+      expect(await staking.totalStake()).to.be.eq(defMinimalStake);
+      expect(await staking.getStake(SECOND.address)).to.be.eq(0);
     });
 
     it('should get exception if try to withdraw without announcement', async () => {
@@ -521,9 +582,23 @@ describe('Staking', () => {
     });
 
     it('should get exception if the withdrawal time has not come', async () => {
-      await staking.connect(FIRST).announceWithdrawal(announceAmount.mul(2));
+      await staking.connect(FIRST).announceWithdrawal();
 
       const reason = 'Staking: The time for withdrawal has not come';
+
+      await expect(staking.connect(FIRST).withdraw()).to.be.revertedWith(reason);
+    });
+
+    it('should get exception if the slashed validator tries to withdraw', async () => {
+      await staking.connect(FIRST).announceWithdrawal();
+
+      const withdrawalTime = getEndDKGPeriodTime(announceTime);
+
+      const reason = 'Staking: Validator was slashed';
+
+      await dkg.setSlashedValidator(FIRST.address, true);
+
+      await setTime(withdrawalTime.add('10').toNumber());
 
       await expect(staking.connect(FIRST).withdraw()).to.be.revertedWith(reason);
     });

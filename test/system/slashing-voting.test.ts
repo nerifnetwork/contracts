@@ -68,7 +68,6 @@ describe('SlashingVoting', () => {
     const DKGFactory = await ethers.getContractFactory('TestDKG');
     const SlashingVotingFactory = await ethers.getContractFactory('TestSlashingVoting');
     const StakingFactory = await ethers.getContractFactory('Staking');
-    const RewardDistributionPoolFactory = await ethers.getContractFactory('RewardDistributionPool');
     const TokensVestingFactory = await ethers.getContractFactory('TokensVesting');
     const NerifTokenFactory = await ethers.getContractFactory('NerifToken');
 
@@ -78,7 +77,6 @@ describe('SlashingVoting', () => {
     const stakingImpl = await StakingFactory.deploy();
     const dkgImpl = await DKGFactory.deploy();
     const slashingVotingImpl = await SlashingVotingFactory.deploy();
-    const rewardsDistributionPoolImpl = await RewardDistributionPoolFactory.deploy();
     const nerifTokenImpl = await NerifTokenFactory.deploy();
 
     const tokensVesting = await TokensVestingFactory.deploy();
@@ -92,10 +90,6 @@ describe('SlashingVoting', () => {
     await contractsRegistry.addProxyContract(
       await contractsRegistry.SLASHING_VOTING_NAME(),
       slashingVotingImpl.address
-    );
-    await contractsRegistry.addProxyContract(
-      await contractsRegistry.REWARDS_DISTRIBUTION_POOL_NAME(),
-      rewardsDistributionPoolImpl.address
     );
     await contractsRegistry.addProxyContract(await contractsRegistry.NERIF_TOKEN_NAME(), nerifTokenImpl.address);
 
@@ -120,7 +114,6 @@ describe('SlashingVoting', () => {
     await contractsRegistry.injectDependencies(await contractsRegistry.DKG_NAME());
     await contractsRegistry.injectDependencies(await contractsRegistry.STAKING_NAME());
     await contractsRegistry.injectDependencies(await contractsRegistry.SLASHING_VOTING_NAME());
-    await contractsRegistry.injectDependencies(await contractsRegistry.REWARDS_DISTRIBUTION_POOL_NAME());
     await contractsRegistry.injectDependencies(await contractsRegistry.NERIF_TOKEN_NAME());
 
     await setNextBlockTime(startTime.toNumber());
@@ -194,7 +187,7 @@ describe('SlashingVoting', () => {
 
       await dkg.setSigner(startEpochId, SIGNER.address);
 
-      for (let i = 0; i < expectedValidators.length; i++) {
+      for (let i = 1; i < expectedValidators.length; i++) {
         await stake(expectedValidators[i]);
       }
 
@@ -309,7 +302,7 @@ describe('SlashingVoting', () => {
 
       await dkg.setSigner(startEpochId, SIGNER.address);
 
-      for (let i = 0; i < expectedValidators.length; i++) {
+      for (let i = 1; i < expectedValidators.length; i++) {
         await stake(expectedValidators[i]);
       }
 
@@ -413,7 +406,7 @@ describe('SlashingVoting', () => {
 
       await dkg.setSigner(startEpochId, SIGNER.address);
 
-      for (let i = 0; i < expectedValidators.length; i++) {
+      for (let i = 1; i < expectedValidators.length; i++) {
         await stake(expectedValidators[i]);
       }
 

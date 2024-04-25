@@ -12,7 +12,6 @@ contract ContractsRegistry is IContractsRegistry, OwnableContractsRegistry, UUPS
     string public constant DKG_NAME = "DKG";
     string public constant STAKING_NAME = "STAKING";
     string public constant SLASHING_VOTING_NAME = "SLASHING_VOTING";
-    string public constant REWARDS_DISTRIBUTION_POOL_NAME = "REWARDS_DISTRIBUTION_POOL";
 
     string public constant BILLING_MANAGER_NAME = "BILLING_MANAGER";
     string public constant REGISTRY_NAME = "REGISTRY";
@@ -45,10 +44,6 @@ contract ContractsRegistry is IContractsRegistry, OwnableContractsRegistry, UUPS
 
     function getSlashingVotingContract() external view override returns (address) {
         return getContract(SLASHING_VOTING_NAME);
-    }
-
-    function getRewardsDistributionPoolContract() external view override returns (address) {
-        return getContract(REWARDS_DISTRIBUTION_POOL_NAME);
     }
 
     function getBillingManagerContract() external view override returns (address) {

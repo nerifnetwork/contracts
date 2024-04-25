@@ -9,6 +9,10 @@ contract TestDKG is DKG {
         _dkgEpochsData[_epochId].epochSigner = _signer;
     }
 
+    function setSlashedValidator(address _validatorAddr, bool _newValue) external {
+        _slashedValidators[_validatorAddr] = _newValue;
+    }
+
     function getStaking() external view returns (address) {
         return address(_staking);
     }

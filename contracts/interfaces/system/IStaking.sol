@@ -74,17 +74,9 @@ interface IStaking {
     function slashValidator(address _validator) external;
 
     /**
-     * @notice Adds rewards to a validator's stake
-     * @param _validator The address of the validator
-     * @param _amount The amount of rewards to add
-     */
-    function addRewardsToStake(address _validator, uint256 _amount) external;
-
-    /**
      * @notice Announces a withdrawal
-     * @param _amount The amount of tokens to withdraw
      */
-    function announceWithdrawal(uint256 _amount) external;
+    function announceWithdrawal() external;
 
     /**
      * @notice Withdraws tokens
