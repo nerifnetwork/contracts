@@ -17,8 +17,7 @@ import "@solarity/solidity-lib/libs/data-structures/StringSet.sol";
 
 import "../interfaces/core/IContractsRegistry.sol";
 import "../interfaces/operational/IBillingManager.sol";
-
-import "./Registry.sol";
+import "../interfaces/operational/IRegistry.sol";
 
 contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable {
     using EnumerableSet for *;
@@ -32,7 +31,7 @@ contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable
         );
 
     IContractsRegistry internal _contractsRegistry;
-    Registry internal _registry;
+    IRegistry internal _registry;
 
     string public nativeDepositAssetKey;
 
@@ -73,7 +72,7 @@ contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable
         IContractsRegistry contractsRegistry = IContractsRegistry(_contractsRegistryAddr);
 
         _contractsRegistry = contractsRegistry;
-        _registry = Registry(contractsRegistry.getRegistryContract());
+        _registry = IRegistry(contractsRegistry.getRegistryContract());
     }
 
     // solhint-disable-next-line ordering

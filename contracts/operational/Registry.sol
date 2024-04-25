@@ -9,7 +9,6 @@ import "@solarity/solidity-lib/contracts-registry/AbstractDependant.sol";
 import "@solarity/solidity-lib/libs/arrays/Paginator.sol";
 import "@solarity/solidity-lib/libs/data-structures/StringSet.sol";
 
-import "../interfaces/SignerOwnable.sol";
 import "../interfaces/core/IContractsRegistry.sol";
 import "../interfaces/operational/IGateway.sol";
 import "../interfaces/operational/IGatewayFactory.sol";

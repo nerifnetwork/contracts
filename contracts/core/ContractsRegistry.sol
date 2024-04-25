@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@solarity/solidity-lib/contracts-registry/presets/OwnableContractsRegistry.sol";
 
 import "../interfaces/core/IContractsRegistry.sol";
-import "../interfaces/ISignerAddress.sol";
+import "../interfaces/core/ISignerAddress.sol";
 
 contract ContractsRegistry is IContractsRegistry, OwnableContractsRegistry, UUPSUpgradeable {
     string public constant DKG_NAME = "DKG";

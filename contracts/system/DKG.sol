@@ -9,13 +9,11 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@solarity/solidity-lib/contracts-registry/AbstractDependant.sol";
 import "@solarity/solidity-lib/libs/data-structures/memory/Vector.sol";
 
+import "../interfaces/core/ISignerAddress.sol";
 import "../interfaces/core/IContractsRegistry.sol";
 import "../interfaces/system/IDKG.sol";
 import "../interfaces/system/IStaking.sol";
 import "../interfaces/system/ISlashingVoting.sol";
-import "../interfaces/ISignerAddress.sol";
-
-import "hardhat/console.sol";
 
 contract DKG is IDKG, Initializable, AbstractDependant {
     using EnumerableSet for EnumerableSet.AddressSet;
