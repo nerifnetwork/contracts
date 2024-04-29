@@ -14,14 +14,13 @@ interface IBillingManager {
      * @dev Struct containing data related to the deposit asset
      * @param tokenAddr The address of the token for the deposit asset
      * @param workflowExecutionDiscount The discount applied for workflow execution
-     * @param networkRewards The rewards earned from network activities
      * @param isPermitable Indicates whether permit is allowed for this asset
      * @param isEnabled Indicates whether the asset is enabled for deposit
      */
     struct DepositAssetData {
         address tokenAddr;
         uint256 workflowExecutionDiscount;
-        uint256 networkRewards;
+        uint256 totalAssetAmount;
         bool isPermitable;
         bool isEnabled;
     }
@@ -34,18 +33,6 @@ interface IBillingManager {
     struct DepositAssetInfo {
         string depositAssetKey;
         DepositAssetData depositAssetData;
-    }
-
-    /**
-     * @dev Struct containing user data related to deposits
-     * @param withdrawNonce The nonce for withdrawals, used to prevent replay attacks
-     * @param depositAssetKeys Set containing keys of all deposit assets associated with the user
-     * @param userDepositsAmount Mapping from deposit asset keys to the amount deposited by the user
-     */
-    struct UserData {
-        uint256 withdrawNonce;
-        StringSet.Set depositAssetKeys;
-        mapping(string => uint256) userDepositsAmount;
     }
 
     /**
@@ -68,6 +55,20 @@ interface IBillingManager {
         string depositAssetKey;
         address userAddr;
         uint256 amountToWithdraw;
+    }
+
+    struct WithdrawData {
+        string[] depositAssetKeys;
+        uint256[] withdrawAmounts;
+        uint256 nonce;
+        SigData sigData;
+    }
+
+    struct SigData {
+        uint256 sigExpirationTime;
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
     }
 
     /**
@@ -110,20 +111,19 @@ interface IBillingManager {
         uint256 depositAmount
     );
 
-    /**
-     * @notice Event emitted when funds are withdrawn from a user's balance
-     * @param depositAssetKey The unique key identifying the deposit asset
-     * @param userAddr The address of the user
-     * @param withdrawnAmount The amount withdrawn from the user's balance
-     */
-    event UserFundsWithdrawn(string indexed depositAssetKey, address indexed userAddr, uint256 withdrawnAmount);
+    event FundsWithdrawn(
+        address indexed userAddr,
+        string[] depositAssetKeys,
+        uint256[] withdrawnAmounts,
+        uint256 nonce
+    );
 
-    /**
-     * @notice Event emitted when network rewards are withdrawn
-     * @param recipientAddr The address of the recipient
-     * @param rewardsAmount The amount of rewards withdrawn
-     */
-    event RewardsWithdrawn(string indexed depositAssetKey, address indexed recipientAddr, uint256 rewardsAmount);
+    event RewardsWithdrawn(
+        address indexed userAddr,
+        string[] depositAssetKeys,
+        uint256[] rewardsAmounts,
+        uint256 nonce
+    );
 
     /**
      * @notice Emitted when a network withdrawal is completed
@@ -157,12 +157,6 @@ interface IBillingManager {
     function updateDepositAssetEnabledStatus(string memory _depositAssetKey, bool _newEnabledStatus) external;
 
     /**
-     * @notice Allows the network to withdraw tokens on behalf of users
-     * @param _networkWithdrawArr An array containing NetworkWithdrawInfo structs for each withdrawal
-     */
-    function networkWithdraw(NetworkWithdrawInfo[] calldata _networkWithdrawArr) external;
-
-    /**
      * @notice Deposits a specified amount of tokens into the protocol
      * @dev This function can accept ETH if the deposit asset is the Native
      * @param _depositAssetKey The unique key identifying the deposit asset
@@ -177,44 +171,13 @@ interface IBillingManager {
      * @param _depositAssetKey The unique key identifying the deposit asset
      * @param _recipientAddr The address to which the deposited tokens will be attributed
      * @param _depositAmount The amount of tokens to deposit
-     * @param _sigExpirationTime The expiration time for the permit signature
-     * @param _v The recovery byte of the permit signature
-     * @param _r The R part of the permit signature
-     * @param _s The S part of the permit signature
      */
     function depositWithPermit(
         string memory _depositAssetKey,
         address _recipientAddr,
         uint256 _depositAmount,
-        uint256 _sigExpirationTime,
-        uint8 _v,
-        bytes32 _r,
-        bytes32 _s
+        SigData calldata _sigData
     ) external;
-
-    /**
-     * @notice Initiates a withdrawal of funds
-     * @param _depositAssetKey The key identifying the deposit asset
-     * @param _amountToWithdraw The amount of tokens to withdraw
-     * @param _sigExpirationTime The expiration time for the withdrawal signature
-     * @param _v The recovery byte of the withdrawal signature
-     * @param _r The R part of the withdrawal signature
-     * @param _s The S part of the withdrawal signature
-     */
-    function withdrawFunds(
-        string memory _depositAssetKey,
-        uint256 _amountToWithdraw,
-        uint256 _sigExpirationTime,
-        uint8 _v,
-        bytes32 _r,
-        bytes32 _s
-    ) external;
-
-    /**
-     * @notice Withdraws network rewards
-     * @param _depositAssetKey The unique key identifying the deposit asset
-     */
-    function withdrawNetworkRewards(string memory _depositAssetKey) external;
 
     /**
      * @notice Retrieves the key identifying the native deposit asset
@@ -222,11 +185,7 @@ interface IBillingManager {
      */
     function nativeDepositAssetKey() external view returns (string memory);
 
-    /**
-     * @notice Retrieves the total count of registered users
-     * @return uint256 The total count of registered users
-     */
-    function getTotalUsersCount() external view returns (uint256);
+    function nerifTokenDepositAssetKey() external view returns (string memory);
 
     /**
      * @notice Retrieves an array of supported deposit asset keys
@@ -242,57 +201,6 @@ interface IBillingManager {
     function getDepositAssetsInfo(
         string[] memory _depositAssetKeysArr
     ) external view returns (DepositAssetInfo[] memory);
-
-    /**
-     * @notice Retrieves an array of existing user addresses within the specified range
-     * @param _offset The starting index of users to retrieve
-     * @param _limit The maximum number of users to retrieve
-     * @return An array containing user addresses
-     */
-    function getExistingUsers(uint256 _offset, uint256 _limit) external view returns (address[] memory);
-
-    /**
-     * @notice Retrieves an array of user funds information within the specified range
-     * @param _offset The starting index of user funds information to retrieve
-     * @param _limit The maximum number of user funds information to retrieve
-     * @return _usersInfoArr An array containing information about user funds
-     */
-    function getUsersDepositInfo(
-        string memory _depositAssetKey,
-        uint256 _offset,
-        uint256 _limit
-    ) external view returns (UserDepositInfo[] memory _usersInfoArr);
-
-    /**
-     * @notice Retrieves the withdrawal nonce for a specific user
-     * @param _userAddr The address of the user
-     * @return The withdrawal nonce for the user
-     */
-    function getUserWithdrawNonce(address _userAddr) external view returns (uint256);
-
-    /**
-     * @notice Retrieves the deposit asset keys associated with a specific user
-     * @param _userAddr The address of the user for whom to retrieve deposit asset keys
-     * @return An array containing the deposit asset keys associated with the specified user
-     */
-    function getUserDepositAssetKeys(address _userAddr) external view returns (string[] memory);
-
-    /**
-     * @notice Retrieves the network rewards for a specific deposit asset
-     * @param _depositAssetKey The key identifying the deposit asset for which to retrieve network rewards
-     * @return uint256 The amount of network rewards associated with the specified deposit asset
-     */
-    function getNetworkRewards(string memory _depositAssetKey) external view returns (uint256);
-
-    /**
-     * @notice Retrieves the funds information of a user
-     * @param _userAddr The address of the user
-     * @return Information about the user's funds
-     */
-    function getUserDepositInfo(
-        address _userAddr,
-        string memory _depositAssetKey
-    ) external view returns (UserDepositInfo memory);
 
     /**
      * @notice Checks if a deposit asset is supported

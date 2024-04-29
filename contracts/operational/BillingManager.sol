@@ -25,21 +25,29 @@ contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable
     using SafeERC20 for IERC20;
 
     // solhint-disable-next-line var-name-mixedcase
-    bytes32 private constant _WITHDRAW_TYPEHASH =
+    bytes32 private constant _FUNDS_WITHDRAW_TYPEHASH =
         keccak256(
-            "Withdraw(address userAddr,string depositAssetKey,uint256 withdrawAmount,uint256 nonce,uint256 deadline)"
+            // solhint-disable-next-line max-line-length
+            "FundsWithdraw(address userAddr,bytes32 depositAssetsHash,bytes32 amountsHash,uint256 nonce,uint256 deadline)"
+        );
+
+    // solhint-disable-next-line var-name-mixedcase
+    bytes32 private constant _REWARDS_WITHDRAW_TYPEHASH =
+        keccak256(
+            // solhint-disable-next-line max-line-length
+            "RewardsWithdraw(address userAddr,bytes32 depositAssetsHash,bytes32 amountsHash,uint256 nonce,uint256 deadline)"
         );
 
     IContractsRegistry internal _contractsRegistry;
     IRegistry internal _registry;
 
-    string public nativeDepositAssetKey;
+    string public override nativeDepositAssetKey;
+    string public override nerifTokenDepositAssetKey;
 
-    EnumerableSet.AddressSet internal _existingUsers;
     StringSet.Set internal _supportedDepositAssetKeys;
 
     mapping(string => DepositAssetData) internal _depositAssetsData;
-    mapping(address => UserData) internal _usersData;
+    mapping(address => mapping(uint256 => bool)) internal _usersNonces;
 
     modifier onlySigner() {
         _onlySigner(msg.sender);
@@ -60,12 +68,17 @@ contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable
         _depositAsset(nativeDepositAssetKey, msg.sender, msg.sender, msg.value, true);
     }
 
-    function initialize(DepositAssetInfo calldata _nativeDepositAssetInfo) external initializer {
+    function initialize(
+        DepositAssetInfo calldata _nativeDepositAssetInfo,
+        DepositAssetInfo calldata _nerifTokenDepositAssetInfo
+    ) external initializer {
         __EIP712_init("BillingManager", "1");
 
         nativeDepositAssetKey = _nativeDepositAssetInfo.depositAssetKey;
+        nerifTokenDepositAssetKey = _nerifTokenDepositAssetInfo.depositAssetKey;
 
         _addDepositAsset(_nativeDepositAssetInfo);
+        _addDepositAsset(_nerifTokenDepositAssetInfo);
     }
 
     function setDependencies(address _contractsRegistryAddr, bytes memory) public override dependant {
@@ -111,30 +124,6 @@ contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable
         emit DepositAssetEnabledStatusUpdated(_depositAssetKey, _newEnabledStatus);
     }
 
-    function networkWithdraw(NetworkWithdrawInfo[] calldata _networkWithdrawArr) external override onlySigner {
-        for (uint256 i = 0; i < _networkWithdrawArr.length; i++) {
-            NetworkWithdrawInfo calldata withdrawInfo = _networkWithdrawArr[i];
-
-            _onlyExistingDepositAsset(withdrawInfo.depositAssetKey);
-            _onlyEnoughFunds(withdrawInfo.depositAssetKey, withdrawInfo.userAddr, withdrawInfo.amountToWithdraw);
-
-            _updateUserDepositData(
-                withdrawInfo.depositAssetKey,
-                withdrawInfo.userAddr,
-                withdrawInfo.amountToWithdraw,
-                false
-            );
-
-            _depositAssetsData[withdrawInfo.depositAssetKey].networkRewards += withdrawInfo.amountToWithdraw;
-
-            emit NetworkWithdrawCompleted(
-                withdrawInfo.depositAssetKey,
-                withdrawInfo.userAddr,
-                withdrawInfo.amountToWithdraw
-            );
-        }
-    }
-
     function deposit(
         string memory _depositAssetKey,
         address _recipientAddr,
@@ -155,85 +144,47 @@ contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable
         string memory _depositAssetKey,
         address _recipientAddr,
         uint256 _depositAmount,
-        uint256 _sigExpirationTime,
-        uint8 _v,
-        bytes32 _r,
-        bytes32 _s
+        SigData calldata _sigData
     ) external override onlyExistingDepositAsset(_depositAssetKey) onlyEnabledDepositAsset(_depositAssetKey) {
         require(
             !isNativeDepositAsset(_depositAssetKey),
             "BillingManager: Unable to deposit native currency with permit"
         );
-
         require(isDepositAssetPermitable(_depositAssetKey), "BillingManager: Deposit asset is not permitable");
 
         IERC20Permit(_depositAssetsData[_depositAssetKey].tokenAddr).permit(
             msg.sender,
             address(this),
             _depositAmount,
-            _sigExpirationTime,
-            _v,
-            _r,
-            _s
+            _sigData.sigExpirationTime,
+            _sigData.v,
+            _sigData.r,
+            _sigData.s
         );
 
         _depositAsset(_depositAssetKey, msg.sender, _recipientAddr, _depositAmount, false);
     }
 
-    function withdrawFunds(
-        string memory _depositAssetKey,
-        uint256 _amountToWithdraw,
-        uint256 _sigExpirationTime,
-        uint8 _v,
-        bytes32 _r,
-        bytes32 _s
-    ) external override {
-        require(block.timestamp <= _sigExpirationTime, "BillingManager: Expired deadline");
+    function withdrawFunds(WithdrawData calldata _withdrawData) external {
+        _withdraw(msg.sender, _FUNDS_WITHDRAW_TYPEHASH, _withdrawData);
 
-        uint256 currentNonce = _usersData[msg.sender].withdrawNonce++;
-
-        bytes32 withdrawStructHash = keccak256(
-            abi.encode(
-                _WITHDRAW_TYPEHASH,
-                msg.sender,
-                keccak256(bytes(_depositAssetKey)),
-                _amountToWithdraw,
-                currentNonce,
-                _sigExpirationTime
-            )
+        emit FundsWithdrawn(
+            msg.sender,
+            _withdrawData.depositAssetKeys,
+            _withdrawData.withdrawAmounts,
+            _withdrawData.nonce
         );
-
-        _onlySigner(ECDSA.recover(_hashTypedDataV4(withdrawStructHash), _v, _r, _s));
-
-        _onlyEnoughFunds(_depositAssetKey, msg.sender, _amountToWithdraw);
-        _updateUserDepositData(_depositAssetKey, msg.sender, _amountToWithdraw, false);
-        _sendFunds(_depositAssetKey, msg.sender, _amountToWithdraw);
-
-        emit UserFundsWithdrawn(_depositAssetKey, msg.sender, _amountToWithdraw);
     }
 
-    function withdrawNetworkRewards(
-        string memory _depositAssetKey
-    ) external override onlyExistingDepositAsset(_depositAssetKey) {
-        DepositAssetData storage depositAssetData = _depositAssetsData[_depositAssetKey];
+    function withdrawRewards(WithdrawData calldata _withdrawData) external {
+        _withdraw(msg.sender, _REWARDS_WITHDRAW_TYPEHASH, _withdrawData);
 
-        uint256 amountToWithdraw = depositAssetData.networkRewards;
-
-        require(amountToWithdraw > 0, "BillingManager: No network rewards to withdraw");
-
-        delete depositAssetData.networkRewards;
-
-        address signerAddr = _contractsRegistry.getSigner();
-
-        require(signerAddr != address(0), "BillingManager: Zero signer address");
-
-        _sendFunds(_depositAssetKey, signerAddr, amountToWithdraw);
-
-        emit RewardsWithdrawn(_depositAssetKey, signerAddr, amountToWithdraw);
-    }
-
-    function getTotalUsersCount() external view override returns (uint256) {
-        return _existingUsers.length();
+        emit RewardsWithdrawn(
+            msg.sender,
+            _withdrawData.depositAssetKeys,
+            _withdrawData.withdrawAmounts,
+            _withdrawData.nonce
+        );
     }
 
     function getSupportedDepositAssetKeys() external view override returns (string[] memory) {
@@ -253,41 +204,12 @@ contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable
         }
     }
 
-    function getExistingUsers(uint256 _offset, uint256 _limit) external view override returns (address[] memory) {
-        return Paginator.part(_existingUsers, _offset, _limit);
+    function getTotalDepositAssetAmount(string calldata _depositAssetKey) external view returns (uint256) {
+        return _depositAssetsData[_depositAssetKey].totalAssetAmount;
     }
 
-    function getUsersDepositInfo(
-        string memory _depositAssetKey,
-        uint256 _offset,
-        uint256 _limit
-    ) external view override returns (UserDepositInfo[] memory _usersInfoArr) {
-        uint256 to = Paginator.getTo(_existingUsers.length(), _offset, _limit);
-
-        _usersInfoArr = new UserDepositInfo[](to - _offset);
-
-        for (uint256 i = _offset; i < to; i++) {
-            _usersInfoArr[i - _offset] = getUserDepositInfo(_existingUsers.at(i), _depositAssetKey);
-        }
-    }
-
-    function getUserWithdrawNonce(address _userAddr) external view override returns (uint256) {
-        return _usersData[_userAddr].withdrawNonce;
-    }
-
-    function getUserDepositAssetKeys(address _userAddr) external view override returns (string[] memory) {
-        return _usersData[_userAddr].depositAssetKeys.values();
-    }
-
-    function getNetworkRewards(string memory _depositAssetKey) external view override returns (uint256) {
-        return _depositAssetsData[_depositAssetKey].networkRewards;
-    }
-
-    function getUserDepositInfo(
-        address _userAddr,
-        string memory _depositAssetKey
-    ) public view override returns (UserDepositInfo memory) {
-        return UserDepositInfo(_userAddr, _usersData[_userAddr].userDepositsAmount[_depositAssetKey]);
+    function isUserNonceUsed(address _userAddr, uint256 _nonce) public view returns (bool) {
+        return _usersNonces[_userAddr][_nonce];
     }
 
     function isDepositAssetSupported(string memory _depositAssetKey) public view override returns (bool) {
@@ -318,8 +240,8 @@ contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable
         );
         require(bytes(_depositAssetInfo.depositAssetKey).length > 0, "BillingManager: Invalid deposit asset key");
         require(
-            _depositAssetInfo.depositAssetData.networkRewards == 0,
-            "BillingManager: Invalid init network rewards value"
+            _depositAssetInfo.depositAssetData.totalAssetAmount == 0,
+            "BillingManager: Invalid init total asset amount value"
         );
 
         _depositAssetsData[_depositAssetInfo.depositAssetKey] = _depositAssetInfo.depositAssetData;
@@ -345,35 +267,46 @@ contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable
             );
         }
 
-        _updateUserDepositData(_depositAssetKey, _recipientAddr, _depositAmount, true);
+        _depositAssetsData[_depositAssetKey].totalAssetAmount += _depositAmount;
 
         emit AssetDeposited(_depositAssetKey, _tokensSenderAddr, _recipientAddr, _depositAmount);
     }
 
-    function _updateUserDepositData(
-        string memory _depositAssetKey,
-        address _userAddr,
-        uint256 _amountToUpdate,
-        bool _isAdding
-    ) internal {
-        require(_amountToUpdate > 0, "BillingManager: Zero amount to update");
+    function _withdraw(address _userAddr, bytes32 _structTypehash, WithdrawData calldata _withdrawData) internal {
+        require(block.timestamp <= _withdrawData.sigData.sigExpirationTime, "BillingManager: Expired deadline");
+        require(!isUserNonceUsed(msg.sender, _withdrawData.nonce), "BillingManager: Nonce has already been used");
 
-        UserData storage userData = _usersData[_userAddr];
+        bytes32 rewardsWithdrawStructHash = _getStructHash(
+            _structTypehash,
+            _userAddr,
+            _withdrawData.depositAssetKeys,
+            _withdrawData.withdrawAmounts,
+            _withdrawData.sigData.sigExpirationTime,
+            _withdrawData.nonce
+        );
 
-        if (_isAdding) {
-            userData.userDepositsAmount[_depositAssetKey] += _amountToUpdate;
-            userData.depositAssetKeys.add(_depositAssetKey);
+        _onlySigner(
+            ECDSA.recover(
+                _hashTypedDataV4(rewardsWithdrawStructHash),
+                _withdrawData.sigData.v,
+                _withdrawData.sigData.r,
+                _withdrawData.sigData.s
+            )
+        );
 
-            _existingUsers.add(_userAddr);
-        } else {
-            uint256 newUserFundsAmount = userData.userDepositsAmount[_depositAssetKey] - _amountToUpdate;
-
-            userData.userDepositsAmount[_depositAssetKey] = newUserFundsAmount;
-
-            if (newUserFundsAmount == 0) {
-                _existingUsers.remove(_userAddr);
-            }
+        for (uint256 i = 0; i < _withdrawData.depositAssetKeys.length; i++) {
+            _withdrawAsset(_userAddr, _withdrawData.depositAssetKeys[i], _withdrawData.withdrawAmounts[i]);
         }
+
+        _usersNonces[msg.sender][_withdrawData.nonce] = true;
+    }
+
+    function _withdrawAsset(address _recipientAddr, string calldata _assetKey, uint256 _withdrawAmount) internal {
+        _onlyExistingDepositAsset(_assetKey);
+        _onlyEnoughDepositAsset(_assetKey, _withdrawAmount);
+        _sendFunds(_assetKey, _recipientAddr, _withdrawAmount);
+
+        _depositAssetsData[_assetKey].totalAssetAmount -= _withdrawAmount;
     }
 
     function _sendFunds(string memory _depositAssetKey, address _recipientAddr, uint256 _amountToSend) internal {
@@ -392,14 +325,35 @@ contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable
         require(isDepositAssetSupported(_depositAssetKey), "BillingManager: Deposit asset does not exist");
     }
 
+    function _onlyEnoughDepositAsset(string memory _depositAssetKey, uint256 _neededAmount) internal view {
+        require(
+            _depositAssetsData[_depositAssetKey].totalAssetAmount >= _neededAmount,
+            "BillingManager: Not enough deposit asset"
+        );
+    }
+
     function _onlyEnabledDepositAsset(string memory _depositAssetKey) internal view {
         require(isDepositAssetEnabled(_depositAssetKey), "BillingManager: Deposit asset is disabled");
     }
 
-    function _onlyEnoughFunds(string memory _depositAssetKey, address _userAddr, uint256 _neededAmount) internal view {
-        require(
-            _usersData[_userAddr].userDepositsAmount[_depositAssetKey] >= _neededAmount,
-            "BillingManager: Not enough deposited funds"
-        );
+    function _getStructHash(
+        bytes32 _structTypehash,
+        address _userAddr,
+        string[] calldata _depositAssetKeys,
+        uint256[] calldata _withdrawAmounts,
+        uint256 _sigExpirationTime,
+        uint256 _nonce
+    ) internal pure returns (bytes32) {
+        return
+            keccak256(
+                abi.encode(
+                    _structTypehash,
+                    _userAddr,
+                    keccak256(abi.encode(_depositAssetKeys)),
+                    keccak256(abi.encode(_withdrawAmounts)),
+                    _nonce,
+                    _sigExpirationTime
+                )
+            );
     }
 }
