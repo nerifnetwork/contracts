@@ -107,16 +107,43 @@ export = async (deployer: Deployer) => {
     );
     const gatewayImpl = await deployer.deployed(Gateway__factory);
 
-    await billingManager.initialize({
-      depositAssetKey: operationalContractsInitParams.nativeDepositAssetData.nativeDepositAssetKey,
-      depositAssetData: {
-        tokenAddr: ethers.constants.AddressZero,
-        workflowExecutionDiscount: operationalContractsInitParams.nativeDepositAssetData.workflowExecutionDiscount,
-        isEnabled: operationalContractsInitParams.nativeDepositAssetData.isEnabled,
-        networkRewards: 0,
-        isPermitable: false,
+    let nerifTokenAddr: string;
+
+    if (isZeroAddr(operationalContractsInitParams.billingManagerInitParams.nerifTokenDepositAssetData.nerifTokenAddr)) {
+      nerifTokenAddr = await contractsRegistry.getNerifTokenContract();
+    } else {
+      nerifTokenAddr =
+        operationalContractsInitParams.billingManagerInitParams.nerifTokenDepositAssetData.nerifTokenAddr;
+    }
+
+    await billingManager.initialize(
+      {
+        depositAssetKey:
+          operationalContractsInitParams.billingManagerInitParams.nativeDepositAssetData.nativeDepositAssetKey,
+        depositAssetData: {
+          tokenAddr: ethers.constants.AddressZero,
+          workflowExecutionDiscount:
+            operationalContractsInitParams.billingManagerInitParams.nativeDepositAssetData.workflowExecutionDiscount,
+          isEnabled: operationalContractsInitParams.billingManagerInitParams.nativeDepositAssetData.isEnabled,
+          totalAssetAmount: 0,
+          isPermitable: false,
+        },
       },
-    });
+      {
+        depositAssetKey:
+          operationalContractsInitParams.billingManagerInitParams.nerifTokenDepositAssetData.nativeDepositAssetKey,
+        depositAssetData: {
+          tokenAddr: nerifTokenAddr,
+          workflowExecutionDiscount:
+            operationalContractsInitParams.billingManagerInitParams.nerifTokenDepositAssetData
+              .workflowExecutionDiscount,
+          isEnabled: operationalContractsInitParams.billingManagerInitParams.nerifTokenDepositAssetData.isEnabled,
+          totalAssetAmount: 0,
+          isPermitable: operationalContractsInitParams.billingManagerInitParams.nerifTokenDepositAssetData.isPermitable,
+        },
+      }
+    );
+
     await registry.initialize(operationalContractsInitParams.maxWorkflowsPerAccount);
     await gatewayFactory.initialize(gatewayImpl.address);
 
