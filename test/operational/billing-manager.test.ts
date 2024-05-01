@@ -23,6 +23,7 @@ describe('BillingManager', () => {
   let OWNER: SignerWithAddress;
   let FIRST: SignerWithAddress;
   let SIGNER: SignerWithAddress;
+  let STAKING: SignerWithAddress;
 
   let contractsRegistry: ContractsRegistry;
 
@@ -147,7 +148,7 @@ describe('BillingManager', () => {
   }
 
   before(async () => {
-    [OWNER, FIRST, SIGNER] = await ethers.getSigners();
+    [OWNER, FIRST, SIGNER, STAKING] = await ethers.getSigners();
 
     const ERC1967ProxyFactory = await ethers.getContractFactory('ERC1967Proxy');
     const ContractsRegistryFactory = await ethers.getContractFactory('ContractsRegistry');
@@ -184,6 +185,7 @@ describe('BillingManager', () => {
 
     await contractsRegistry.addContract(await contractsRegistry.GATEWAY_FACTORY_NAME(), gatewayFactory.address);
     await contractsRegistry.addContract(await contractsRegistry.TOKENS_VESTING_NAME(), tokensVesting.address);
+    await contractsRegistry.addContract(await contractsRegistry.STAKING_NAME(), STAKING.address);
     await contractsRegistry.addContract(await contractsRegistry.SIGNER_GETTER_NAME(), signerStorage.address);
 
     registry = RegistryFactory.attach(await contractsRegistry.getRegistryContract());

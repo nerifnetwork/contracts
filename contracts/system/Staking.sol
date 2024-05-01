@@ -15,6 +15,7 @@ import "../interfaces/core/IContractsRegistry.sol";
 import "../interfaces/system/IDKG.sol";
 import "../interfaces/system/IStaking.sol";
 import "../interfaces/system/ISlashingVoting.sol";
+import "../interfaces/operational/IBillingManager.sol";
 
 contract Staking is IStaking, Initializable, AbstractDependant {
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -24,6 +25,7 @@ contract Staking is IStaking, Initializable, AbstractDependant {
     IContractsRegistry internal _contractsRegistry;
     IDKG internal _dkg;
     ISlashingVoting internal _slashingVoting;
+    IBillingManager internal _billingManager;
 
     IERC20 public stakeToken;
 
@@ -72,6 +74,7 @@ contract Staking is IStaking, Initializable, AbstractDependant {
         _contractsRegistry = contractsRegistry;
         _dkg = IDKG(contractsRegistry.getDKGContract());
         _slashingVoting = ISlashingVoting(contractsRegistry.getSlashingVotingContract());
+        _billingManager = IBillingManager(contractsRegistry.getBillingManagerContract());
     }
 
     // solhint-disable-next-line ordering
@@ -88,7 +91,14 @@ contract Staking is IStaking, Initializable, AbstractDependant {
     }
 
     function slashValidator(address _validator) external override onlySlashingVoting {
-        // TODO: Add validator slashing logic
+        string memory nerifTokenDepositAssetKey = _billingManager.nerifTokenDepositAssetKey();
+
+        require(
+            _billingManager.getDepositAssetTokenAddr(nerifTokenDepositAssetKey) == address(stakeToken),
+            "Staking: Stake token not a NERIF token"
+        );
+
+        _billingManager.addSlashedTokens(nerifTokenDepositAssetKey, _usersStake[_validator]);
     }
 
     function stake(uint256 _stakeAmount) external override onlyWhitelistedUser onlyNotSlashed {

@@ -40,6 +40,7 @@ contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable
 
     IContractsRegistry internal _contractsRegistry;
     IRegistry internal _registry;
+    address internal _stakingAddr;
 
     string public override nativeDepositAssetKey;
     string public override nerifTokenDepositAssetKey;
@@ -51,6 +52,11 @@ contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable
 
     modifier onlySigner() {
         _onlySigner(msg.sender);
+        _;
+    }
+
+    modifier onlyStaking() {
+        _onlyStaking();
         _;
     }
 
@@ -86,6 +92,10 @@ contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable
 
         _contractsRegistry = contractsRegistry;
         _registry = IRegistry(contractsRegistry.getRegistryContract());
+
+        if (_contractsRegistry.isMainChain()) {
+            _stakingAddr = contractsRegistry.getStakingContract();
+        }
     }
 
     // solhint-disable-next-line ordering
@@ -122,6 +132,12 @@ contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable
         _depositAssetsData[_depositAssetKey].isEnabled = _newEnabledStatus;
 
         emit DepositAssetEnabledStatusUpdated(_depositAssetKey, _newEnabledStatus);
+    }
+
+    function addSlashedTokens(string calldata _depositAssetKey, uint256 _tokensAmount) external override onlyStaking {
+        _depositAssetsData[_depositAssetKey].totalAssetAmount += _tokensAmount;
+
+        emit SlashedTokensAdded(_depositAssetKey, _tokensAmount);
     }
 
     function deposit(
@@ -204,11 +220,15 @@ contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable
         }
     }
 
-    function getTotalDepositAssetAmount(string calldata _depositAssetKey) external view returns (uint256) {
+    function getDepositAssetTokenAddr(string calldata _depositAssetKey) external view override returns (address) {
+        return _depositAssetsData[_depositAssetKey].tokenAddr;
+    }
+
+    function getTotalDepositAssetAmount(string calldata _depositAssetKey) external view override returns (uint256) {
         return _depositAssetsData[_depositAssetKey].totalAssetAmount;
     }
 
-    function isUserNonceUsed(address _userAddr, uint256 _nonce) public view returns (bool) {
+    function isUserNonceUsed(address _userAddr, uint256 _nonce) public view override returns (bool) {
         return _usersNonces[_userAddr][_nonce];
     }
 
@@ -319,6 +339,10 @@ contract BillingManager is IBillingManager, AbstractDependant, EIP712Upgradeable
 
     function _onlySigner(address _userAddr) internal view {
         require(_contractsRegistry.getSigner() == _userAddr, "BillingManager: Not a signer");
+    }
+
+    function _onlyStaking() internal view {
+        require(msg.sender == _stakingAddr, "BillingManager: Not a staking address");
     }
 
     function _onlyExistingDepositAsset(string memory _depositAssetKey) internal view {

@@ -111,6 +111,8 @@ interface IBillingManager {
         uint256 depositAmount
     );
 
+    event SlashedTokensAdded(string indexed depositAssetKey, uint256 tokensAmount);
+
     event FundsWithdrawn(
         address indexed userAddr,
         string[] depositAssetKeys,
@@ -137,7 +139,7 @@ interface IBillingManager {
      * @notice Adds multiple deposit assets with their corresponding information
      * @param _depositAssetInfoArr An array containing DepositAssetInfo structs for the deposit assets to be added
      */
-    function addDepositAssets(DepositAssetInfo[] memory _depositAssetInfoArr) external;
+    function addDepositAssets(DepositAssetInfo[] calldata _depositAssetInfoArr) external;
 
     /**
      * @notice Updates the workflow execution discount for a specific deposit asset
@@ -145,7 +147,7 @@ interface IBillingManager {
      * @param _newWorkflowExecutionDiscount The new workflow execution discount to be set
      */
     function updateWorkflowExecutionDiscount(
-        string memory _depositAssetKey,
+        string calldata _depositAssetKey,
         uint256 _newWorkflowExecutionDiscount
     ) external;
 
@@ -154,7 +156,9 @@ interface IBillingManager {
      * @param _depositAssetKey The unique key identifying the deposit asset
      * @param _newEnabledStatus The new enabled status to be set
      */
-    function updateDepositAssetEnabledStatus(string memory _depositAssetKey, bool _newEnabledStatus) external;
+    function updateDepositAssetEnabledStatus(string calldata _depositAssetKey, bool _newEnabledStatus) external;
+
+    function addSlashedTokens(string calldata _depositAssetKey, uint256 _tokensAmount) external;
 
     /**
      * @notice Deposits a specified amount of tokens into the protocol
@@ -163,7 +167,7 @@ interface IBillingManager {
      * @param _recipientAddr The address to which the deposited tokens will be attributed
      * @param _depositAmount The amount of tokens to deposit
      */
-    function deposit(string memory _depositAssetKey, address _recipientAddr, uint256 _depositAmount) external payable;
+    function deposit(string calldata _depositAssetKey, address _recipientAddr, uint256 _depositAmount) external payable;
 
     /**
      * @notice Deposits a specified amount of tokens into the protocol using permit for approval
@@ -173,7 +177,7 @@ interface IBillingManager {
      * @param _depositAmount The amount of tokens to deposit
      */
     function depositWithPermit(
-        string memory _depositAssetKey,
+        string calldata _depositAssetKey,
         address _recipientAddr,
         uint256 _depositAmount,
         SigData calldata _sigData
@@ -201,6 +205,12 @@ interface IBillingManager {
     function getDepositAssetsInfo(
         string[] memory _depositAssetKeysArr
     ) external view returns (DepositAssetInfo[] memory);
+
+    function getDepositAssetTokenAddr(string calldata _depositAssetKey) external view returns (address);
+
+    function getTotalDepositAssetAmount(string calldata _depositAssetKey) external view returns (uint256);
+
+    function isUserNonceUsed(address _userAddr, uint256 _nonce) external view returns (bool);
 
     /**
      * @notice Checks if a deposit asset is supported
