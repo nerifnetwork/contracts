@@ -10,22 +10,22 @@ interface IDKG {
      */
     enum DKGEpochStatuses {
         NONE,
-        NOT_STARTED,
-        UPDATES_COLLECTION,
-        DKG_GENERATION,
         GUARANTEED_WORKING,
         ACTIVE,
+        UPDATES_COLLECTION,
+        DKG_GENERATION,
         FINISHED
     }
 
     /**
      * @dev Struct containing information about a DKG epoch
-     * @param mainEpochInfo The main information about the epoch
      * @param epochSigner The address of the signer for the epoch
      * @param epochStatus The status of the epoch
      */
     struct DKGEpochInfo {
-        MainEpochInfo mainEpochInfo;
+        uint256 epochId;
+        uint256 epochStartTime;
+        uint256 dkgGenPeriodStartTime;
         address epochSigner;
         DKGEpochStatuses epochStatus;
     }
@@ -38,20 +38,8 @@ interface IDKG {
      */
     struct ValidatorInfo {
         address validator;
-        ValidationData startValidationData;
-        ValidationData endValidationData;
-    }
-
-    /**
-     * @dev Struct containing main information about an epoch
-     * @param epochId The ID of the epoch
-     * @param epochStartTime The start time of the epoch
-     * @param dkgGenPeriodEndTime The end time of the DKG generation period for the epoch
-     */
-    struct MainEpochInfo {
-        uint256 epochId;
-        uint256 epochStartTime;
-        uint256 dkgGenPeriodEndTime;
+        uint256 startValidationEpochId;
+        uint256 endValidationEpochId;
     }
 
     /**
@@ -64,28 +52,17 @@ interface IDKG {
     struct DKGEpochData {
         address epochSigner;
         uint256 epochStartTime;
+        uint256 dkgGenPeriodStartTime;
         mapping(address => uint256) signerVotesCount;
         mapping(address => address) signerVotes;
     }
 
     /**
-     * @dev Struct containing validation data
-     * @param validationTime The time of validation
-     * @param validationEpoch The epoch of validation
-     */
-    struct ValidationData {
-        uint256 validationTime;
-        uint256 validationEpoch;
-    }
-
-    /**
      * @notice Represents the data associated with a validator
-     * @param startValidationData The validation data at the start of the validator's period
-     * @param endValidationData The validation data at the end of the validator's period
      */
     struct ValidatorData {
-        ValidationData startValidationData;
-        ValidationData endValidationData;
+        uint256 startValidationEpochId;
+        uint256 endValidationEpochId;
     }
 
     /**
@@ -98,18 +75,16 @@ interface IDKG {
     /**
      * @notice Emitted when a new validator is added
      * @param validatorAddr The address of the newly added validator
-     * @param startValidationTime The time when the validation period starts for the validator
      * @param startValidationEpoch The epoch when the validation period starts for the validator
      */
-    event NewValidatorAdded(address indexed validatorAddr, uint256 startValidationTime, uint256 startValidationEpoch);
+    event NewValidatorAdded(address indexed validatorAddr, uint256 startValidationEpoch);
 
     /**
      * @notice Emitted when a validator exit is announced
      * @param validatorAddr The address of the validator announcing the exit
-     * @param endValidationTime The time when the validation period ends for the exiting validator
      * @param endValidationEpoch The epoch when the validation period ends for the exiting validator
      */
-    event ValidatorExitAnnounced(address indexed validatorAddr, uint256 endValidationTime, uint256 endValidationEpoch);
+    event ValidatorExitAnnounced(address indexed validatorAddr, uint256 endValidationEpoch);
 
     /**
      * @notice Emitted when a validator is removed
@@ -159,9 +134,9 @@ interface IDKG {
 
     /**
      * @notice Creates a slashing proposal
-     * @return The main information about the created epoch
+     * @return The DKG generation period start time
      */
-    function createProposal() external returns (MainEpochInfo memory);
+    function createProposal() external returns (uint256);
 
     /**
      * @notice Slashes a validator
@@ -187,6 +162,8 @@ interface IDKG {
      * @return The signer address
      */
     function getSignerAddress() external view returns (address);
+
+    function getActiveEpochId() external view returns (uint256);
 
     /**
      * @notice Retrieves information about a DKG epoch
@@ -246,7 +223,7 @@ interface IDKG {
      * @notice Retrieves the current epoch status
      * @return The current epoch status
      */
-    function getCurrentEpochStatus() external view returns (DKGEpochStatuses);
+    function getActiveEpochStatus() external view returns (DKGEpochStatuses);
 
     /**
      * @notice Retrieves the status of a specific epoch
@@ -256,51 +233,11 @@ interface IDKG {
     function getEpochStatus(uint256 _epochId) external view returns (DKGEpochStatuses);
 
     /**
-     * @notice Retrieves the end time for the updates collection period of an epoch
-     * @param _epochId The ID of the epoch
-     * @return The end time for the updates collection period
-     */
-    function getUpdatedCollectionPeriodEndTime(uint256 _epochId) external view returns (uint256);
-
-    /**
      * @notice Retrieves the end time for the DKG period of an epoch
      * @param _epochId The ID of the epoch
      * @return The end time for the DKG period
      */
     function getDKGPeriodEndTime(uint256 _epochId) external view returns (uint256);
-
-    /**
-     * @notice Retrieves the end time for the epoch
-     * @param _epochId The ID of the epoch
-     * @return The end time for the epoch
-     */
-    function getEpochEndTime(uint256 _epochId) external view returns (uint256);
-
-    /**
-     * @notice Retrieves the ID of the last epoch
-     * @return The ID of the last epoch
-     */
-    function getLastEpochId() external view returns (uint256);
-
-    /**
-     * @notice Retrieves the ID of the current epoch
-     * @return _currentEpochId The ID of the current epoch
-     */
-    function getCurrentEpochId() external view returns (uint256 _currentEpochId);
-
-    /**
-     * @notice Checks if the given epoch ID is the current epoch
-     * @param _epochId The ID of the epoch
-     * @return True if the epoch is the current epoch, otherwise false
-     */
-    function isCurrentEpoch(uint256 _epochId) external view returns (bool);
-
-    /**
-     * @notice Checks if the given epoch ID is the last epoch
-     * @param _epochId The ID of the epoch
-     * @return True if the epoch is the last epoch, otherwise false
-     */
-    function isLastEpoch(uint256 _epochId) external view returns (bool);
 
     /**
      * @notice Checks if a validator is active
@@ -317,11 +254,4 @@ interface IDKG {
     function isValidator(address _validatorAddr) external view returns (bool);
 
     function isValidatorSlashed(address _validatorAddr) external view returns (bool);
-
-    /**
-     * @notice Checks if DKG generation was successful for a specific epoch
-     * @param _epochId The ID of the epoch
-     * @return True if DKG generation was successful, otherwise false
-     */
-    function isDKGGenSuccessful(uint256 _epochId) external view returns (bool);
 }

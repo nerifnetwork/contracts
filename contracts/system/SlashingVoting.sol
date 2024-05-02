@@ -67,17 +67,13 @@ contract SlashingVoting is ISlashingVoting, Initializable, AbstractDependant {
         proposalData.validator = _validatorAddr;
         proposalData.reason = _reason;
 
-        IDKG.MainEpochInfo memory epochInfo = _dkg.createProposal();
-
-        proposalData.epochId = epochInfo.epochId;
-        proposalData.votingStartTime = epochInfo.epochStartTime;
-        proposalData.votingEndTime = epochInfo.dkgGenPeriodEndTime;
+        proposalData.epochId = _dkg.getActiveEpochId();
+        proposalData.votingStartTime = block.timestamp;
+        proposalData.votingEndTime = _dkg.createProposal();
 
         _pendingSlashingProposals[_validatorAddr] = newProposalId;
 
-        if (epochInfo.epochStartTime <= block.timestamp) {
-            _vote(newProposalId);
-        }
+        _vote(newProposalId);
 
         emit ProposalCreated(newProposalId, _validatorAddr);
 
