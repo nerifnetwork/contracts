@@ -131,21 +131,23 @@ contract Staking is IStaking, Initializable, AbstractDependant {
         require(userStakedAmount > 0, "Staking: Nothing to withdraw");
         require(!hasWithdrawalAnnouncement(msg.sender), "Staking: User already has withdrawal announcement");
 
-        uint256 withdrawalTime = block.timestamp;
+        uint256 withdrawalEpochId;
 
         if (userStakedAmount >= minimalStake) {
-            withdrawalTime = _dkg.announceValidatorExit(msg.sender);
+            withdrawalEpochId = _dkg.announceValidatorExit(msg.sender);
+        } else {
+            withdrawalEpochId = _dkg.getActiveEpochId();
         }
 
-        _withdrawalAnnouncements[msg.sender] = WithdrawalAnnouncement(userStakedAmount, withdrawalTime);
+        _withdrawalAnnouncements[msg.sender] = WithdrawalAnnouncement(userStakedAmount, withdrawalEpochId);
 
-        emit WithdrawalAnnounced(msg.sender, userStakedAmount, withdrawalTime);
+        emit WithdrawalAnnounced(msg.sender, userStakedAmount, withdrawalEpochId);
     }
 
     function withdraw() external override onlyNotSlashed {
         require(hasWithdrawalAnnouncement(msg.sender), "Staking: User does not have withdrawal announcement");
         require(
-            _withdrawalAnnouncements[msg.sender].withdrawalTime <= block.timestamp,
+            _withdrawalAnnouncements[msg.sender].withdrawalEpochId <= _dkg.getActiveEpochId(),
             "Staking: The time for withdrawal has not come"
         );
 
@@ -199,7 +201,7 @@ contract Staking is IStaking, Initializable, AbstractDependant {
     }
 
     function hasWithdrawalAnnouncement(address _userAddr) public view override returns (bool) {
-        return _withdrawalAnnouncements[_userAddr].withdrawalTime > 0;
+        return _withdrawalAnnouncements[_userAddr].withdrawalEpochId > 0;
     }
 
     function _setMinimalStake(uint256 _minimalStake) internal {
