@@ -3,8 +3,9 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-import "../interfaces/ISignerAddress.sol";
-import "../interfaces/SignerOwnable.sol";
+import "../interfaces/core/ISignerAddress.sol";
+
+import "../core/SignerOwnable.sol";
 
 // SignerStorage is the simple collective signer address storage contract.
 // This is used on sidechains only. Mainchain uses DKG contract instead.

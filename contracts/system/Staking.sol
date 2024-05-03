@@ -15,8 +15,7 @@ import "../interfaces/core/IContractsRegistry.sol";
 import "../interfaces/system/IDKG.sol";
 import "../interfaces/system/IStaking.sol";
 import "../interfaces/system/ISlashingVoting.sol";
-
-import "./RewardDistributionPool.sol";
+import "../interfaces/operational/IBillingManager.sol";
 
 contract Staking is IStaking, Initializable, AbstractDependant {
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -26,7 +25,7 @@ contract Staking is IStaking, Initializable, AbstractDependant {
     IContractsRegistry internal _contractsRegistry;
     IDKG internal _dkg;
     ISlashingVoting internal _slashingVoting;
-    RewardDistributionPool internal _rewardsDistributionPool;
+    IBillingManager internal _billingManager;
 
     IERC20 public stakeToken;
 
@@ -43,7 +42,7 @@ contract Staking is IStaking, Initializable, AbstractDependant {
         _;
     }
 
-    modifier onlysSlashingVoting() {
+    modifier onlySlashingVoting() {
         _onlySlashingVoting();
         _;
     }
@@ -53,8 +52,8 @@ contract Staking is IStaking, Initializable, AbstractDependant {
         _;
     }
 
-    modifier onlyRewardDistributionPool() {
-        require(msg.sender == address(_rewardsDistributionPool), "Staking: only RewardDistributionPool contract");
+    modifier onlyNotSlashed() {
+        _onlyNotSlashed();
         _;
     }
 
@@ -75,9 +74,7 @@ contract Staking is IStaking, Initializable, AbstractDependant {
         _contractsRegistry = contractsRegistry;
         _dkg = IDKG(contractsRegistry.getDKGContract());
         _slashingVoting = ISlashingVoting(contractsRegistry.getSlashingVotingContract());
-        _rewardsDistributionPool = RewardDistributionPool(
-            payable(contractsRegistry.getRewardsDistributionPoolContract())
-        );
+        _billingManager = IBillingManager(contractsRegistry.getBillingManagerContract());
     }
 
     // solhint-disable-next-line ordering
@@ -93,16 +90,21 @@ contract Staking is IStaking, Initializable, AbstractDependant {
         }
     }
 
-    function slashValidator(address _validator) external override onlysSlashingVoting {
-        // TODO: Add validator slashing logic
+    function slashValidator(address _validator) external override onlySlashingVoting {
+        string memory nerifTokenDepositAssetKey = _billingManager.nerifTokenDepositAssetKey();
+
+        require(
+            _billingManager.getDepositAssetTokenAddr(nerifTokenDepositAssetKey) == address(stakeToken),
+            "Staking: Stake token not a NERIF token"
+        );
+
+        _billingManager.addSlashedTokens(nerifTokenDepositAssetKey, _usersStake[_validator]);
+        stakeToken.safeTransfer(address(_billingManager), _usersStake[_validator]);
+
+        delete _usersStake[_validator];
     }
 
-    function addRewardsToStake(address _validator, uint256 _amount) external override onlyRewardDistributionPool {
-        _usersStake[_validator] += _amount;
-        totalStake += _amount;
-    }
-
-    function stake(uint256 _stakeAmount) external override onlyWhitelistedUser {
+    function stake(uint256 _stakeAmount) external override onlyWhitelistedUser onlyNotSlashed {
         _stake(msg.sender, msg.sender, _stakeAmount);
     }
 
@@ -112,7 +114,7 @@ contract Staking is IStaking, Initializable, AbstractDependant {
         uint8 _v,
         bytes32 _r,
         bytes32 _s
-    ) external override onlyWhitelistedUser {
+    ) external override onlyWhitelistedUser onlyNotSlashed {
         IERC20Permit(address(stakeToken)).permit(
             msg.sender,
             address(this),
@@ -126,43 +128,38 @@ contract Staking is IStaking, Initializable, AbstractDependant {
         _stake(msg.sender, msg.sender, _stakeAmount);
     }
 
-    function announceWithdrawal(uint256 _amountToAnnounce) external override {
-        require(_amountToAnnounce > 0, "Staking: Amount must be greater than zero");
-        require(!hasWithdrawalAnnouncement(msg.sender), "Staking: User already has withdrawal announcement");
-
+    function announceWithdrawal() external override onlyNotSlashed {
         uint256 userStakedAmount = _usersStake[msg.sender];
 
-        require(_amountToAnnounce <= userStakedAmount, "Staking: Not enough stake");
+        require(userStakedAmount > 0, "Staking: Nothing to withdraw");
+        require(!hasWithdrawalAnnouncement(msg.sender), "Staking: User already has withdrawal announcement");
 
-        uint256 withdrawalTime = block.timestamp;
+        uint256 withdrawalEpochId;
 
-        if (userStakedAmount - minimalStake < _amountToAnnounce) {
-            withdrawalTime = _dkg.announceValidatorExit(msg.sender);
+        if (userStakedAmount >= minimalStake) {
+            withdrawalEpochId = _dkg.announceValidatorExit(msg.sender);
+        } else {
+            withdrawalEpochId = _dkg.getActiveEpochId();
         }
 
-        _withdrawalAnnouncements[msg.sender] = WithdrawalAnnouncement(_amountToAnnounce, withdrawalTime);
+        _withdrawalAnnouncements[msg.sender] = WithdrawalAnnouncement(userStakedAmount, withdrawalEpochId);
 
-        emit WithdrawalAnnounced(msg.sender, _amountToAnnounce, withdrawalTime);
+        emit WithdrawalAnnounced(msg.sender, userStakedAmount, withdrawalEpochId);
     }
 
-    function withdraw() external override {
+    function withdraw() external override onlyNotSlashed {
         require(hasWithdrawalAnnouncement(msg.sender), "Staking: User does not have withdrawal announcement");
         require(
-            _withdrawalAnnouncements[msg.sender].withdrawalTime <= block.timestamp,
+            _withdrawalAnnouncements[msg.sender].withdrawalEpochId <= _dkg.getActiveEpochId(),
             "Staking: The time for withdrawal has not come"
         );
 
         uint256 withdrawalAmount = _withdrawalAnnouncements[msg.sender].tokensAmount;
-        uint256 newUserStakeAmount = _usersStake[msg.sender] - withdrawalAmount;
 
-        _usersStake[msg.sender] = newUserStakeAmount;
         totalStake -= withdrawalAmount;
 
+        delete _usersStake[msg.sender];
         delete _withdrawalAnnouncements[msg.sender];
-
-        if (newUserStakeAmount < minimalStake && _dkg.isValidator(msg.sender)) {
-            _dkg.removeValidator(msg.sender);
-        }
 
         stakeToken.safeTransfer(msg.sender, withdrawalAmount);
 
@@ -203,7 +200,7 @@ contract Staking is IStaking, Initializable, AbstractDependant {
     }
 
     function hasWithdrawalAnnouncement(address _userAddr) public view override returns (bool) {
-        return _withdrawalAnnouncements[_userAddr].withdrawalTime > 0;
+        return _withdrawalAnnouncements[_userAddr].withdrawalEpochId > 0;
     }
 
     function _setMinimalStake(uint256 _minimalStake) internal {
@@ -215,17 +212,19 @@ contract Staking is IStaking, Initializable, AbstractDependant {
     function _stake(address _tokenSenderAddr, address _stakeRecipientAddr, uint256 _stakeAmount) internal {
         require(_stakeAmount > 0, "Staking: Zero stake amount");
         require(stakeToken.balanceOf(_tokenSenderAddr) >= _stakeAmount, "Staking: Not enough tokens to stake");
+        require(!_dkg.isValidator(_stakeRecipientAddr), "Staking: User is already a validator");
+        require(!hasWithdrawalAnnouncement(_stakeRecipientAddr), "Staking: User has a withdrawal announcement");
 
         uint256 newStakeAmount = _usersStake[_stakeRecipientAddr] + _stakeAmount;
 
-        if (!_dkg.isValidator(_stakeRecipientAddr) && newStakeAmount >= minimalStake) {
+        if (newStakeAmount >= minimalStake) {
             _dkg.addValidator(_stakeRecipientAddr);
         }
 
-        stakeToken.safeTransferFrom(_tokenSenderAddr, address(this), _stakeAmount);
-
         _usersStake[_stakeRecipientAddr] = newStakeAmount;
         totalStake += _stakeAmount;
+
+        stakeToken.safeTransferFrom(_tokenSenderAddr, address(this), _stakeAmount);
 
         emit TokensStaked(_tokenSenderAddr, _stakeRecipientAddr, _stakeAmount);
     }
@@ -240,5 +239,9 @@ contract Staking is IStaking, Initializable, AbstractDependant {
 
     function _onlyWhitelistedUser() internal view {
         require(isUserWhitelisted(msg.sender), "Staking: Not a whitelisted user");
+    }
+
+    function _onlyNotSlashed() internal view {
+        require(!_dkg.isValidatorSlashed(msg.sender), "Staking: Validator was slashed");
     }
 }

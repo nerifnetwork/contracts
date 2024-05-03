@@ -31,35 +31,24 @@ var (
 
 // IDKGDKGEpochInfo is an auto generated low-level Go binding around an user-defined struct.
 type IDKGDKGEpochInfo struct {
-	MainEpochInfo IDKGMainEpochInfo
-	EpochSigner   common.Address
-	EpochStatus   uint8
-}
-
-// IDKGMainEpochInfo is an auto generated low-level Go binding around an user-defined struct.
-type IDKGMainEpochInfo struct {
-	EpochId             *big.Int
-	EpochStartTime      *big.Int
-	DkgGenPeriodEndTime *big.Int
-}
-
-// IDKGValidationData is an auto generated low-level Go binding around an user-defined struct.
-type IDKGValidationData struct {
-	ValidationTime  *big.Int
-	ValidationEpoch *big.Int
+	EpochId               *big.Int
+	EpochStartTime        *big.Int
+	DkgGenPeriodStartTime *big.Int
+	EpochSigner           common.Address
+	EpochStatus           uint8
 }
 
 // IDKGValidatorInfo is an auto generated low-level Go binding around an user-defined struct.
 type IDKGValidatorInfo struct {
-	Validator           common.Address
-	StartValidationData IDKGValidationData
-	EndValidationData   IDKGValidationData
+	Validator              common.Address
+	StartValidationEpochId *big.Int
+	EndValidationEpochId   *big.Int
 }
 
 // DKGMetaData contains all meta data concerning the DKG contract.
 var DKGMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"epochId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"epochStartTime\",\"type\":\"uint256\"}],\"name\":\"NewEpochCreated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"validatorAddr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"startValidationTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"startValidationEpoch\",\"type\":\"uint256\"}],\"name\":\"NewValidatorAdded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"epochId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"signerAddress\",\"type\":\"address\"}],\"name\":\"SignerAddressUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"epochId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"collectiveSigner\",\"type\":\"address\"}],\"name\":\"SignerVoted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"validatorAddr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"endValidationTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"endValidationEpoch\",\"type\":\"uint256\"}],\"name\":\"ValidatorExitAnnounced\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"validatorAddr\",\"type\":\"address\"}],\"name\":\"ValidatorRemoved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"validatorAddr\",\"type\":\"address\"}],\"name\":\"ValidatorSlashed\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"FIRST_EPOCH_ID\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validatorToAdd\",\"type\":\"address\"}],\"name\":\"addValidator\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validatorToExit\",\"type\":\"address\"}],\"name\":\"announceValidatorExit\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"createProposal\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"epochId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"epochStartTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"dkgGenPeriodEndTime\",\"type\":\"uint256\"}],\"internalType\":\"structIDKG.MainEpochInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"dkgGenerationEpochDuration\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getActiveValidators\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getActiveValidatorsCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"_activeValidatorsCount\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getAllValidators\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getAllValidatorsCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getCurrentEpochId\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"_currentEpochId\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getCurrentEpochStatus\",\"outputs\":[{\"internalType\":\"enumIDKG.DKGEpochStatuses\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"getDKGEpochInfo\",\"outputs\":[{\"components\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"epochId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"epochStartTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"dkgGenPeriodEndTime\",\"type\":\"uint256\"}],\"internalType\":\"structIDKG.MainEpochInfo\",\"name\":\"mainEpochInfo\",\"type\":\"tuple\"},{\"internalType\":\"address\",\"name\":\"epochSigner\",\"type\":\"address\"},{\"internalType\":\"enumIDKG.DKGEpochStatuses\",\"name\":\"epochStatus\",\"type\":\"uint8\"}],\"internalType\":\"structIDKG.DKGEpochInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"getDKGPeriodEndTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"getEpochEndTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"getEpochStatus\",\"outputs\":[{\"internalType\":\"enumIDKG.DKGEpochStatuses\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getInjector\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"injector_\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getLastEpochId\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"getMainEpochInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"epochId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"epochStartTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"dkgGenPeriodEndTime\",\"type\":\"uint256\"}],\"internalType\":\"structIDKG.MainEpochInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getSignerAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_signerAddr\",\"type\":\"address\"}],\"name\":\"getSignerVotesCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"getUpdatedCollectionPeriodEndTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validator\",\"type\":\"address\"}],\"name\":\"getValidatorInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"validationTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"validationEpoch\",\"type\":\"uint256\"}],\"internalType\":\"structIDKG.ValidationData\",\"name\":\"startValidationData\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"validationTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"validationEpoch\",\"type\":\"uint256\"}],\"internalType\":\"structIDKG.ValidationData\",\"name\":\"endValidationData\",\"type\":\"tuple\"}],\"internalType\":\"structIDKG.ValidatorInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_validatorAddr\",\"type\":\"address\"}],\"name\":\"getValidatorVote\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"guaranteedWorkingEpochDuration\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_updatesCollectionEpochDuration\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_dkgGenerationEpochDuration\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_guaranteedWorkingEpochDuration\",\"type\":\"uint256\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validatorAddr\",\"type\":\"address\"}],\"name\":\"isActiveValidator\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"isCurrentEpoch\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"isDKGGenSuccessful\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"isLastEpoch\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validatorAddr\",\"type\":\"address\"}],\"name\":\"isValidator\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validatorAddr\",\"type\":\"address\"}],\"name\":\"isValidatorSlashed\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validatorToRemove\",\"type\":\"address\"}],\"name\":\"removeValidator\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_contractsRegistryAddr\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"name\":\"setDependencies\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"injector_\",\"type\":\"address\"}],\"name\":\"setInjector\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validatorAddr\",\"type\":\"address\"}],\"name\":\"slashValidator\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"updateAllValidators\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"updatesCollectionEpochDuration\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_signerAddress\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"_signature\",\"type\":\"bytes\"}],\"name\":\"voteSigner\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
-	Bin: "0x608060405234801561001057600080fd5b50612570806100206000396000f3fe608060405234801561001057600080fd5b50600436106102325760003560e01c806372ef10b211610130578063c3125405116100b8578063f072ec081161007c578063f072ec08146104e0578063f3513a37146104e9578063f7897c07146104f1578063f9cf0dd81461052b578063facd743b1461053e57600080fd5b8063c31254051461047f578063c88bc06714610487578063ca1583481461049a578063d4ee9f8d146104ba578063e80f6534146104cd57600080fd5b80639de70258116100ff5780639de7025814610410578063a29a839f14610425578063ac4fe5ab1461042d578063b2d5258c14610459578063c04747531461046c57600080fd5b806372ef10b2146103c157806380d85911146103ca5780638a11d7c9146103dd5780638cb941cc146103fd57600080fd5b80633e15d5be116101be5780634711f586116101825780634711f586146103775780634d238c8e1461038a578063691304511461039d578063696f2959146103b05780636c8fbb64146103b957600080fd5b80633e15d5be1461032a5780633e3b5b191461033257806340550a1c1461034757806340a141ff1461035a5780634666a62b1461036f57600080fd5b8063202016681161020557806320201668146102ad578063214e6a56146102bf57806331147c30146102e457806336503f42146102ec5780633ae0725a146102ff57600080fd5b8063124e3ffa1461023757806315accc9214610267578063180fd87f146102875780631a296e021461029c575b600080fd5b61024a610245366004612098565b610551565b6040516001600160a01b0390911681526020015b60405180910390f35b61027a6102753660046120c8565b610583565b60405161025e9190612119565b61028f61064e565b60405161025e9190612127565b6006546001600160a01b031661024a565b6005545b60405190815260200161025e565b6102d46102cd3660046120c8565b6005541490565b604051901515815260200161025e565b6102b161068b565b6102b16102fa3660046120c8565b6106db565b6102d461030d3660046120c8565b6000908152600960205260409020546001600160a01b0316151590565b6102b1600181565b60008051602061251b8339815191525461024a565b6102d4610355366004612148565b6106fb565b61036d610368366004612148565b610812565b005b61027a6108f9565b61036d610385366004612148565b610906565b61036d610398366004612148565b6109ce565b61036d6103ab366004612208565b610aec565b6102b160045481565b61036d610c1d565b6102b160025481565b61036d6103d8366004612258565b610cf8565b6103f06103eb366004612148565b610e13565b60405161025e9190612284565b61036d61040b366004612148565b610e7c565b610418610e9a565b60405161025e91906122c7565b6102b1610f13565b6102d461043b366004612148565b6001600160a01b03166000908152600b602052604090205460ff1690565b61028f6104673660046120c8565b610f3f565b6102b161047a3660046120c8565b610fa1565b6102b1610fb9565b61036d610495366004612314565b610fc5565b6104ad6104a83660046120c8565b611276565b60405161025e919061236d565b6102b16104c83660046120c8565b6112da565b6102d46104db3660046120c8565b6112e8565b6102b160035481565b6104186112fa565b6102b16104ff366004612098565b60008281526009602090815260408083206001600160a01b038516845260020190915290205492915050565b6102b1610539366004612148565b611306565b6102d461054c366004612148565b61146a565b60008281526009602090815260408083206001600160a01b038086168552600390910190925290912054165b92915050565b600060055482111561059757506000919050565b600082815260096020526040902060010154600554831480156105c15750428111806105c1575080155b156105cf5750600192915050565b6105d8836112e8565b6105e55750600692915050565b42600254826105f491906123c3565b915081106106055750600292915050565b426003548261061491906123c3565b915081106106255750600392915050565b426004548261063491906123c3565b915081106106455750600492915050565b50600592915050565b61067260405180606001604052806000815260200160008152602001600081525090565b61067a611477565b6106856104676114de565b90505b90565b60008061069860076115d1565b905060005b818110156106d6576106b36103556007836115db565b156106c657826106c2816123d6565b9350505b6106cf816123d6565b905061069d565b505090565b600254600082815260096020526040812060010154909161057d916123c3565b6001600160a01b0381166000908152600a60209081526040808320815160808101835281548184019081526001808401546060840152908252835180850190945260028301548452600390920154838501528084019290925281519092015190918391148061078c575081516020015161078c906000908152600960205260409020546001600160a01b0316151590565b801561079a57508151514210155b905060006107c78360200151602001516000908152600960205260409020546001600160a01b0316151590565b15806107d7575060208301515142105b6001600160a01b0386166000908152600b602052604090205490915060ff161580156108005750815b80156108095750805b95945050505050565b61081a6115ee565b61082560078261164e565b6108765760405162461bcd60e51b815260206004820152601d60248201527f444b473a2056616c696461746f7220646f6573206e6f7420657869737400000060448201526064015b60405180910390fd5b6001600160a01b0381166000908152600a60205260409020600201544210156108ed5760405162461bcd60e51b815260206004820152602360248201527f444b473a2056616c696461746f722063616e27742062652072656d6f766564206044820152621e595d60ea1b606482015260840161086d565b6108f681611670565b50565b6000610685610275610f13565b61090e611477565b6001600160a01b0381166000908152600b602052604090205460ff16156109825760405162461bcd60e51b815260206004820152602260248201527f444b473a2056616c696461746f722068617320616c726561647920736c617368604482015261195960f21b606482015260840161086d565b6001600160a01b0381166000818152600b6020526040808220805460ff19166001179055517f1647efd0ce9727dc31dc201c9d8d35ac687f7370adcacbd454afc6485ddabfda9190a250565b6109d66115ee565b6109df8161146a565b15610a2c5760405162461bcd60e51b815260206004820152601d60248201527f444b473a2056616c696461746f7220616c726561647920657869737473000000604482015260640161086d565b6000610a366116d4565b604080518082018252828152815180830183526000198152600060208281018290528084019283526001600160a01b0388168252600a815293902091518051835583015160018301555180516002830155909101516003909101559050610a9e600783611739565b50805160208083015160408051938452918301526001600160a01b038416917fcd38d7f8bcd459fe58ab4e4f5ba2ee51418a1a0cf207a6747f61bb7945e62b41910160405180910390a25050565b610af461174e565b6000829050806001600160a01b0316638e68dce46040518163ffffffff1660e01b8152600401602060405180830381865afa158015610b37573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610b5b91906123ef565b600060026101000a8154816001600160a01b0302191690836001600160a01b03160217905550806001600160a01b031663fb9d9ac56040518163ffffffff1660e01b8152600401602060405180830381865afa158015610bbf573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610be391906123ef565b600180546001600160a01b0319166001600160a01b0392909216919091179055503360008051602061251b833981519152555050565b5050565b6000610c2960076117d2565b905060005b8151811015610c19576000600a6000848481518110610c4f57610c4f61240c565b60200260200101516001600160a01b03166001600160a01b031681526020019081526020016000209050610c9b838381518110610c8e57610c8e61240c565b60200260200101516106fb565b15610cb157610cac816002016117df565b610cba565b610cba816117df565b60028101544210610ce757610ce7838381518110610cda57610cda61240c565b6020026020010151611670565b50610cf1816123d6565b9050610c2e565b600054610100900460ff1615808015610d185750600054600160ff909116105b80610d325750303b158015610d32575060005460ff166001145b610d955760405162461bcd60e51b815260206004820152602e60248201527f496e697469616c697a61626c653a20636f6e747261637420697320616c72656160448201526d191e481a5b9a5d1a585b1a5e995960921b606482015260840161086d565b6000805460ff191660011790558015610db8576000805461ff0019166101001790555b6002849055600383905560048290558015610e0d576000805461ff0019169055604051600181527f7f26b83ff96e1f2b6a682f133852f6798a09c465da95921460cefb38474024989060200160405180910390a15b50505050565b610e1b611fe1565b506001600160a01b03166000818152600a602090815260409182902082516060810184529384528251808401845281548152600182015481840152848301528251808401845260028201548152600390910154918101919091529082015290565b610e8461174e565b6108f68160008051602061251b83398151915255565b60606000610ea6611832565b90506000610eb460076115d1565b905060005b81811015610ef9576000610ece6007836115db565b9050610ed9816106fb565b15610ee857610ee88482611859565b50610ef2816123d6565b9050610eb9565b50610f0c8280516020015160609061057d565b9250505090565b6005546000818152600960205260409020600101544210156106885780610f3981612422565b91505090565b610f6360405180606001604052806000815260200160008152602001600081525090565b604051806060016040528083815260200160096000858152602001908152602001600020600101548152602001610f9984610fa1565b905292915050565b6000600354610faf836106db565b61057d91906123c3565b600061068560076115d1565b610fcd61186e565b6003610fd884610583565b6006811115610fe957610fe96120e1565b146110365760405162461bcd60e51b815260206004820181905260248201527f444b473a204e6f74206120444b472067656e65726174696f6e20706572696f64604482015260640161086d565b6000611069826110636040518060400160405280600681526020016576657269667960d01b8152506118c3565b906118fe565b9050826001600160a01b0316816001600160a01b0316146110cc5760405162461bcd60e51b815260206004820152601960248201527f444b473a205369676e617475726520697320696e76616c696400000000000000604482015260640161086d565b600084815260096020908152604080832033845260038101909252909120546001600160a01b0316156111365760405162461bcd60e51b81526020600482015260126024820152711112d1ce88105b1c9958591e481d9bdd195960721b604482015260640161086d565b6001600160a01b038416600090815260028201602052604081208054829061115d906123d6565b918290555033600081815260038501602090815260409182902080546001600160a01b0319166001600160a01b038b1690811790915582518b815291820193909352908101919091529091507f4686ba7a5df3cb2d9979ee16ec58c7ea0b92273d836278488fb07c732cf8ec199060600160405180910390a160026111e061068b565b6111ea9190612439565b8111801561120657506006546001600160a01b03868116911614155b1561126e5781546001600160a01b0386166001600160a01b0319918216811784556006805490921681179091556040805188815260208101929092527fa6d3de2b2ccbce3cf736f5f8e515fdad82235d0d1f1ff8a0ad14f98c48af0a46910160405180910390a15b505050505050565b61127e612040565b6000828152600960205260409081902081516060810190925290806112a285610f3f565b815282546001600160a01b031660208201526040016112c085610583565b60068111156112d1576112d16120e1565b90529392505050565b6000600454610faf83610fa1565b6000816112f3610f13565b1492915050565b606061068560076117d2565b60006113106115ee565b611319826106fb565b6113655760405162461bcd60e51b815260206004820152601c60248201527f444b473a2056616c696461746f72206973206e6f742061637469766500000000604482015260640161086d565b6001600160a01b0382166000908152600a6020526040902060020154600019146113ef5760405162461bcd60e51b815260206004820152603560248201527f444b473a2045786974206f66207468652076616c696461746f722068617320616044820152741b1c9958591e481899595b88185b9b9bdd5b98d959605a1b606482015260840161086d565b60006113f96116d4565b6001600160a01b0384166000818152600a602090815260409182902084516002820181905585830151600390920182905583519081529182015292935090917fd75af7adb28dda89e53e18c225f03e4aee3f0132f19eaff0a642b1f88433baad910160405180910390a25192915050565b600061057d60078361164e565b6001546001600160a01b031633146114dc5760405162461bcd60e51b815260206004820152602260248201527f444b473a204e6f74206120736c617368696e6720766f74696e67206164647265604482015261737360f01b606482015260840161086d565b565b6000806114e9610f13565b915081905060006114f982610583565b9050600281600681111561150f5761150f6120e1565b146106d65760055492508183036106d657426005826006811115611535576115356120e1565b1415801561155557506001826006811115611552576115526120e1565b14155b1561156657611563846112da565b90505b600560008154611575906123d6565b918290555060008181526009602090815260409182902060010184905581518381529081018490529195507ff27e0ff471920cfae653a7a16cf64784b13fafb16b991f9af7860027c1b475d7910160405180910390a150505090565b600061057d825490565b60006115e78383611922565b9392505050565b6000546201000090046001600160a01b031633146114dc5760405162461bcd60e51b815260206004820152601a60248201527f444b473a204e6f742061207374616b696e672061646472657373000000000000604482015260640161086d565b6001600160a01b038116600090815260018301602052604081205415156115e7565b61167b60078261194c565b506001600160a01b0381166000818152600a60205260408082208281556001810183905560028101839055600301829055517fe1434e25d6611e0db941968fdc97811c982ac1602e951637d206f5fdda9dd8f19190a250565b604080518082019091526000808252602082015260055460006116f56114de565b90506001811461171d5761170881611961565b9250818360200151146106d6576106d6610c1d565b6040518060400160405280428152602001828152509250505090565b60006115e7836001600160a01b038416611996565b600061176660008051602061251b8339815191525490565b90506001600160a01b038116158061178657506001600160a01b03811633145b6108f65760405162461bcd60e51b815260206004820152601a60248201527f446570656e64616e743a206e6f7420616e20696e6a6563746f72000000000000604482015260640161086d565b606060006115e7836119e5565b8054421080159061180a575060018101546000908152600960205260409020546001600160a01b0316155b156108f657600061182161181c6114de565b611961565b805183556020015160018301555050565b6040805160608101825260006020820181815292820152908152611854611a41565b815290565b8151610c19906001600160a01b038316611a75565b611877336106fb565b6114dc5760405162461bcd60e51b815260206004820152601c60248201527f444b473a204e6f7420616e206163746976652076616c696461746f7200000000604482015260640161086d565b60006118cf8251611ac6565b826040516020016118e192919061247f565b604051602081830303815290604052805190602001209050919050565b600080600061190d8585611b59565b9150915061191a81611b9e565b509392505050565b60008260000182815481106119395761193961240c565b9060005260206000200154905092915050565b60006115e7836001600160a01b038416611ce8565b6040805180820190915260008082526020820152604051806040016040528061198984610fa1565b8152602001929092525090565b60008181526001830160205260408120546119dd5750815460018181018455600084815260208082209093018490558454848252828601909352604090209190915561057d565b50600061057d565b606081600001805480602002602001604051908101604052809291908181526020018280548015611a3557602002820191906000526020600020905b815481526020019060010190808311611a21575b50505050509050919050565b60408051808201825260008082526020820152815160a0810190925290611a69816001611de2565b60058252602082015290565b6000611a8383602001515190565b8351909150611a938260016123c3565b03611ab0578251611ab0908490611aab9060026124da565b611e03565b6020928301516001820181529083020190910152565b60606000611ad383611e45565b600101905060008167ffffffffffffffff811115611af357611af3612165565b6040519080825280601f01601f191660200182016040528015611b1d576020820181803683370190505b5090508181016020015b600019016f181899199a1a9b1b9c1cb0b131b232b360811b600a86061a8153600a8504945084611b2757509392505050565b6000808251604103611b8f5760208301516040840151606085015160001a611b8387828585611f1d565b94509450505050611b97565b506000905060025b9250929050565b6000816004811115611bb257611bb26120e1565b03611bba5750565b6001816004811115611bce57611bce6120e1565b03611c1b5760405162461bcd60e51b815260206004820152601860248201527f45434453413a20696e76616c6964207369676e61747572650000000000000000604482015260640161086d565b6002816004811115611c2f57611c2f6120e1565b03611c7c5760405162461bcd60e51b815260206004820152601f60248201527f45434453413a20696e76616c6964207369676e6174757265206c656e67746800604482015260640161086d565b6003816004811115611c9057611c906120e1565b036108f65760405162461bcd60e51b815260206004820152602260248201527f45434453413a20696e76616c6964207369676e6174757265202773272076616c604482015261756560f01b606482015260840161086d565b60008181526001830160205260408120548015611dd1576000611d0c6001836124f1565b8554909150600090611d20906001906124f1565b9050818114611d85576000866000018281548110611d4057611d4061240c565b9060005260206000200154905080876000018481548110611d6357611d6361240c565b6000918252602080832090910192909255918252600188019052604090208390555b8554869080611d9657611d96612504565b60019003818190600052602060002001600090559055856001016000868152602001908152602001600020600090556001935050505061057d565b600091505061057d565b5092915050565b60005b60208202811015611dfe57600083820152602001611de5565b505050565b604080516020830281019091526020830151805160005b602080830201811015611e37578281015184820152602001611e1a565b505050908252602090910152565b60008072184f03e93ff9f4daa797ed6e38ed64bf6a1f0160401b8310611e845772184f03e93ff9f4daa797ed6e38ed64bf6a1f0160401b830492506040015b6d04ee2d6d415b85acef81000000008310611eb0576d04ee2d6d415b85acef8100000000830492506020015b662386f26fc100008310611ece57662386f26fc10000830492506010015b6305f5e1008310611ee6576305f5e100830492506008015b6127108310611efa57612710830492506004015b60648310611f0c576064830492506002015b600a831061057d5760010192915050565b6000807f7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0831115611f545750600090506003611fd8565b6040805160008082526020820180845289905260ff881692820192909252606081018690526080810185905260019060a0016020604051602081039080840390855afa158015611fa8573d6000803e3d6000fd5b5050604051601f1901519150506001600160a01b038116611fd157600060019250925050611fd8565b9150600090505b94509492505050565b604051806060016040528060006001600160a01b03168152602001612019604051806040016040528060008152602001600081525090565b815260200161203b604051806040016040528060008152602001600081525090565b905290565b604051806060016040528061206f60405180606001604052806000815260200160008152602001600081525090565b815260006020820181905260409091015290565b6001600160a01b03811681146108f657600080fd5b600080604083850312156120ab57600080fd5b8235915060208301356120bd81612083565b809150509250929050565b6000602082840312156120da57600080fd5b5035919050565b634e487b7160e01b600052602160045260246000fd5b6007811061211557634e487b7160e01b600052602160045260246000fd5b9052565b6020810161057d82846120f7565b8151815260208083015190820152604080830151908201526060810161057d565b60006020828403121561215a57600080fd5b81356115e781612083565b634e487b7160e01b600052604160045260246000fd5b600082601f83011261218c57600080fd5b813567ffffffffffffffff808211156121a7576121a7612165565b604051601f8301601f19908116603f011681019082821181831017156121cf576121cf612165565b816040528381528660208588010111156121e857600080fd5b836020870160208301376000602085830101528094505050505092915050565b6000806040838503121561221b57600080fd5b823561222681612083565b9150602083013567ffffffffffffffff81111561224257600080fd5b61224e8582860161217b565b9150509250929050565b60008060006060848603121561226d57600080fd5b505081359360208301359350604090920135919050565b81516001600160a01b0316815260208083015180518284015290810151604083015260a08201905060408301518051606084015260208101516080840152611ddb565b6020808252825182820181905260009190848201906040850190845b818110156123085783516001600160a01b0316835292840192918401916001016122e3565b50909695505050505050565b60008060006060848603121561232957600080fd5b83359250602084013561233b81612083565b9150604084013567ffffffffffffffff81111561235757600080fd5b6123638682870161217b565b9150509250925092565b81518051825260208082015181840152604091820151828401528301516001600160a01b0316606083015282015160a0820190611ddb60808401826120f7565b634e487b7160e01b600052601160045260246000fd5b8082018082111561057d5761057d6123ad565b6000600182016123e8576123e86123ad565b5060010190565b60006020828403121561240157600080fd5b81516115e781612083565b634e487b7160e01b600052603260045260246000fd5b600081612431576124316123ad565b506000190190565b60008261245657634e487b7160e01b600052601260045260246000fd5b500490565b60005b8381101561247657818101518382015260200161245e565b50506000910152565b7f19457468657265756d205369676e6564204d6573736167653a0a0000000000008152600083516124b781601a85016020880161245b565b8351908301906124ce81601a84016020880161245b565b01601a01949350505050565b808202811582820484141761057d5761057d6123ad565b8181038181111561057d5761057d6123ad565b634e487b7160e01b600052603160045260246000fdfe3d1f25f1ac447e55e7fec744471c4dab1c6a2b6ffb897825f9ea3d2e8c9be583a26469706673582212205a34170a3a04f24e9ff5a5522fa0f0866073b53ab016f51ac8eed770de7f22dc64736f6c63430008120033",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"epochId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"epochStartTime\",\"type\":\"uint256\"}],\"name\":\"NewEpochCreated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"validatorAddr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"startValidationEpoch\",\"type\":\"uint256\"}],\"name\":\"NewValidatorAdded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"epochId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"signerAddress\",\"type\":\"address\"}],\"name\":\"SignerAddressUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"epochId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"collectiveSigner\",\"type\":\"address\"}],\"name\":\"SignerVoted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"validatorAddr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"endValidationEpoch\",\"type\":\"uint256\"}],\"name\":\"ValidatorExitAnnounced\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"validatorAddr\",\"type\":\"address\"}],\"name\":\"ValidatorRemoved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"validatorAddr\",\"type\":\"address\"}],\"name\":\"ValidatorSlashed\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"FIRST_EPOCH_ID\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validatorToAdd\",\"type\":\"address\"}],\"name\":\"addValidator\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validatorAddr\",\"type\":\"address\"}],\"name\":\"announceValidatorExit\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"_endValidationEpoch\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"createProposal\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"dkgGenerationEpochDuration\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getActiveEpochId\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getActiveEpochStatus\",\"outputs\":[{\"internalType\":\"enumIDKG.DKGEpochStatuses\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getActiveValidators\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getActiveValidatorsCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"_activeValidatorsCount\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getAllValidators\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getAllValidatorsCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"getDKGEpochInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"epochId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"epochStartTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"dkgGenPeriodStartTime\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"epochSigner\",\"type\":\"address\"},{\"internalType\":\"enumIDKG.DKGEpochStatuses\",\"name\":\"epochStatus\",\"type\":\"uint8\"}],\"internalType\":\"structIDKG.DKGEpochInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"getDKGPeriodEndTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"getEpochStatus\",\"outputs\":[{\"internalType\":\"enumIDKG.DKGEpochStatuses\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"}],\"name\":\"getGuaranteedWorkingPeriodEndTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getInjector\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"injector_\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getSignerAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_signerAddr\",\"type\":\"address\"}],\"name\":\"getSignerVotesCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validator\",\"type\":\"address\"}],\"name\":\"getValidatorInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"startValidationEpochId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"endValidationEpochId\",\"type\":\"uint256\"}],\"internalType\":\"structIDKG.ValidatorInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_validatorAddr\",\"type\":\"address\"}],\"name\":\"getValidatorVote\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"guaranteedWorkingEpochDuration\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_updatesCollectionEpochDuration\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_dkgGenerationEpochDuration\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_guaranteedWorkingEpochDuration\",\"type\":\"uint256\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validatorAddr\",\"type\":\"address\"}],\"name\":\"isActiveValidator\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validatorAddr\",\"type\":\"address\"}],\"name\":\"isValidator\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validatorAddr\",\"type\":\"address\"}],\"name\":\"isValidatorSlashed\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_contractsRegistryAddr\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"name\":\"setDependencies\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"injector_\",\"type\":\"address\"}],\"name\":\"setInjector\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_validatorAddr\",\"type\":\"address\"}],\"name\":\"slashValidator\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"updateAllValidators\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"updatesCollectionEpochDuration\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_signerAddress\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"_signature\",\"type\":\"bytes\"}],\"name\":\"voteSigner\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	Bin: "0x608060405234801561001057600080fd5b5061214b806100206000396000f3fe608060405234801561001057600080fd5b50600436106101e55760003560e01c80637c34a5251161010f578063c88bc067116100a2578063f7897c0711610071578063f7897c0714610412578063f9cf0dd81461044c578063facd743b1461045f578063fd33434b1461047257600080fd5b8063c88bc067146103ce578063ca158348146103e1578063f072ec0814610401578063f3513a371461040a57600080fd5b80639de70258116100de5780639de7025814610372578063ac4fe5ab14610387578063c0474753146103b3578063c3125405146103c657600080fd5b80637c34a5251461030657806380d859111461030e5780638a11d7c9146103215780638cb941cc1461035f57600080fd5b80633e3b5b1911610187578063691304511161015657806369130451146102d9578063696f2959146102ec5780636c8fbb64146102f557806372ef10b2146102fd57600080fd5b80633e3b5b191461027957806340550a1c1461028e5780634711f586146102b15780634d238c8e146102c657600080fd5b80631a296e02116101c35780631a296e021461025057806331147c301461026157806337e4e780146102695780633e15d5be1461027157600080fd5b8063124e3ffa146101ea57806315accc921461021a578063180fd87f1461023a575b600080fd5b6101fd6101f8366004611cec565b610485565b6040516001600160a01b0390911681526020015b60405180910390f35b61022d610228366004611d1c565b6104b7565b6040516102119190611d6d565b610242610560565b604051908152602001610211565b6006546001600160a01b03166101fd565b61024261058c565b600554610242565b610242600181565b6000805160206120f6833981519152546101fd565b6102a161029c366004611d7b565b6105dc565b6040519015158152602001610211565b6102c46102bf366004611d7b565b610645565b005b6102c46102d4366004611d7b565b610729565b6102c46102e7366004611e3b565b610821565b61024260045481565b6102c4610952565b61024260025481565b61022d6109e8565b6102c461031c366004611e8b565b6109fa565b61033461032f366004611d7b565b610b1d565b6040805182516001600160a01b03168152602080840151908201529181015190820152606001610211565b6102c461036d366004611d7b565b610b85565b61037a610ba6565b6040516102119190611eb7565b6102a1610395366004611d7b565b6001600160a01b03166000908152600b602052604090205460ff1690565b6102426103c1366004611d1c565b610c16565b610242610ca7565b6102c46103dc366004611f04565b610cb3565b6103f46103ef366004611d1c565b610f79565b6040516102119190611f5d565b61024260035481565b61037a610fed565b610242610420366004611cec565b60008281526009602090815260408083206001600160a01b038516845260030190915290205492915050565b61024261045a366004611d7b565b610ff9565b6102a161046d366004611d7b565b61114b565b610242610480366004611d1c565b611158565b60008281526009602090815260408083206001600160a01b038086168552600490910190925290912054165b92915050565b60006005548211156104cb57506000919050565b60055482146104dc57506005919050565b60008281526009602052604090206001015460045442906104fd9083611fb5565b9150811061050e5750600192915050565b60008381526009602052604090206002015480156105565742811115610538575060039392505050565b42600354826105479190611fb5565b10610556575060049392505050565b5060029392505050565b600061056a611178565b6105726111df565b505060055460009081526009602052604090206002015490565b6000806105996007611308565b905060005b818110156105d7576105b461029c600783611312565b156105c757826105c381611fc8565b9350505b6105d081611fc8565b905061059e565b505090565b6001600160a01b0381166000818152600a60209081526040808320815180830183528154815260019091015481840152938352600b90915281205490919060ff1615801561062d5750600554815111155b801561063e57506005548160200151115b9392505050565b61064d611178565b6001600160a01b0381166000908152600b602052604090205460ff16156106c65760405162461bcd60e51b815260206004820152602260248201527f444b473a2056616c696461746f722068617320616c726561647920736c617368604482015261195960f21b60648201526084015b60405180910390fd5b6001600160a01b0381166000908152600b60205260409020805460ff191660011790556106f28161131e565b6040516001600160a01b038216907f1647efd0ce9727dc31dc201c9d8d35ac687f7370adcacbd454afc6485ddabfda90600090a250565b610731611374565b61073a8161114b565b156107875760405162461bcd60e51b815260206004820152601d60248201527f444b473a2056616c696461746f7220616c72656164792065786973747300000060448201526064016106bd565b60006107916111df565b60408051808201825282815260001960208083019182526001600160a01b0387166000908152600a9091529290922090518155905160019091015590506107d96007836113d4565b50816001600160a01b03167f80bd2303d5db0c7f61ca096867fe20736ecab88d458da842d6aedd5170f4a5618260405161081591815260200190565b60405180910390a25050565b6108296113e9565b6000829050806001600160a01b0316638e68dce46040518163ffffffff1660e01b8152600401602060405180830381865afa15801561086c573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906108909190611fe1565b600060026101000a8154816001600160a01b0302191690836001600160a01b03160217905550806001600160a01b031663fb9d9ac56040518163ffffffff1660e01b8152600401602060405180830381865afa1580156108f4573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906109189190611fe1565b600180546001600160a01b0319166001600160a01b039290921691909117905550336000805160206120f6833981519152555050565b5050565b600061095e600761146d565b905060005b815181101561094e57600554600a600084848151811061098557610985611ffe565b60200260200101516001600160a01b03166001600160a01b0316815260200190815260200160002060010154116109d8576109d88282815181106109cb576109cb611ffe565b602002602001015161131e565b6109e181611fc8565b9050610963565b60006109f56005546104b7565b905090565b600054610100900460ff1615808015610a1a5750600054600160ff909116105b80610a345750303b158015610a34575060005460ff166001145b610a975760405162461bcd60e51b815260206004820152602e60248201527f496e697469616c697a61626c653a20636f6e747261637420697320616c72656160448201526d191e481a5b9a5d1a585b1a5e995960921b60648201526084016106bd565b6000805460ff191660011790558015610aba576000805461ff0019166101001790555b600284905560038390556004829055610ad161147a565b8015610b17576000805461ff0019169055604051600181527f7f26b83ff96e1f2b6a682f133852f6798a09c465da95921460cefb38474024989060200160405180910390a15b50505050565b610b4a604051806060016040528060006001600160a01b0316815260200160008152602001600081525090565b506001600160a01b03166000818152600a60209081526040918290208251606081018452938452805491840191909152600101549082015290565b610b8d6113e9565b610ba3816000805160206120f683398151915255565b50565b60606000610bb26114e5565b90506000610bc06007611308565b905060005b81811015610c05576000610bda600783611312565b9050610be5816105dc565b15610bf457610bf4848261150c565b50610bfe81611fc8565b9050610bc5565b50610c0f82611521565b9250505090565b6000818152600960205260408120600201548103610c885760405162461bcd60e51b815260206004820152602960248201527f444b473a20444b472067656e65726174696f6e20706572696f6420646f6573206044820152681b9bdd08195e1a5cdd60ba1b60648201526084016106bd565b6003546000838152600960205260409020600201546104b19190611fb5565b60006109f56007611308565b610cbb61152f565b6004610cc6846104b7565b6005811115610cd757610cd7611d35565b14610d245760405162461bcd60e51b815260206004820181905260248201527f444b473a204e6f74206120444b472067656e65726174696f6e20706572696f6460448201526064016106bd565b6000610d5782610d516040518060400160405280600681526020016576657269667960d01b815250611584565b906115bf565b9050826001600160a01b0316816001600160a01b031614610dba5760405162461bcd60e51b815260206004820152601960248201527f444b473a205369676e617475726520697320696e76616c69640000000000000060448201526064016106bd565b600084815260096020908152604080832033845260048101909252909120546001600160a01b031615610e245760405162461bcd60e51b81526020600482015260126024820152711112d1ce88105b1c9958591e481d9bdd195960721b60448201526064016106bd565b6001600160a01b0384166000908152600382016020526040812080548290610e4b90611fc8565b918290555033600081815260048501602090815260409182902080546001600160a01b0319166001600160a01b038b1690811790915582518b815291820193909352908101919091529091507f4686ba7a5df3cb2d9979ee16ec58c7ea0b92273d836278488fb07c732cf8ec199060600160405180910390a16002610ece61058c565b610ed89190612014565b81118015610ef457506006546001600160a01b03868116911614155b15610f715781546001600160a01b0386166001600160a01b03199182168117845560068054909216179055610f2761147a565b610f2f610952565b604080518781526001600160a01b03871660208201527fa6d3de2b2ccbce3cf736f5f8e515fdad82235d0d1f1ff8a0ad14f98c48af0a46910160405180910390a15b505050505050565b610f81611c8f565b600082815260096020908152604091829020825160a08101845285815260018201549281019290925260028101549282019290925281546001600160a01b0316606082015260808101610fd3856104b7565b6005811115610fe457610fe4611d35565b90529392505050565b60606109f5600761146d565b6000611003611374565b61100c826105dc565b6110585760405162461bcd60e51b815260206004820152601c60248201527f444b473a2056616c696461746f72206973206e6f74206163746976650000000060448201526064016106bd565b6001600160a01b0382166000908152600a6020526040902060010154600019146110e25760405162461bcd60e51b815260206004820152603560248201527f444b473a2045786974206f66207468652076616c696461746f722068617320616044820152741b1c9958591e481899595b88185b9b9bdd5b98d959605a1b60648201526084016106bd565b6110ea6111df565b6001600160a01b0383166000818152600a60205260409081902060010183905551919250907f30ac6b6a6a27291e9b642749b60a3e096ce91197734d2a31e39d755a750abf809061113e9084815260200190565b60405180910390a2919050565b60006104b16007836115e3565b60045460008281526009602052604081206001015490916104b191611fb5565b6001546001600160a01b031633146111dd5760405162461bcd60e51b815260206004820152602260248201527f444b473a204e6f74206120736c617368696e6720766f74696e67206164647265604482015261737360f01b60648201526084016106bd565b565b6000806111ea6109e8565b9050600481600581111561120057611200611d35565b036112735760405162461bcd60e51b815260206004820152603f60248201527f444b473a20556e61626c6520746f20636f6c6c6563742075706461746573206460448201527f7572696e672074686520444b472067656e65726174696f6e20706572696f640060648201526084016106bd565b600554600081815260096020526040902060020154158061129b57504261129982610c16565b105b156112ef57600060018360058111156112b6576112b6611d35565b036112c9576112c482611158565b6112cb565b425b9050600254816112db9190611fb5565b600083815260096020526040902060020155505b600181146104b15761130081611fc8565b905080610c0f565b60006104b1825490565b600061063e8383611605565b61132960078261162f565b506001600160a01b0381166000818152600a6020526040808220828155600101829055517fe1434e25d6611e0db941968fdc97811c982ac1602e951637d206f5fdda9dd8f19190a250565b6000546201000090046001600160a01b031633146111dd5760405162461bcd60e51b815260206004820152601a60248201527f444b473a204e6f742061207374616b696e67206164647265737300000000000060448201526064016106bd565b600061063e836001600160a01b038416611644565b60006114016000805160206120f68339815191525490565b90506001600160a01b038116158061142157506001600160a01b03811633145b610ba35760405162461bcd60e51b815260206004820152601a60248201527f446570656e64616e743a206e6f7420616e20696e6a6563746f7200000000000060448201526064016106bd565b6060600061063e83611693565b600060056000815461148b90611fc8565b91829055506000818152600960209081526040918290204260019091018190558251848152918201529192507ff27e0ff471920cfae653a7a16cf64784b13fafb16b991f9af7860027c1b475d7910160405180910390a150565b60408051606081018252600060208201818152928201529081526115076116ef565b815290565b815161094e906001600160a01b038316611723565b8051602001516060906104b1565b611538336105dc565b6111dd5760405162461bcd60e51b815260206004820152601c60248201527f444b473a204e6f7420616e206163746976652076616c696461746f720000000060448201526064016106bd565b60006115908251611774565b826040516020016115a292919061205a565b604051602081830303815290604052805190602001209050919050565b60008060006115ce8585611807565b915091506115db8161184c565b509392505050565b6001600160a01b0381166000908152600183016020526040812054151561063e565b600082600001828154811061161c5761161c611ffe565b9060005260206000200154905092915050565b600061063e836001600160a01b038416611996565b600081815260018301602052604081205461168b575081546001818101845560008481526020808220909301849055845484825282860190935260409020919091556104b1565b5060006104b1565b6060816000018054806020026020016040519081016040528092919081815260200182805480156116e357602002820191906000526020600020905b8154815260200190600101908083116116cf575b50505050509050919050565b60408051808201825260008082526020820152815160a0810190925290611717816001611a90565b60058252602082015290565b600061173183602001515190565b8351909150611741826001611fb5565b0361175e57825161175e9084906117599060026120b5565b611ab1565b6020928301516001820181529083020190910152565b6060600061178183611af3565b600101905060008167ffffffffffffffff8111156117a1576117a1611d98565b6040519080825280601f01601f1916602001820160405280156117cb576020820181803683370190505b5090508181016020015b600019016f181899199a1a9b1b9c1cb0b131b232b360811b600a86061a8153600a85049450846117d557509392505050565b600080825160410361183d5760208301516040840151606085015160001a61183187828585611bcb565b94509450505050611845565b506000905060025b9250929050565b600081600481111561186057611860611d35565b036118685750565b600181600481111561187c5761187c611d35565b036118c95760405162461bcd60e51b815260206004820152601860248201527f45434453413a20696e76616c6964207369676e6174757265000000000000000060448201526064016106bd565b60028160048111156118dd576118dd611d35565b0361192a5760405162461bcd60e51b815260206004820152601f60248201527f45434453413a20696e76616c6964207369676e6174757265206c656e6774680060448201526064016106bd565b600381600481111561193e5761193e611d35565b03610ba35760405162461bcd60e51b815260206004820152602260248201527f45434453413a20696e76616c6964207369676e6174757265202773272076616c604482015261756560f01b60648201526084016106bd565b60008181526001830160205260408120548015611a7f5760006119ba6001836120cc565b85549091506000906119ce906001906120cc565b9050818114611a335760008660000182815481106119ee576119ee611ffe565b9060005260206000200154905080876000018481548110611a1157611a11611ffe565b6000918252602080832090910192909255918252600188019052604090208390555b8554869080611a4457611a446120df565b6001900381819060005260206000200160009055905585600101600086815260200190815260200160002060009055600193505050506104b1565b60009150506104b1565b5092915050565b60005b60208202811015611aac57600083820152602001611a93565b505050565b604080516020830281019091526020830151805160005b602080830201811015611ae5578281015184820152602001611ac8565b505050908252602090910152565b60008072184f03e93ff9f4daa797ed6e38ed64bf6a1f0160401b8310611b325772184f03e93ff9f4daa797ed6e38ed64bf6a1f0160401b830492506040015b6d04ee2d6d415b85acef81000000008310611b5e576d04ee2d6d415b85acef8100000000830492506020015b662386f26fc100008310611b7c57662386f26fc10000830492506010015b6305f5e1008310611b94576305f5e100830492506008015b6127108310611ba857612710830492506004015b60648310611bba576064830492506002015b600a83106104b15760010192915050565b6000807f7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0831115611c025750600090506003611c86565b6040805160008082526020820180845289905260ff881692820192909252606081018690526080810185905260019060a0016020604051602081039080840390855afa158015611c56573d6000803e3d6000fd5b5050604051601f1901519150506001600160a01b038116611c7f57600060019250925050611c86565b9150600090505b94509492505050565b6040518060a0016040528060008152602001600081526020016000815260200160006001600160a01b0316815260200160006005811115611cd257611cd2611d35565b905290565b6001600160a01b0381168114610ba357600080fd5b60008060408385031215611cff57600080fd5b823591506020830135611d1181611cd7565b809150509250929050565b600060208284031215611d2e57600080fd5b5035919050565b634e487b7160e01b600052602160045260246000fd5b60068110611d6957634e487b7160e01b600052602160045260246000fd5b9052565b602081016104b18284611d4b565b600060208284031215611d8d57600080fd5b813561063e81611cd7565b634e487b7160e01b600052604160045260246000fd5b600082601f830112611dbf57600080fd5b813567ffffffffffffffff80821115611dda57611dda611d98565b604051601f8301601f19908116603f01168101908282118183101715611e0257611e02611d98565b81604052838152866020858801011115611e1b57600080fd5b836020870160208301376000602085830101528094505050505092915050565b60008060408385031215611e4e57600080fd5b8235611e5981611cd7565b9150602083013567ffffffffffffffff811115611e7557600080fd5b611e8185828601611dae565b9150509250929050565b600080600060608486031215611ea057600080fd5b505081359360208301359350604090920135919050565b6020808252825182820181905260009190848201906040850190845b81811015611ef85783516001600160a01b031683529284019291840191600101611ed3565b50909695505050505050565b600080600060608486031215611f1957600080fd5b833592506020840135611f2b81611cd7565b9150604084013567ffffffffffffffff811115611f4757600080fd5b611f5386828701611dae565b9150509250925092565b8151815260208083015190820152604080830151908201526060808301516001600160a01b03169082015260808083015160a0830191611a8990840182611d4b565b634e487b7160e01b600052601160045260246000fd5b808201808211156104b1576104b1611f9f565b600060018201611fda57611fda611f9f565b5060010190565b600060208284031215611ff357600080fd5b815161063e81611cd7565b634e487b7160e01b600052603260045260246000fd5b60008261203157634e487b7160e01b600052601260045260246000fd5b500490565b60005b83811015612051578181015183820152602001612039565b50506000910152565b7f19457468657265756d205369676e6564204d6573736167653a0a00000000000081526000835161209281601a850160208801612036565b8351908301906120a981601a840160208801612036565b01601a01949350505050565b80820281158282048414176104b1576104b1611f9f565b818103818111156104b1576104b1611f9f565b634e487b7160e01b600052603160045260246000fdfe3d1f25f1ac447e55e7fec744471c4dab1c6a2b6ffb897825f9ea3d2e8c9be583a2646970667358221220dc0a12842164ae11b38687323563c88f5828afd3b492ed7241848322f073793664736f6c63430008120033",
 }
 
 // DKGABI is the input ABI used to generate the binding from.
@@ -291,6 +280,68 @@ func (_DKG *DKGCallerSession) DkgGenerationEpochDuration() (*big.Int, error) {
 	return _DKG.Contract.DkgGenerationEpochDuration(&_DKG.CallOpts)
 }
 
+// GetActiveEpochId is a free data retrieval call binding the contract method 0x37e4e780.
+//
+// Solidity: function getActiveEpochId() view returns(uint256)
+func (_DKG *DKGCaller) GetActiveEpochId(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _DKG.contract.Call(opts, &out, "getActiveEpochId")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// GetActiveEpochId is a free data retrieval call binding the contract method 0x37e4e780.
+//
+// Solidity: function getActiveEpochId() view returns(uint256)
+func (_DKG *DKGSession) GetActiveEpochId() (*big.Int, error) {
+	return _DKG.Contract.GetActiveEpochId(&_DKG.CallOpts)
+}
+
+// GetActiveEpochId is a free data retrieval call binding the contract method 0x37e4e780.
+//
+// Solidity: function getActiveEpochId() view returns(uint256)
+func (_DKG *DKGCallerSession) GetActiveEpochId() (*big.Int, error) {
+	return _DKG.Contract.GetActiveEpochId(&_DKG.CallOpts)
+}
+
+// GetActiveEpochStatus is a free data retrieval call binding the contract method 0x7c34a525.
+//
+// Solidity: function getActiveEpochStatus() view returns(uint8)
+func (_DKG *DKGCaller) GetActiveEpochStatus(opts *bind.CallOpts) (uint8, error) {
+	var out []interface{}
+	err := _DKG.contract.Call(opts, &out, "getActiveEpochStatus")
+
+	if err != nil {
+		return *new(uint8), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(uint8)).(*uint8)
+
+	return out0, err
+
+}
+
+// GetActiveEpochStatus is a free data retrieval call binding the contract method 0x7c34a525.
+//
+// Solidity: function getActiveEpochStatus() view returns(uint8)
+func (_DKG *DKGSession) GetActiveEpochStatus() (uint8, error) {
+	return _DKG.Contract.GetActiveEpochStatus(&_DKG.CallOpts)
+}
+
+// GetActiveEpochStatus is a free data retrieval call binding the contract method 0x7c34a525.
+//
+// Solidity: function getActiveEpochStatus() view returns(uint8)
+func (_DKG *DKGCallerSession) GetActiveEpochStatus() (uint8, error) {
+	return _DKG.Contract.GetActiveEpochStatus(&_DKG.CallOpts)
+}
+
 // GetActiveValidators is a free data retrieval call binding the contract method 0x9de70258.
 //
 // Solidity: function getActiveValidators() view returns(address[])
@@ -415,71 +466,9 @@ func (_DKG *DKGCallerSession) GetAllValidatorsCount() (*big.Int, error) {
 	return _DKG.Contract.GetAllValidatorsCount(&_DKG.CallOpts)
 }
 
-// GetCurrentEpochId is a free data retrieval call binding the contract method 0xa29a839f.
-//
-// Solidity: function getCurrentEpochId() view returns(uint256 _currentEpochId)
-func (_DKG *DKGCaller) GetCurrentEpochId(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "getCurrentEpochId")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// GetCurrentEpochId is a free data retrieval call binding the contract method 0xa29a839f.
-//
-// Solidity: function getCurrentEpochId() view returns(uint256 _currentEpochId)
-func (_DKG *DKGSession) GetCurrentEpochId() (*big.Int, error) {
-	return _DKG.Contract.GetCurrentEpochId(&_DKG.CallOpts)
-}
-
-// GetCurrentEpochId is a free data retrieval call binding the contract method 0xa29a839f.
-//
-// Solidity: function getCurrentEpochId() view returns(uint256 _currentEpochId)
-func (_DKG *DKGCallerSession) GetCurrentEpochId() (*big.Int, error) {
-	return _DKG.Contract.GetCurrentEpochId(&_DKG.CallOpts)
-}
-
-// GetCurrentEpochStatus is a free data retrieval call binding the contract method 0x4666a62b.
-//
-// Solidity: function getCurrentEpochStatus() view returns(uint8)
-func (_DKG *DKGCaller) GetCurrentEpochStatus(opts *bind.CallOpts) (uint8, error) {
-	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "getCurrentEpochStatus")
-
-	if err != nil {
-		return *new(uint8), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(uint8)).(*uint8)
-
-	return out0, err
-
-}
-
-// GetCurrentEpochStatus is a free data retrieval call binding the contract method 0x4666a62b.
-//
-// Solidity: function getCurrentEpochStatus() view returns(uint8)
-func (_DKG *DKGSession) GetCurrentEpochStatus() (uint8, error) {
-	return _DKG.Contract.GetCurrentEpochStatus(&_DKG.CallOpts)
-}
-
-// GetCurrentEpochStatus is a free data retrieval call binding the contract method 0x4666a62b.
-//
-// Solidity: function getCurrentEpochStatus() view returns(uint8)
-func (_DKG *DKGCallerSession) GetCurrentEpochStatus() (uint8, error) {
-	return _DKG.Contract.GetCurrentEpochStatus(&_DKG.CallOpts)
-}
-
 // GetDKGEpochInfo is a free data retrieval call binding the contract method 0xca158348.
 //
-// Solidity: function getDKGEpochInfo(uint256 _epochId) view returns(((uint256,uint256,uint256),address,uint8))
+// Solidity: function getDKGEpochInfo(uint256 _epochId) view returns((uint256,uint256,uint256,address,uint8))
 func (_DKG *DKGCaller) GetDKGEpochInfo(opts *bind.CallOpts, _epochId *big.Int) (IDKGDKGEpochInfo, error) {
 	var out []interface{}
 	err := _DKG.contract.Call(opts, &out, "getDKGEpochInfo", _epochId)
@@ -496,14 +485,14 @@ func (_DKG *DKGCaller) GetDKGEpochInfo(opts *bind.CallOpts, _epochId *big.Int) (
 
 // GetDKGEpochInfo is a free data retrieval call binding the contract method 0xca158348.
 //
-// Solidity: function getDKGEpochInfo(uint256 _epochId) view returns(((uint256,uint256,uint256),address,uint8))
+// Solidity: function getDKGEpochInfo(uint256 _epochId) view returns((uint256,uint256,uint256,address,uint8))
 func (_DKG *DKGSession) GetDKGEpochInfo(_epochId *big.Int) (IDKGDKGEpochInfo, error) {
 	return _DKG.Contract.GetDKGEpochInfo(&_DKG.CallOpts, _epochId)
 }
 
 // GetDKGEpochInfo is a free data retrieval call binding the contract method 0xca158348.
 //
-// Solidity: function getDKGEpochInfo(uint256 _epochId) view returns(((uint256,uint256,uint256),address,uint8))
+// Solidity: function getDKGEpochInfo(uint256 _epochId) view returns((uint256,uint256,uint256,address,uint8))
 func (_DKG *DKGCallerSession) GetDKGEpochInfo(_epochId *big.Int) (IDKGDKGEpochInfo, error) {
 	return _DKG.Contract.GetDKGEpochInfo(&_DKG.CallOpts, _epochId)
 }
@@ -539,37 +528,6 @@ func (_DKG *DKGCallerSession) GetDKGPeriodEndTime(_epochId *big.Int) (*big.Int, 
 	return _DKG.Contract.GetDKGPeriodEndTime(&_DKG.CallOpts, _epochId)
 }
 
-// GetEpochEndTime is a free data retrieval call binding the contract method 0xd4ee9f8d.
-//
-// Solidity: function getEpochEndTime(uint256 _epochId) view returns(uint256)
-func (_DKG *DKGCaller) GetEpochEndTime(opts *bind.CallOpts, _epochId *big.Int) (*big.Int, error) {
-	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "getEpochEndTime", _epochId)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// GetEpochEndTime is a free data retrieval call binding the contract method 0xd4ee9f8d.
-//
-// Solidity: function getEpochEndTime(uint256 _epochId) view returns(uint256)
-func (_DKG *DKGSession) GetEpochEndTime(_epochId *big.Int) (*big.Int, error) {
-	return _DKG.Contract.GetEpochEndTime(&_DKG.CallOpts, _epochId)
-}
-
-// GetEpochEndTime is a free data retrieval call binding the contract method 0xd4ee9f8d.
-//
-// Solidity: function getEpochEndTime(uint256 _epochId) view returns(uint256)
-func (_DKG *DKGCallerSession) GetEpochEndTime(_epochId *big.Int) (*big.Int, error) {
-	return _DKG.Contract.GetEpochEndTime(&_DKG.CallOpts, _epochId)
-}
-
 // GetEpochStatus is a free data retrieval call binding the contract method 0x15accc92.
 //
 // Solidity: function getEpochStatus(uint256 _epochId) view returns(uint8)
@@ -601,6 +559,37 @@ func (_DKG *DKGCallerSession) GetEpochStatus(_epochId *big.Int) (uint8, error) {
 	return _DKG.Contract.GetEpochStatus(&_DKG.CallOpts, _epochId)
 }
 
+// GetGuaranteedWorkingPeriodEndTime is a free data retrieval call binding the contract method 0xfd33434b.
+//
+// Solidity: function getGuaranteedWorkingPeriodEndTime(uint256 _epochId) view returns(uint256)
+func (_DKG *DKGCaller) GetGuaranteedWorkingPeriodEndTime(opts *bind.CallOpts, _epochId *big.Int) (*big.Int, error) {
+	var out []interface{}
+	err := _DKG.contract.Call(opts, &out, "getGuaranteedWorkingPeriodEndTime", _epochId)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// GetGuaranteedWorkingPeriodEndTime is a free data retrieval call binding the contract method 0xfd33434b.
+//
+// Solidity: function getGuaranteedWorkingPeriodEndTime(uint256 _epochId) view returns(uint256)
+func (_DKG *DKGSession) GetGuaranteedWorkingPeriodEndTime(_epochId *big.Int) (*big.Int, error) {
+	return _DKG.Contract.GetGuaranteedWorkingPeriodEndTime(&_DKG.CallOpts, _epochId)
+}
+
+// GetGuaranteedWorkingPeriodEndTime is a free data retrieval call binding the contract method 0xfd33434b.
+//
+// Solidity: function getGuaranteedWorkingPeriodEndTime(uint256 _epochId) view returns(uint256)
+func (_DKG *DKGCallerSession) GetGuaranteedWorkingPeriodEndTime(_epochId *big.Int) (*big.Int, error) {
+	return _DKG.Contract.GetGuaranteedWorkingPeriodEndTime(&_DKG.CallOpts, _epochId)
+}
+
 // GetInjector is a free data retrieval call binding the contract method 0x3e3b5b19.
 //
 // Solidity: function getInjector() view returns(address injector_)
@@ -630,68 +619,6 @@ func (_DKG *DKGSession) GetInjector() (common.Address, error) {
 // Solidity: function getInjector() view returns(address injector_)
 func (_DKG *DKGCallerSession) GetInjector() (common.Address, error) {
 	return _DKG.Contract.GetInjector(&_DKG.CallOpts)
-}
-
-// GetLastEpochId is a free data retrieval call binding the contract method 0x20201668.
-//
-// Solidity: function getLastEpochId() view returns(uint256)
-func (_DKG *DKGCaller) GetLastEpochId(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "getLastEpochId")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// GetLastEpochId is a free data retrieval call binding the contract method 0x20201668.
-//
-// Solidity: function getLastEpochId() view returns(uint256)
-func (_DKG *DKGSession) GetLastEpochId() (*big.Int, error) {
-	return _DKG.Contract.GetLastEpochId(&_DKG.CallOpts)
-}
-
-// GetLastEpochId is a free data retrieval call binding the contract method 0x20201668.
-//
-// Solidity: function getLastEpochId() view returns(uint256)
-func (_DKG *DKGCallerSession) GetLastEpochId() (*big.Int, error) {
-	return _DKG.Contract.GetLastEpochId(&_DKG.CallOpts)
-}
-
-// GetMainEpochInfo is a free data retrieval call binding the contract method 0xb2d5258c.
-//
-// Solidity: function getMainEpochInfo(uint256 _epochId) view returns((uint256,uint256,uint256))
-func (_DKG *DKGCaller) GetMainEpochInfo(opts *bind.CallOpts, _epochId *big.Int) (IDKGMainEpochInfo, error) {
-	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "getMainEpochInfo", _epochId)
-
-	if err != nil {
-		return *new(IDKGMainEpochInfo), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(IDKGMainEpochInfo)).(*IDKGMainEpochInfo)
-
-	return out0, err
-
-}
-
-// GetMainEpochInfo is a free data retrieval call binding the contract method 0xb2d5258c.
-//
-// Solidity: function getMainEpochInfo(uint256 _epochId) view returns((uint256,uint256,uint256))
-func (_DKG *DKGSession) GetMainEpochInfo(_epochId *big.Int) (IDKGMainEpochInfo, error) {
-	return _DKG.Contract.GetMainEpochInfo(&_DKG.CallOpts, _epochId)
-}
-
-// GetMainEpochInfo is a free data retrieval call binding the contract method 0xb2d5258c.
-//
-// Solidity: function getMainEpochInfo(uint256 _epochId) view returns((uint256,uint256,uint256))
-func (_DKG *DKGCallerSession) GetMainEpochInfo(_epochId *big.Int) (IDKGMainEpochInfo, error) {
-	return _DKG.Contract.GetMainEpochInfo(&_DKG.CallOpts, _epochId)
 }
 
 // GetSignerAddress is a free data retrieval call binding the contract method 0x1a296e02.
@@ -756,40 +683,9 @@ func (_DKG *DKGCallerSession) GetSignerVotesCount(_epochId *big.Int, _signerAddr
 	return _DKG.Contract.GetSignerVotesCount(&_DKG.CallOpts, _epochId, _signerAddr)
 }
 
-// GetUpdatedCollectionPeriodEndTime is a free data retrieval call binding the contract method 0x36503f42.
-//
-// Solidity: function getUpdatedCollectionPeriodEndTime(uint256 _epochId) view returns(uint256)
-func (_DKG *DKGCaller) GetUpdatedCollectionPeriodEndTime(opts *bind.CallOpts, _epochId *big.Int) (*big.Int, error) {
-	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "getUpdatedCollectionPeriodEndTime", _epochId)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// GetUpdatedCollectionPeriodEndTime is a free data retrieval call binding the contract method 0x36503f42.
-//
-// Solidity: function getUpdatedCollectionPeriodEndTime(uint256 _epochId) view returns(uint256)
-func (_DKG *DKGSession) GetUpdatedCollectionPeriodEndTime(_epochId *big.Int) (*big.Int, error) {
-	return _DKG.Contract.GetUpdatedCollectionPeriodEndTime(&_DKG.CallOpts, _epochId)
-}
-
-// GetUpdatedCollectionPeriodEndTime is a free data retrieval call binding the contract method 0x36503f42.
-//
-// Solidity: function getUpdatedCollectionPeriodEndTime(uint256 _epochId) view returns(uint256)
-func (_DKG *DKGCallerSession) GetUpdatedCollectionPeriodEndTime(_epochId *big.Int) (*big.Int, error) {
-	return _DKG.Contract.GetUpdatedCollectionPeriodEndTime(&_DKG.CallOpts, _epochId)
-}
-
 // GetValidatorInfo is a free data retrieval call binding the contract method 0x8a11d7c9.
 //
-// Solidity: function getValidatorInfo(address _validator) view returns((address,(uint256,uint256),(uint256,uint256)))
+// Solidity: function getValidatorInfo(address _validator) view returns((address,uint256,uint256))
 func (_DKG *DKGCaller) GetValidatorInfo(opts *bind.CallOpts, _validator common.Address) (IDKGValidatorInfo, error) {
 	var out []interface{}
 	err := _DKG.contract.Call(opts, &out, "getValidatorInfo", _validator)
@@ -806,14 +702,14 @@ func (_DKG *DKGCaller) GetValidatorInfo(opts *bind.CallOpts, _validator common.A
 
 // GetValidatorInfo is a free data retrieval call binding the contract method 0x8a11d7c9.
 //
-// Solidity: function getValidatorInfo(address _validator) view returns((address,(uint256,uint256),(uint256,uint256)))
+// Solidity: function getValidatorInfo(address _validator) view returns((address,uint256,uint256))
 func (_DKG *DKGSession) GetValidatorInfo(_validator common.Address) (IDKGValidatorInfo, error) {
 	return _DKG.Contract.GetValidatorInfo(&_DKG.CallOpts, _validator)
 }
 
 // GetValidatorInfo is a free data retrieval call binding the contract method 0x8a11d7c9.
 //
-// Solidity: function getValidatorInfo(address _validator) view returns((address,(uint256,uint256),(uint256,uint256)))
+// Solidity: function getValidatorInfo(address _validator) view returns((address,uint256,uint256))
 func (_DKG *DKGCallerSession) GetValidatorInfo(_validator common.Address) (IDKGValidatorInfo, error) {
 	return _DKG.Contract.GetValidatorInfo(&_DKG.CallOpts, _validator)
 }
@@ -909,99 +805,6 @@ func (_DKG *DKGSession) IsActiveValidator(_validatorAddr common.Address) (bool, 
 // Solidity: function isActiveValidator(address _validatorAddr) view returns(bool)
 func (_DKG *DKGCallerSession) IsActiveValidator(_validatorAddr common.Address) (bool, error) {
 	return _DKG.Contract.IsActiveValidator(&_DKG.CallOpts, _validatorAddr)
-}
-
-// IsCurrentEpoch is a free data retrieval call binding the contract method 0xe80f6534.
-//
-// Solidity: function isCurrentEpoch(uint256 _epochId) view returns(bool)
-func (_DKG *DKGCaller) IsCurrentEpoch(opts *bind.CallOpts, _epochId *big.Int) (bool, error) {
-	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "isCurrentEpoch", _epochId)
-
-	if err != nil {
-		return *new(bool), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
-
-	return out0, err
-
-}
-
-// IsCurrentEpoch is a free data retrieval call binding the contract method 0xe80f6534.
-//
-// Solidity: function isCurrentEpoch(uint256 _epochId) view returns(bool)
-func (_DKG *DKGSession) IsCurrentEpoch(_epochId *big.Int) (bool, error) {
-	return _DKG.Contract.IsCurrentEpoch(&_DKG.CallOpts, _epochId)
-}
-
-// IsCurrentEpoch is a free data retrieval call binding the contract method 0xe80f6534.
-//
-// Solidity: function isCurrentEpoch(uint256 _epochId) view returns(bool)
-func (_DKG *DKGCallerSession) IsCurrentEpoch(_epochId *big.Int) (bool, error) {
-	return _DKG.Contract.IsCurrentEpoch(&_DKG.CallOpts, _epochId)
-}
-
-// IsDKGGenSuccessful is a free data retrieval call binding the contract method 0x3ae0725a.
-//
-// Solidity: function isDKGGenSuccessful(uint256 _epochId) view returns(bool)
-func (_DKG *DKGCaller) IsDKGGenSuccessful(opts *bind.CallOpts, _epochId *big.Int) (bool, error) {
-	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "isDKGGenSuccessful", _epochId)
-
-	if err != nil {
-		return *new(bool), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
-
-	return out0, err
-
-}
-
-// IsDKGGenSuccessful is a free data retrieval call binding the contract method 0x3ae0725a.
-//
-// Solidity: function isDKGGenSuccessful(uint256 _epochId) view returns(bool)
-func (_DKG *DKGSession) IsDKGGenSuccessful(_epochId *big.Int) (bool, error) {
-	return _DKG.Contract.IsDKGGenSuccessful(&_DKG.CallOpts, _epochId)
-}
-
-// IsDKGGenSuccessful is a free data retrieval call binding the contract method 0x3ae0725a.
-//
-// Solidity: function isDKGGenSuccessful(uint256 _epochId) view returns(bool)
-func (_DKG *DKGCallerSession) IsDKGGenSuccessful(_epochId *big.Int) (bool, error) {
-	return _DKG.Contract.IsDKGGenSuccessful(&_DKG.CallOpts, _epochId)
-}
-
-// IsLastEpoch is a free data retrieval call binding the contract method 0x214e6a56.
-//
-// Solidity: function isLastEpoch(uint256 _epochId) view returns(bool)
-func (_DKG *DKGCaller) IsLastEpoch(opts *bind.CallOpts, _epochId *big.Int) (bool, error) {
-	var out []interface{}
-	err := _DKG.contract.Call(opts, &out, "isLastEpoch", _epochId)
-
-	if err != nil {
-		return *new(bool), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
-
-	return out0, err
-
-}
-
-// IsLastEpoch is a free data retrieval call binding the contract method 0x214e6a56.
-//
-// Solidity: function isLastEpoch(uint256 _epochId) view returns(bool)
-func (_DKG *DKGSession) IsLastEpoch(_epochId *big.Int) (bool, error) {
-	return _DKG.Contract.IsLastEpoch(&_DKG.CallOpts, _epochId)
-}
-
-// IsLastEpoch is a free data retrieval call binding the contract method 0x214e6a56.
-//
-// Solidity: function isLastEpoch(uint256 _epochId) view returns(bool)
-func (_DKG *DKGCallerSession) IsLastEpoch(_epochId *big.Int) (bool, error) {
-	return _DKG.Contract.IsLastEpoch(&_DKG.CallOpts, _epochId)
 }
 
 // IsValidator is a free data retrieval call binding the contract method 0xfacd743b.
@@ -1120,42 +923,42 @@ func (_DKG *DKGTransactorSession) AddValidator(_validatorToAdd common.Address) (
 
 // AnnounceValidatorExit is a paid mutator transaction binding the contract method 0xf9cf0dd8.
 //
-// Solidity: function announceValidatorExit(address _validatorToExit) returns(uint256)
-func (_DKG *DKGTransactor) AnnounceValidatorExit(opts *bind.TransactOpts, _validatorToExit common.Address) (*types.Transaction, error) {
-	return _DKG.contract.Transact(opts, "announceValidatorExit", _validatorToExit)
+// Solidity: function announceValidatorExit(address _validatorAddr) returns(uint256 _endValidationEpoch)
+func (_DKG *DKGTransactor) AnnounceValidatorExit(opts *bind.TransactOpts, _validatorAddr common.Address) (*types.Transaction, error) {
+	return _DKG.contract.Transact(opts, "announceValidatorExit", _validatorAddr)
 }
 
 // AnnounceValidatorExit is a paid mutator transaction binding the contract method 0xf9cf0dd8.
 //
-// Solidity: function announceValidatorExit(address _validatorToExit) returns(uint256)
-func (_DKG *DKGSession) AnnounceValidatorExit(_validatorToExit common.Address) (*types.Transaction, error) {
-	return _DKG.Contract.AnnounceValidatorExit(&_DKG.TransactOpts, _validatorToExit)
+// Solidity: function announceValidatorExit(address _validatorAddr) returns(uint256 _endValidationEpoch)
+func (_DKG *DKGSession) AnnounceValidatorExit(_validatorAddr common.Address) (*types.Transaction, error) {
+	return _DKG.Contract.AnnounceValidatorExit(&_DKG.TransactOpts, _validatorAddr)
 }
 
 // AnnounceValidatorExit is a paid mutator transaction binding the contract method 0xf9cf0dd8.
 //
-// Solidity: function announceValidatorExit(address _validatorToExit) returns(uint256)
-func (_DKG *DKGTransactorSession) AnnounceValidatorExit(_validatorToExit common.Address) (*types.Transaction, error) {
-	return _DKG.Contract.AnnounceValidatorExit(&_DKG.TransactOpts, _validatorToExit)
+// Solidity: function announceValidatorExit(address _validatorAddr) returns(uint256 _endValidationEpoch)
+func (_DKG *DKGTransactorSession) AnnounceValidatorExit(_validatorAddr common.Address) (*types.Transaction, error) {
+	return _DKG.Contract.AnnounceValidatorExit(&_DKG.TransactOpts, _validatorAddr)
 }
 
 // CreateProposal is a paid mutator transaction binding the contract method 0x180fd87f.
 //
-// Solidity: function createProposal() returns((uint256,uint256,uint256))
+// Solidity: function createProposal() returns(uint256)
 func (_DKG *DKGTransactor) CreateProposal(opts *bind.TransactOpts) (*types.Transaction, error) {
 	return _DKG.contract.Transact(opts, "createProposal")
 }
 
 // CreateProposal is a paid mutator transaction binding the contract method 0x180fd87f.
 //
-// Solidity: function createProposal() returns((uint256,uint256,uint256))
+// Solidity: function createProposal() returns(uint256)
 func (_DKG *DKGSession) CreateProposal() (*types.Transaction, error) {
 	return _DKG.Contract.CreateProposal(&_DKG.TransactOpts)
 }
 
 // CreateProposal is a paid mutator transaction binding the contract method 0x180fd87f.
 //
-// Solidity: function createProposal() returns((uint256,uint256,uint256))
+// Solidity: function createProposal() returns(uint256)
 func (_DKG *DKGTransactorSession) CreateProposal() (*types.Transaction, error) {
 	return _DKG.Contract.CreateProposal(&_DKG.TransactOpts)
 }
@@ -1179,27 +982,6 @@ func (_DKG *DKGSession) Initialize(_updatesCollectionEpochDuration *big.Int, _dk
 // Solidity: function initialize(uint256 _updatesCollectionEpochDuration, uint256 _dkgGenerationEpochDuration, uint256 _guaranteedWorkingEpochDuration) returns()
 func (_DKG *DKGTransactorSession) Initialize(_updatesCollectionEpochDuration *big.Int, _dkgGenerationEpochDuration *big.Int, _guaranteedWorkingEpochDuration *big.Int) (*types.Transaction, error) {
 	return _DKG.Contract.Initialize(&_DKG.TransactOpts, _updatesCollectionEpochDuration, _dkgGenerationEpochDuration, _guaranteedWorkingEpochDuration)
-}
-
-// RemoveValidator is a paid mutator transaction binding the contract method 0x40a141ff.
-//
-// Solidity: function removeValidator(address _validatorToRemove) returns()
-func (_DKG *DKGTransactor) RemoveValidator(opts *bind.TransactOpts, _validatorToRemove common.Address) (*types.Transaction, error) {
-	return _DKG.contract.Transact(opts, "removeValidator", _validatorToRemove)
-}
-
-// RemoveValidator is a paid mutator transaction binding the contract method 0x40a141ff.
-//
-// Solidity: function removeValidator(address _validatorToRemove) returns()
-func (_DKG *DKGSession) RemoveValidator(_validatorToRemove common.Address) (*types.Transaction, error) {
-	return _DKG.Contract.RemoveValidator(&_DKG.TransactOpts, _validatorToRemove)
-}
-
-// RemoveValidator is a paid mutator transaction binding the contract method 0x40a141ff.
-//
-// Solidity: function removeValidator(address _validatorToRemove) returns()
-func (_DKG *DKGTransactorSession) RemoveValidator(_validatorToRemove common.Address) (*types.Transaction, error) {
-	return _DKG.Contract.RemoveValidator(&_DKG.TransactOpts, _validatorToRemove)
 }
 
 // SetDependencies is a paid mutator transaction binding the contract method 0x69130451.
@@ -1646,14 +1428,13 @@ func (it *DKGNewValidatorAddedIterator) Close() error {
 // DKGNewValidatorAdded represents a NewValidatorAdded event raised by the DKG contract.
 type DKGNewValidatorAdded struct {
 	ValidatorAddr        common.Address
-	StartValidationTime  *big.Int
 	StartValidationEpoch *big.Int
 	Raw                  types.Log // Blockchain specific contextual infos
 }
 
-// FilterNewValidatorAdded is a free log retrieval operation binding the contract event 0xcd38d7f8bcd459fe58ab4e4f5ba2ee51418a1a0cf207a6747f61bb7945e62b41.
+// FilterNewValidatorAdded is a free log retrieval operation binding the contract event 0x80bd2303d5db0c7f61ca096867fe20736ecab88d458da842d6aedd5170f4a561.
 //
-// Solidity: event NewValidatorAdded(address indexed validatorAddr, uint256 startValidationTime, uint256 startValidationEpoch)
+// Solidity: event NewValidatorAdded(address indexed validatorAddr, uint256 startValidationEpoch)
 func (_DKG *DKGFilterer) FilterNewValidatorAdded(opts *bind.FilterOpts, validatorAddr []common.Address) (*DKGNewValidatorAddedIterator, error) {
 
 	var validatorAddrRule []interface{}
@@ -1668,9 +1449,9 @@ func (_DKG *DKGFilterer) FilterNewValidatorAdded(opts *bind.FilterOpts, validato
 	return &DKGNewValidatorAddedIterator{contract: _DKG.contract, event: "NewValidatorAdded", logs: logs, sub: sub}, nil
 }
 
-// WatchNewValidatorAdded is a free log subscription operation binding the contract event 0xcd38d7f8bcd459fe58ab4e4f5ba2ee51418a1a0cf207a6747f61bb7945e62b41.
+// WatchNewValidatorAdded is a free log subscription operation binding the contract event 0x80bd2303d5db0c7f61ca096867fe20736ecab88d458da842d6aedd5170f4a561.
 //
-// Solidity: event NewValidatorAdded(address indexed validatorAddr, uint256 startValidationTime, uint256 startValidationEpoch)
+// Solidity: event NewValidatorAdded(address indexed validatorAddr, uint256 startValidationEpoch)
 func (_DKG *DKGFilterer) WatchNewValidatorAdded(opts *bind.WatchOpts, sink chan<- *DKGNewValidatorAdded, validatorAddr []common.Address) (event.Subscription, error) {
 
 	var validatorAddrRule []interface{}
@@ -1710,9 +1491,9 @@ func (_DKG *DKGFilterer) WatchNewValidatorAdded(opts *bind.WatchOpts, sink chan<
 	}), nil
 }
 
-// ParseNewValidatorAdded is a log parse operation binding the contract event 0xcd38d7f8bcd459fe58ab4e4f5ba2ee51418a1a0cf207a6747f61bb7945e62b41.
+// ParseNewValidatorAdded is a log parse operation binding the contract event 0x80bd2303d5db0c7f61ca096867fe20736ecab88d458da842d6aedd5170f4a561.
 //
-// Solidity: event NewValidatorAdded(address indexed validatorAddr, uint256 startValidationTime, uint256 startValidationEpoch)
+// Solidity: event NewValidatorAdded(address indexed validatorAddr, uint256 startValidationEpoch)
 func (_DKG *DKGFilterer) ParseNewValidatorAdded(log types.Log) (*DKGNewValidatorAdded, error) {
 	event := new(DKGNewValidatorAdded)
 	if err := _DKG.contract.UnpackLog(event, "NewValidatorAdded", log); err != nil {
@@ -2063,14 +1844,13 @@ func (it *DKGValidatorExitAnnouncedIterator) Close() error {
 // DKGValidatorExitAnnounced represents a ValidatorExitAnnounced event raised by the DKG contract.
 type DKGValidatorExitAnnounced struct {
 	ValidatorAddr      common.Address
-	EndValidationTime  *big.Int
 	EndValidationEpoch *big.Int
 	Raw                types.Log // Blockchain specific contextual infos
 }
 
-// FilterValidatorExitAnnounced is a free log retrieval operation binding the contract event 0xd75af7adb28dda89e53e18c225f03e4aee3f0132f19eaff0a642b1f88433baad.
+// FilterValidatorExitAnnounced is a free log retrieval operation binding the contract event 0x30ac6b6a6a27291e9b642749b60a3e096ce91197734d2a31e39d755a750abf80.
 //
-// Solidity: event ValidatorExitAnnounced(address indexed validatorAddr, uint256 endValidationTime, uint256 endValidationEpoch)
+// Solidity: event ValidatorExitAnnounced(address indexed validatorAddr, uint256 endValidationEpoch)
 func (_DKG *DKGFilterer) FilterValidatorExitAnnounced(opts *bind.FilterOpts, validatorAddr []common.Address) (*DKGValidatorExitAnnouncedIterator, error) {
 
 	var validatorAddrRule []interface{}
@@ -2085,9 +1865,9 @@ func (_DKG *DKGFilterer) FilterValidatorExitAnnounced(opts *bind.FilterOpts, val
 	return &DKGValidatorExitAnnouncedIterator{contract: _DKG.contract, event: "ValidatorExitAnnounced", logs: logs, sub: sub}, nil
 }
 
-// WatchValidatorExitAnnounced is a free log subscription operation binding the contract event 0xd75af7adb28dda89e53e18c225f03e4aee3f0132f19eaff0a642b1f88433baad.
+// WatchValidatorExitAnnounced is a free log subscription operation binding the contract event 0x30ac6b6a6a27291e9b642749b60a3e096ce91197734d2a31e39d755a750abf80.
 //
-// Solidity: event ValidatorExitAnnounced(address indexed validatorAddr, uint256 endValidationTime, uint256 endValidationEpoch)
+// Solidity: event ValidatorExitAnnounced(address indexed validatorAddr, uint256 endValidationEpoch)
 func (_DKG *DKGFilterer) WatchValidatorExitAnnounced(opts *bind.WatchOpts, sink chan<- *DKGValidatorExitAnnounced, validatorAddr []common.Address) (event.Subscription, error) {
 
 	var validatorAddrRule []interface{}
@@ -2127,9 +1907,9 @@ func (_DKG *DKGFilterer) WatchValidatorExitAnnounced(opts *bind.WatchOpts, sink 
 	}), nil
 }
 
-// ParseValidatorExitAnnounced is a log parse operation binding the contract event 0xd75af7adb28dda89e53e18c225f03e4aee3f0132f19eaff0a642b1f88433baad.
+// ParseValidatorExitAnnounced is a log parse operation binding the contract event 0x30ac6b6a6a27291e9b642749b60a3e096ce91197734d2a31e39d755a750abf80.
 //
-// Solidity: event ValidatorExitAnnounced(address indexed validatorAddr, uint256 endValidationTime, uint256 endValidationEpoch)
+// Solidity: event ValidatorExitAnnounced(address indexed validatorAddr, uint256 endValidationEpoch)
 func (_DKG *DKGFilterer) ParseValidatorExitAnnounced(log types.Log) (*DKGValidatorExitAnnounced, error) {
 	event := new(DKGValidatorExitAnnounced)
 	if err := _DKG.contract.UnpackLog(event, "ValidatorExitAnnounced", log); err != nil {

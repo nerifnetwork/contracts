@@ -34,13 +34,16 @@ describe('Registry', () => {
   const tokensAmount = wei('10000');
 
   const nativeDepositAssetKey: string = 'NATIVE';
-  const nativeDepositAssetData: IBillingManager.DepositAssetDataStruct = {
+  const nerifTokenDepositAssetKey: string = 'NERIF';
+
+  let nativeDepositAssetData: IBillingManager.DepositAssetDataStruct = {
     tokenAddr: ethers.constants.AddressZero,
     workflowExecutionDiscount: 0,
-    networkRewards: 0,
+    totalAssetAmount: 0,
     isPermitable: false,
     isEnabled: true,
   };
+  let nerifTokenDepositAssetData: IBillingManager.DepositAssetDataStruct;
 
   function getSetNumberCalldata(expectedNumber: BigNumberish): string {
     return testTarget.interface.encodeFunctionData('setNumber', [expectedNumber]);
@@ -93,12 +96,27 @@ describe('Registry', () => {
     billingManager = BillingManagerFactory.attach(await contractsRegistry.getBillingManagerContract());
     const nerifToken = NerifTokenFactory.attach(await contractsRegistry.getNerifTokenContract());
 
+    nativeDepositAssetData = {
+      tokenAddr: ethers.constants.AddressZero,
+      workflowExecutionDiscount: 0,
+      totalAssetAmount: 0,
+      isPermitable: false,
+      isEnabled: true,
+    };
+    nerifTokenDepositAssetData = {
+      tokenAddr: nerifToken.address,
+      workflowExecutionDiscount: 10,
+      totalAssetAmount: 0,
+      isPermitable: true,
+      isEnabled: true,
+    };
+
     await signerStorage.initialize(SIGNER.address);
     await registry.initialize(0);
-    await billingManager.initialize({
-      depositAssetKey: nativeDepositAssetKey,
-      depositAssetData: nativeDepositAssetData,
-    });
+    await billingManager.initialize(
+      { depositAssetKey: nativeDepositAssetKey, depositAssetData: nativeDepositAssetData },
+      { depositAssetKey: nerifTokenDepositAssetKey, depositAssetData: nerifTokenDepositAssetData }
+    );
     await gatewayFactory.initialize(gatewayImpl.address);
     await nerifToken.initialize(tokensAmount, 'NERIF', 'NERIF');
     await tokensVesting.initialize();

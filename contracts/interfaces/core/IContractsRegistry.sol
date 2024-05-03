@@ -42,12 +42,6 @@ interface IContractsRegistry {
     function getSlashingVotingContract() external view returns (address);
 
     /**
-     * @notice Retrieves the address of the rewards distribution pool contract
-     * @return The address of the rewards distribution pool contract
-     */
-    function getRewardsDistributionPoolContract() external view returns (address);
-
-    /**
      * @notice Retrieves the address of the billing manager contract
      * @return The address of the billing manager contract
      */

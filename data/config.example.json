@@ -41,11 +41,20 @@
   },
   "operationalContractsInitParams": {
     "maxWorkflowsPerAccount": "0",
-    "signer": "0xbDA5747bFD65F08deb54cb465eB87D40e51B197E",
-    "nativeDepositAssetData": {
-      "nativeDepositAssetKey": "NATIVE",
-      "workflowExecutionDiscount": "0",
-      "isEnabled": true
-    }
+    "billingManagerInitParams": {
+      "nativeDepositAssetData": {
+        "nativeDepositAssetKey": "NATIVE",
+        "workflowExecutionDiscount": "0",
+        "isEnabled": true
+      },
+      "nerifTokenDepositAssetData": {
+        "nerifTokenAddr": "",
+        "nativeDepositAssetKey": "NERIF",
+        "workflowExecutionDiscount": "0",
+        "isEnabled": true,
+        "isPermitable": true
+      }
+    },
+    "signer": "0xbDA5747bFD65F08deb54cb465eB87D40e51B197E"
   }
 }

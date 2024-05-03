@@ -29,7 +29,7 @@ const signPermit = (domain, message, privateKey) => {
   return fromRpcSig(signTypedData({ privateKey, data, version: "V4" }));
 };
 
-const signWithdraw = (domain, message, privateKey) => {
+const signFundsWithdraw = (domain, message, privateKey) => {
   const { name, version, chainId, verifyingContract } = domain;
 
   const EIP712Domain = [
@@ -39,25 +39,58 @@ const signWithdraw = (domain, message, privateKey) => {
     { name: "verifyingContract", type: "address" },
   ];
 
-  const Withdraw = [
+  const FundsWithdraw = [
     { name: "userAddr", type: "address" },
-    { name: "depositAssetKey", type: "string" },
-    { name: "withdrawAmount", type: "uint256" },
+    { name: "depositAssetsHash", type: "bytes32" },
+    { name: "amountsHash", type: "bytes32" },
     { name: "nonce", type: "uint256" },
     { name: "deadline", type: "uint256" },
   ];
 
   const data = {
-    primaryType: "Withdraw",
-    types: { EIP712Domain, Withdraw },
+    primaryType: "FundsWithdraw",
+    types: { EIP712Domain, FundsWithdraw },
     domain: { name, version, chainId, verifyingContract },
     message: message,
   };
 
-  return fromRpcSig(signTypedData({ privateKey, data, version: "V4" }));
+  const sigRaw = signTypedData({ privateKey, data, version: "V4" });
+
+  return fromRpcSig(sigRaw);
+};
+
+const signRewardsWithdraw = (domain, message, privateKey) => {
+  const { name, version, chainId, verifyingContract } = domain;
+
+  const EIP712Domain = [
+    { name: "name", type: "string" },
+    { name: "version", type: "string" },
+    { name: "chainId", type: "uint256" },
+    { name: "verifyingContract", type: "address" },
+  ];
+
+  const RewardsWithdraw = [
+    { name: "userAddr", type: "address" },
+    { name: "depositAssetsHash", type: "bytes32" },
+    { name: "amountsHash", type: "bytes32" },
+    { name: "nonce", type: "uint256" },
+    { name: "deadline", type: "uint256" },
+  ];
+
+  const data = {
+    primaryType: "RewardsWithdraw",
+    types: { EIP712Domain, RewardsWithdraw },
+    domain: { name, version, chainId, verifyingContract },
+    message: message,
+  };
+
+  const sigRaw = signTypedData({ privateKey, data, version: "V4" });
+
+  return fromRpcSig(sigRaw);
 };
 
 module.exports = {
   signPermit,
-  signWithdraw,
+  signFundsWithdraw,
+  signRewardsWithdraw,
 };

@@ -29,7 +29,7 @@ export type SystemContractsInitParams = {
 
 export type OperationalContractsInitParams = {
   maxWorkflowsPerAccount: BigNumber;
-  nativeDepositAssetData: NativeDepositAssetData;
+  billingManagerInitParams: BillingManagerInitParams;
   signer?: string;
 };
 
@@ -69,10 +69,20 @@ export type SlashingVotingInitParams = {
   slashingThresoldPercentage: BigNumber;
 };
 
+export type BillingManagerInitParams = {
+  nativeDepositAssetData: NativeDepositAssetData;
+  nerifTokenDepositAssetData: NerifTokenDepositAssetData;
+};
+
 export type NativeDepositAssetData = {
   nativeDepositAssetKey: string;
   workflowExecutionDiscount: BigNumber;
   isEnabled: boolean;
+};
+
+export type NerifTokenDepositAssetData = NativeDepositAssetData & {
+  nerifTokenAddr: string;
+  isPermitable: boolean;
 };
 
 export class ConfigParser {
@@ -139,9 +149,8 @@ export class ConfigParser {
 
   protected validateOperationalContractsInitParams(operationalContractsInitParams: OperationalContractsInitParams) {
     this.nonEmptyField(operationalContractsInitParams.maxWorkflowsPerAccount, 'maxWorkflowsPerAccount');
-    this.nonUndefinedField(operationalContractsInitParams.nativeDepositAssetData, 'nativeDepositAssetData');
 
-    this.validateNativeDepositAssetData(operationalContractsInitParams.nativeDepositAssetData);
+    this.validateBillingManagerInitParams(operationalContractsInitParams.billingManagerInitParams);
 
     if (!this.configData.isMainChain) {
       this.nonZeroAddr(operationalContractsInitParams.signer, 'signer');
@@ -185,6 +194,22 @@ export class ConfigParser {
 
   protected validateSlashingVotingInitParams(slashingVotingInitParams: SlashingVotingInitParams) {
     this.nonEmptyField(slashingVotingInitParams.slashingThresoldPercentage, 'slashingThresoldPercentage');
+  }
+
+  protected validateBillingManagerInitParams(billingManagerInitParams: BillingManagerInitParams) {
+    this.validateNativeDepositAssetData(billingManagerInitParams.nativeDepositAssetData);
+    this.validateNerifTokenDepositAssetData(billingManagerInitParams.nerifTokenDepositAssetData);
+  }
+
+  protected validateNerifTokenDepositAssetData(nerifTokenDepositAssetData: NerifTokenDepositAssetData) {
+    this.validateNativeDepositAssetData(nerifTokenDepositAssetData);
+    this.nonEmptyField(nerifTokenDepositAssetData.isPermitable, 'isPermitable');
+
+    if (this.needToDeployNerifToken()) {
+      this.nonUndefinedField(nerifTokenDepositAssetData.nerifTokenAddr, 'nerifTokenAddr');
+    } else {
+      this.nonEmptyField(nerifTokenDepositAssetData.nerifTokenAddr, 'nerifTokenAddr');
+    }
   }
 
   protected validateNativeDepositAssetData(nativeDepositAssetData: NativeDepositAssetData) {

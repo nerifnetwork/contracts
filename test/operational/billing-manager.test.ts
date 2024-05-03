@@ -15,7 +15,7 @@ import {
 } from '../../generated-types/ethers';
 import { setNextBlockTime, setTime } from '../helpers/block-helper';
 
-const { signPermit, signWithdraw } = require('../helpers/signatures.js');
+const { signPermit, signFundsWithdraw, signRewardsWithdraw } = require('../helpers/signatures.js');
 
 describe('BillingManager', () => {
   const reverter = new Reverter();
@@ -23,6 +23,7 @@ describe('BillingManager', () => {
   let OWNER: SignerWithAddress;
   let FIRST: SignerWithAddress;
   let SIGNER: SignerWithAddress;
+  let STAKING: SignerWithAddress;
 
   let contractsRegistry: ContractsRegistry;
 
@@ -41,13 +42,16 @@ describe('BillingManager', () => {
   const tokensAmount = wei('1000');
 
   const nativeDepositAssetKey: string = 'NATIVE';
-  const nativeDepositAssetData: IBillingManager.DepositAssetDataStruct = {
+  const nerifTokenDepositAssetKey: string = 'NERIF';
+
+  let nativeDepositAssetData: IBillingManager.DepositAssetDataStruct = {
     tokenAddr: ethers.constants.AddressZero,
     workflowExecutionDiscount: 0,
-    networkRewards: 0,
+    totalAssetAmount: 0,
     isPermitable: false,
     isEnabled: true,
   };
+  let nerifTokenDepositAssetData: IBillingManager.DepositAssetDataStruct;
 
   function createPermitSig(
     tokenName: string,
@@ -77,11 +81,11 @@ describe('BillingManager', () => {
     return signPermit(domain, message, buffer);
   }
 
-  function createWithdrawSig(
+  function createFundsWithdrawSig(
     userAddr: string,
-    depositAssetKey: string,
+    depositAssetKeys: string[],
     deadline: string | number = 0,
-    withdrawAmount: string | number = tokensAmount.toString(),
+    withdrawAmounts: string[] | number[] = [tokensAmount.toString()],
     nonce: string | number = 0,
     signerPK: string = SIGNER_PK
   ) {
@@ -92,21 +96,59 @@ describe('BillingManager', () => {
       chainId: '1',
     };
 
+    const depositAssetsHash = ethers.utils.keccak256(
+      ethers.utils.defaultAbiCoder.encode(['string[]'], [depositAssetKeys])
+    );
+    const amountsHash = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['uint256[]'], [withdrawAmounts]));
+
     const message = {
       userAddr: userAddr,
-      depositAssetKey: depositAssetKey,
-      withdrawAmount: withdrawAmount,
+      depositAssetsHash: depositAssetsHash,
+      amountsHash: amountsHash,
       nonce: nonce,
       deadline: deadline,
     };
 
     const buffer = Buffer.from(signerPK, 'hex');
 
-    return signWithdraw(domain, message, buffer);
+    return signFundsWithdraw(domain, message, buffer);
+  }
+
+  function createRewardsWithdrawSig(
+    userAddr: string,
+    depositAssetKeys: string[],
+    deadline: string | number = 0,
+    withdrawAmounts: string[] | number[] = [tokensAmount.toString()],
+    nonce: string | number = 0,
+    signerPK: string = SIGNER_PK
+  ) {
+    const domain = {
+      name: 'BillingManager',
+      version: '1',
+      verifyingContract: billingManager.address,
+      chainId: '1',
+    };
+
+    const depositAssetsHash = ethers.utils.keccak256(
+      ethers.utils.defaultAbiCoder.encode(['string[]'], [depositAssetKeys])
+    );
+    const amountsHash = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['uint256[]'], [withdrawAmounts]));
+
+    const message = {
+      userAddr: userAddr,
+      depositAssetsHash: depositAssetsHash,
+      amountsHash: amountsHash,
+      nonce: nonce,
+      deadline: deadline,
+    };
+
+    const buffer = Buffer.from(signerPK, 'hex');
+
+    return signRewardsWithdraw(domain, message, buffer);
   }
 
   before(async () => {
-    [OWNER, FIRST, SIGNER] = await ethers.getSigners();
+    [OWNER, FIRST, SIGNER, STAKING] = await ethers.getSigners();
 
     const ERC1967ProxyFactory = await ethers.getContractFactory('ERC1967Proxy');
     const ContractsRegistryFactory = await ethers.getContractFactory('ContractsRegistry');
@@ -143,18 +185,34 @@ describe('BillingManager', () => {
 
     await contractsRegistry.addContract(await contractsRegistry.GATEWAY_FACTORY_NAME(), gatewayFactory.address);
     await contractsRegistry.addContract(await contractsRegistry.TOKENS_VESTING_NAME(), tokensVesting.address);
+    await contractsRegistry.addContract(await contractsRegistry.STAKING_NAME(), STAKING.address);
     await contractsRegistry.addContract(await contractsRegistry.SIGNER_GETTER_NAME(), signerStorage.address);
 
     registry = RegistryFactory.attach(await contractsRegistry.getRegistryContract());
     billingManager = BillingManagerFactory.attach(await contractsRegistry.getBillingManagerContract());
     nerifToken = NerifTokenFactory.attach(await contractsRegistry.getNerifTokenContract());
 
+    nativeDepositAssetData = {
+      tokenAddr: ethers.constants.AddressZero,
+      workflowExecutionDiscount: 0,
+      totalAssetAmount: 0,
+      isPermitable: false,
+      isEnabled: true,
+    };
+    nerifTokenDepositAssetData = {
+      tokenAddr: nerifToken.address,
+      workflowExecutionDiscount: 10,
+      totalAssetAmount: 0,
+      isPermitable: true,
+      isEnabled: true,
+    };
+
     await signerStorage.initialize(SIGNER.address);
     await registry.initialize(0);
-    await billingManager.initialize({
-      depositAssetKey: nativeDepositAssetKey,
-      depositAssetData: nativeDepositAssetData,
-    });
+    await billingManager.initialize(
+      { depositAssetKey: nativeDepositAssetKey, depositAssetData: nativeDepositAssetData },
+      { depositAssetKey: nerifTokenDepositAssetKey, depositAssetData: nerifTokenDepositAssetData }
+    );
     await gatewayFactory.initialize(gatewayImpl.address);
     await nerifToken.initialize(tokensAmount, 'NERIF', 'NERIF');
     await tokensVesting.initialize();
@@ -192,10 +250,10 @@ describe('BillingManager', () => {
       const reason = 'Initializable: contract is already initialized';
 
       await expect(
-        billingManager.initialize({
-          depositAssetKey: nativeDepositAssetKey,
-          depositAssetData: nativeDepositAssetData,
-        })
+        billingManager.initialize(
+          { depositAssetKey: nativeDepositAssetKey, depositAssetData: nativeDepositAssetData },
+          { depositAssetKey: nerifTokenDepositAssetKey, depositAssetData: nerifTokenDepositAssetData }
+        )
       ).to.be.revertedWith(reason);
     });
   });
@@ -215,11 +273,7 @@ describe('BillingManager', () => {
         .withArgs(nativeDepositAssetKey, OWNER.address, OWNER.address, depositAmount);
       await expect(tx).to.changeEtherBalances([OWNER, billingManager], [depositAmount.mul(-1), depositAmount]);
 
-      const userDepositInfo = await billingManager.getUserDepositInfo(OWNER.address, nativeDepositAssetKey);
-
-      expect(userDepositInfo.userAddr).to.be.eq(OWNER.address);
-      expect(userDepositInfo.userDepositedAmount).to.be.eq(depositAmount);
-      expect(await billingManager.getTotalUsersCount()).to.be.eq(1);
+      expect(await billingManager.getTotalDepositAssetAmount(nativeDepositAssetKey)).to.be.eq(depositAmount);
     });
 
     it('should get exception if the native deposit asset is disabled', async () => {
@@ -284,14 +338,14 @@ describe('BillingManager', () => {
   });
 
   describe('addDepositAsset', () => {
-    const nerifAssetKey: string = 'NERIF';
-    let nerifAssetData: IBillingManager.DepositAssetDataStruct;
+    const newNerifAssetKey: string = 'NERIF_V2';
+    let newNerifAssetData: IBillingManager.DepositAssetDataStruct;
 
     beforeEach('setup', async () => {
-      nerifAssetData = {
+      newNerifAssetData = {
         tokenAddr: nerifToken.address,
-        workflowExecutionDiscount: 10,
-        networkRewards: 0,
+        workflowExecutionDiscount: 20,
+        totalAssetAmount: 0,
         isPermitable: true,
         isEnabled: true,
       };
@@ -300,26 +354,32 @@ describe('BillingManager', () => {
     it('should correctly add new deposit asset key', async () => {
       const tx = await billingManager.connect(SIGNER).addDepositAssets([
         {
-          depositAssetKey: nerifAssetKey,
-          depositAssetData: nerifAssetData,
+          depositAssetKey: newNerifAssetKey,
+          depositAssetData: newNerifAssetData,
         },
       ]);
 
-      await expect(tx).emit(billingManager, 'DepositAssetAdded').withArgs(nerifAssetKey, Object.values(nerifAssetData));
+      await expect(tx)
+        .emit(billingManager, 'DepositAssetAdded')
+        .withArgs(newNerifAssetKey, Object.values(newNerifAssetData));
 
-      expect(await billingManager.isDepositAssetEnabled(nerifAssetKey)).to.be.eq(true);
-      expect(await billingManager.isDepositAssetSupported(nerifAssetKey)).to.be.eq(true);
+      expect(await billingManager.isDepositAssetEnabled(newNerifAssetKey)).to.be.eq(true);
+      expect(await billingManager.isDepositAssetSupported(newNerifAssetKey)).to.be.eq(true);
 
-      const nativeAssetInfo = (await billingManager.getDepositAssetsInfo([nerifAssetKey]))[0];
+      const newNerifAssetInfo = (await billingManager.getDepositAssetsInfo([newNerifAssetKey]))[0];
 
-      expect(nativeAssetInfo.depositAssetData.tokenAddr).to.be.eq(nerifToken.address);
-      expect(nativeAssetInfo.depositAssetData.workflowExecutionDiscount).to.be.eq(
-        nerifAssetData.workflowExecutionDiscount
+      expect(newNerifAssetInfo.depositAssetData.tokenAddr).to.be.eq(nerifToken.address);
+      expect(newNerifAssetInfo.depositAssetData.workflowExecutionDiscount).to.be.eq(
+        newNerifAssetData.workflowExecutionDiscount
       );
-      expect(nativeAssetInfo.depositAssetData.networkRewards).to.be.eq(0);
-      expect(nativeAssetInfo.depositAssetData.isEnabled).to.be.eq(true);
+      expect(newNerifAssetInfo.depositAssetData.totalAssetAmount).to.be.eq(0);
+      expect(newNerifAssetInfo.depositAssetData.isEnabled).to.be.eq(true);
 
-      expect(await billingManager.getSupportedDepositAssetKeys()).to.be.deep.eq([nativeDepositAssetKey, nerifAssetKey]);
+      expect(await billingManager.getSupportedDepositAssetKeys()).to.be.deep.eq([
+        nativeDepositAssetKey,
+        nerifTokenDepositAssetKey,
+        newNerifAssetKey,
+      ]);
     });
 
     it('should get exception if not a signer try to call this function', async () => {
@@ -328,8 +388,8 @@ describe('BillingManager', () => {
       await expect(
         billingManager.addDepositAssets([
           {
-            depositAssetKey: nerifAssetKey,
-            depositAssetData: nerifAssetData,
+            depositAssetKey: newNerifAssetKey,
+            depositAssetData: newNerifAssetData,
           },
         ])
       ).to.be.revertedWith(reason);
@@ -351,13 +411,13 @@ describe('BillingManager', () => {
     it('should get exception if pass invalid token address', async () => {
       const reason = 'BillingManager: Invalid deposit asset token address';
 
-      nerifAssetData.tokenAddr = ethers.constants.AddressZero;
+      newNerifAssetData.tokenAddr = ethers.constants.AddressZero;
 
       await expect(
         billingManager.connect(SIGNER).addDepositAssets([
           {
-            depositAssetKey: nerifAssetKey,
-            depositAssetData: nerifAssetData,
+            depositAssetKey: newNerifAssetKey,
+            depositAssetData: newNerifAssetData,
           },
         ])
       ).to.be.revertedWith(reason);
@@ -370,22 +430,22 @@ describe('BillingManager', () => {
         billingManager.connect(SIGNER).addDepositAssets([
           {
             depositAssetKey: '',
-            depositAssetData: nerifAssetData,
+            depositAssetData: newNerifAssetData,
           },
         ])
       ).to.be.revertedWith(reason);
     });
 
-    it('should get exception if pass not empty network rewards', async () => {
-      const reason = 'BillingManager: Invalid init network rewards value';
+    it('should get exception if pass not empty total asset amount', async () => {
+      const reason = 'BillingManager: Invalid init total asset amount value';
 
-      nerifAssetData.networkRewards = wei('1');
+      newNerifAssetData.totalAssetAmount = wei('1');
 
       await expect(
         billingManager.connect(SIGNER).addDepositAssets([
           {
-            depositAssetKey: nerifAssetKey,
-            depositAssetData: nerifAssetData,
+            depositAssetKey: newNerifAssetKey,
+            depositAssetData: newNerifAssetData,
           },
         ])
       ).to.be.revertedWith(reason);
@@ -394,7 +454,6 @@ describe('BillingManager', () => {
 
   describe('updateWorkflowExecutionDiscount', () => {
     const newDiscount = 40;
-    const nerifAssetKey: string = 'NERIF';
 
     it('should correctly update workflow execution discount', async () => {
       const tx = await billingManager
@@ -423,14 +482,13 @@ describe('BillingManager', () => {
       const reason = 'BillingManager: Deposit asset does not exist';
 
       await expect(
-        billingManager.connect(SIGNER).updateWorkflowExecutionDiscount(nerifAssetKey, newDiscount)
+        billingManager.connect(SIGNER).updateWorkflowExecutionDiscount('SOME_ASSET_KEY', newDiscount)
       ).to.be.revertedWith(reason);
     });
   });
 
   describe('updateDepositAssetEnabledStatus', () => {
     const newEnabledStatus: boolean = false;
-    const nerifAssetKey: string = 'NERIF';
 
     it('should correctly update deposit asset enabled status', async () => {
       const tx = await billingManager
@@ -456,7 +514,7 @@ describe('BillingManager', () => {
       const reason = 'BillingManager: Deposit asset does not exist';
 
       await expect(
-        billingManager.connect(SIGNER).updateDepositAssetEnabledStatus(nerifAssetKey, newEnabledStatus)
+        billingManager.connect(SIGNER).updateDepositAssetEnabledStatus('SOME_ASSET_KEY', newEnabledStatus)
       ).to.be.revertedWith(reason);
     });
 
@@ -472,25 +530,6 @@ describe('BillingManager', () => {
   describe('deposit', () => {
     const depositTokensAmount = wei('100');
     const depositNativeAmount = wei('1');
-    const nerifAssetKey: string = 'NERIF';
-    let nerifAssetData: IBillingManager.DepositAssetDataStruct;
-
-    beforeEach('setup', async () => {
-      nerifAssetData = {
-        tokenAddr: nerifToken.address,
-        workflowExecutionDiscount: 10,
-        networkRewards: 0,
-        isPermitable: true,
-        isEnabled: true,
-      };
-
-      await billingManager.connect(SIGNER).addDepositAssets([
-        {
-          depositAssetKey: nerifAssetKey,
-          depositAssetData: nerifAssetData,
-        },
-      ]);
-    });
 
     it('should correctly deposit native currency', async () => {
       const tx = await billingManager.deposit(nativeDepositAssetKey, OWNER.address, depositNativeAmount, {
@@ -505,31 +544,22 @@ describe('BillingManager', () => {
         [depositNativeAmount.mul(-1), depositNativeAmount]
       );
 
-      const userDepositInfo = await billingManager.getUserDepositInfo(OWNER.address, nativeDepositAssetKey);
-
-      expect(userDepositInfo.userAddr).to.be.eq(OWNER.address);
-      expect(userDepositInfo.userDepositedAmount).to.be.eq(depositNativeAmount);
-
-      expect(await billingManager.getExistingUsers(0, 10)).to.be.deep.eq([OWNER.address]);
-      expect(await billingManager.getUserDepositAssetKeys(OWNER.address)).to.be.deep.eq([nativeDepositAssetKey]);
+      expect(await billingManager.getTotalDepositAssetAmount(nativeDepositAssetKey)).to.be.eq(depositNativeAmount);
     });
 
     it('should correctly deposit ERC20 tokens', async () => {
       await nerifToken.approve(billingManager.address, depositTokensAmount);
 
-      const tx = await billingManager.deposit(nerifAssetKey, FIRST.address, depositTokensAmount);
+      const tx = await billingManager.deposit(nerifTokenDepositAssetKey, FIRST.address, depositTokensAmount);
 
       await expect(tx)
         .emit(billingManager, 'AssetDeposited')
-        .withArgs(nerifAssetKey, OWNER.address, FIRST.address, depositTokensAmount);
+        .withArgs(nerifTokenDepositAssetKey, OWNER.address, FIRST.address, depositTokensAmount);
 
       expect(await nerifToken.balanceOf(OWNER.address)).to.be.eq(tokensAmount.sub(depositTokensAmount));
       expect(await nerifToken.balanceOf(billingManager.address)).to.be.eq(depositTokensAmount);
 
-      const userDepositInfo = await billingManager.getUserDepositInfo(FIRST.address, nerifAssetKey);
-
-      expect(userDepositInfo.userAddr).to.be.eq(FIRST.address);
-      expect(userDepositInfo.userDepositedAmount).to.be.eq(depositTokensAmount);
+      expect(await billingManager.getTotalDepositAssetAmount(nerifTokenDepositAssetKey)).to.be.eq(depositTokensAmount);
     });
 
     it('should get exception if the deposit asset key does not exist', async () => {
@@ -566,7 +596,9 @@ describe('BillingManager', () => {
       const reason = 'BillingManager: Not a native deposit asset';
 
       await expect(
-        billingManager.deposit(nerifAssetKey, OWNER.address, depositTokensAmount, { value: depositNativeAmount })
+        billingManager.deposit(nerifTokenDepositAssetKey, OWNER.address, depositTokensAmount, {
+          value: depositNativeAmount,
+        })
       ).to.be.revertedWith(reason);
     });
   });
@@ -574,25 +606,8 @@ describe('BillingManager', () => {
   describe('depositWithPermit', () => {
     const depositTokensAmount = wei('100');
     const currentTime = wei('100000', 1);
-    const nerifAssetKey: string = 'NERIF';
-    let nerifAssetData: IBillingManager.DepositAssetDataStruct;
 
     beforeEach('setup', async () => {
-      nerifAssetData = {
-        tokenAddr: nerifToken.address,
-        workflowExecutionDiscount: 10,
-        networkRewards: 0,
-        isPermitable: true,
-        isEnabled: true,
-      };
-
-      await billingManager.connect(SIGNER).addDepositAssets([
-        {
-          depositAssetKey: nerifAssetKey,
-          depositAssetData: nerifAssetData,
-        },
-      ]);
-
       await setTime(currentTime.toNumber());
     });
 
@@ -606,24 +621,18 @@ describe('BillingManager', () => {
         depositTokensAmount.toString()
       );
 
-      const tx = await billingManager.depositWithPermit(
-        nerifAssetKey,
-        OWNER.address,
-        depositTokensAmount,
-        deadline,
-        sig.v,
-        sig.r,
-        sig.s
-      );
+      const tx = await billingManager.depositWithPermit(nerifTokenDepositAssetKey, OWNER.address, depositTokensAmount, {
+        sigExpirationTime: deadline,
+        v: sig.v,
+        r: sig.r,
+        s: sig.s,
+      });
 
       await expect(tx)
         .emit(billingManager, 'AssetDeposited')
-        .withArgs(nerifAssetKey, OWNER.address, OWNER.address, depositTokensAmount);
+        .withArgs(nerifTokenDepositAssetKey, OWNER.address, OWNER.address, depositTokensAmount);
 
-      const userDepositInfo = await billingManager.getUserDepositInfo(OWNER.address, nerifAssetKey);
-
-      expect(userDepositInfo.userAddr).to.be.eq(OWNER.address);
-      expect(userDepositInfo.userDepositedAmount).to.be.eq(depositTokensAmount);
+      expect(await billingManager.getTotalDepositAssetAmount(nerifTokenDepositAssetKey)).to.be.eq(depositTokensAmount);
     });
 
     it('should get exception if the deposit asset key does not exist', async () => {
@@ -638,7 +647,12 @@ describe('BillingManager', () => {
       );
 
       await expect(
-        billingManager.depositWithPermit('SOME_KEY', OWNER.address, depositTokensAmount, deadline, sig.v, sig.r, sig.s)
+        billingManager.depositWithPermit('SOME_KEY', OWNER.address, depositTokensAmount, {
+          sigExpirationTime: deadline,
+          v: sig.v,
+          r: sig.r,
+          s: sig.s,
+        })
       ).to.be.revertedWith(reason);
     });
 
@@ -653,18 +667,15 @@ describe('BillingManager', () => {
         depositTokensAmount.toString()
       );
 
-      await billingManager.connect(SIGNER).updateDepositAssetEnabledStatus(nerifAssetKey, false);
+      await billingManager.connect(SIGNER).updateDepositAssetEnabledStatus(nerifTokenDepositAssetKey, false);
 
       await expect(
-        billingManager.depositWithPermit(
-          nerifAssetKey,
-          OWNER.address,
-          depositTokensAmount,
-          deadline,
-          sig.v,
-          sig.r,
-          sig.s
-        )
+        billingManager.depositWithPermit(nerifTokenDepositAssetKey, OWNER.address, depositTokensAmount, {
+          sigExpirationTime: deadline,
+          v: sig.v,
+          r: sig.r,
+          s: sig.s,
+        })
       ).to.be.revertedWith(reason);
     });
 
@@ -680,28 +691,28 @@ describe('BillingManager', () => {
       );
 
       await expect(
-        billingManager.depositWithPermit(
-          nativeDepositAssetKey,
-          OWNER.address,
-          depositTokensAmount,
-          deadline,
-          sig.v,
-          sig.r,
-          sig.s
-        )
+        billingManager.depositWithPermit(nativeDepositAssetKey, OWNER.address, depositTokensAmount, {
+          sigExpirationTime: deadline,
+          v: sig.v,
+          r: sig.r,
+          s: sig.s,
+        })
       ).to.be.revertedWith(reason);
     });
 
     it('should get exception if the asset is not permitable', async () => {
       const reason = 'BillingManager: Deposit asset is not permitable';
 
-      const newNerifAssetKey = 'NERIF_V2';
-      nerifAssetData.isPermitable = false;
+      const newNerifAssetKey: string = 'NERIF_V2';
+      const newNerifAssetData: IBillingManager.DepositAssetDataStruct = {
+        ...nerifTokenDepositAssetData,
+        isPermitable: false,
+      };
 
       await billingManager.connect(SIGNER).addDepositAssets([
         {
           depositAssetKey: newNerifAssetKey,
-          depositAssetData: nerifAssetData,
+          depositAssetData: newNerifAssetData,
         },
       ]);
 
@@ -714,449 +725,278 @@ describe('BillingManager', () => {
       );
 
       await expect(
-        billingManager.depositWithPermit(
-          newNerifAssetKey,
-          OWNER.address,
-          depositTokensAmount,
-          deadline,
-          sig.v,
-          sig.r,
-          sig.s
-        )
+        billingManager.depositWithPermit(newNerifAssetKey, OWNER.address, depositTokensAmount, {
+          sigExpirationTime: deadline,
+          v: sig.v,
+          r: sig.r,
+          s: sig.s,
+        })
       ).to.be.revertedWith(reason);
-    });
-  });
-
-  describe('withdrawNetworkRewards', () => {
-    const depositTokensAmount = wei('100');
-    const networkWithdrawAmount = wei('20');
-    const nerifAssetKey: string = 'NERIF';
-    let nerifAssetData: IBillingManager.DepositAssetDataStruct;
-
-    beforeEach('setup', async () => {
-      nerifAssetData = {
-        tokenAddr: nerifToken.address,
-        workflowExecutionDiscount: 10,
-        networkRewards: 0,
-        isPermitable: true,
-        isEnabled: true,
-      };
-
-      await billingManager.connect(SIGNER).addDepositAssets([
-        {
-          depositAssetKey: nerifAssetKey,
-          depositAssetData: nerifAssetData,
-        },
-      ]);
-
-      await nerifToken.approve(billingManager.address, tokensAmount);
-      await billingManager.deposit(nerifAssetKey, OWNER.address, depositTokensAmount);
-
-      await billingManager.connect(SIGNER).networkWithdraw([
-        {
-          depositAssetKey: nerifAssetKey,
-          userAddr: OWNER.address,
-          amountToWithdraw: networkWithdrawAmount,
-        },
-      ]);
-
-      expect(await billingManager.getNetworkRewards(nerifAssetKey)).to.be.eq(networkWithdrawAmount);
-    });
-
-    it('should correctly withdraw network rewards', async () => {
-      const tx = await billingManager.withdrawNetworkRewards(nerifAssetKey);
-
-      await expect(tx)
-        .emit(billingManager, 'RewardsWithdrawn')
-        .withArgs(nerifAssetKey, SIGNER.address, networkWithdrawAmount);
-
-      expect(await nerifToken.balanceOf(billingManager.address)).to.be.eq(
-        depositTokensAmount.sub(networkWithdrawAmount)
-      );
-
-      expect(await billingManager.getNetworkRewards(nerifAssetKey)).to.be.eq('0');
-    });
-
-    it('should correctly withdraw native currency', async () => {
-      const nativeCurrencyAmount = wei('1');
-      const nativeWithdrawAmount = wei('0.4');
-
-      await billingManager.deposit(nativeDepositAssetKey, OWNER.address, nativeCurrencyAmount, {
-        value: nativeCurrencyAmount,
-      });
-
-      await billingManager.connect(SIGNER).networkWithdraw([
-        {
-          depositAssetKey: nativeDepositAssetKey,
-          userAddr: OWNER.address,
-          amountToWithdraw: nativeWithdrawAmount,
-        },
-      ]);
-
-      expect(await billingManager.getNetworkRewards(nativeDepositAssetKey)).to.be.eq(nativeWithdrawAmount);
-
-      const tx = await billingManager.withdrawNetworkRewards(nativeDepositAssetKey);
-
-      await expect(tx)
-        .emit(billingManager, 'RewardsWithdrawn')
-        .withArgs(nativeDepositAssetKey, SIGNER.address, nativeWithdrawAmount);
-      await expect(tx).to.changeEtherBalances(
-        [SIGNER, billingManager],
-        [nativeWithdrawAmount, nativeWithdrawAmount.mul(-1)]
-      );
-    });
-
-    it('should get execption if nothing to withdraw', async () => {
-      const reason = 'BillingManager: No network rewards to withdraw';
-
-      await expect(billingManager.withdrawNetworkRewards(nativeDepositAssetKey)).to.be.revertedWith(reason);
-    });
-
-    it('should get exception if signer is zero addr', async () => {
-      const reason = 'BillingManager: Zero signer address';
-
-      await signerStorage.connect(SIGNER).setAddress(ethers.constants.AddressZero);
-
-      await expect(billingManager.withdrawNetworkRewards(nerifAssetKey)).to.be.revertedWith(reason);
-    });
-
-    it('should get exception if the deposit asset key does not exist', async () => {
-      const reason = 'BillingManager: Deposit asset does not exist';
-
-      await expect(billingManager.withdrawNetworkRewards('SOME_KEY')).to.be.revertedWith(reason);
     });
   });
 
   describe('withdrawFunds', () => {
     const currentTime = wei('100000', 1);
     const depositTokensAmount = wei('100');
-    const amountToWithdraw = wei('30');
-    const nerifAssetKey: string = 'NERIF';
-    let nerifAssetData: IBillingManager.DepositAssetDataStruct;
+    const depositNativeAmount = wei('1');
+    const tokensAmountToWithdraw = wei('30');
+    const nativeAmountToWithdraw = wei('0.5');
 
     beforeEach('setup', async () => {
-      nerifAssetData = {
-        tokenAddr: nerifToken.address,
-        workflowExecutionDiscount: 10,
-        networkRewards: 0,
-        isPermitable: true,
-        isEnabled: true,
-      };
-
-      await billingManager.connect(SIGNER).addDepositAssets([
-        {
-          depositAssetKey: nerifAssetKey,
-          depositAssetData: nerifAssetData,
-        },
-      ]);
-
       await nerifToken.approve(billingManager.address, tokensAmount);
-      await billingManager.deposit(nerifAssetKey, OWNER.address, depositTokensAmount);
+      await billingManager.deposit(nerifTokenDepositAssetKey, OWNER.address, depositTokensAmount);
+      await billingManager.deposit(nativeDepositAssetKey, OWNER.address, depositNativeAmount, {
+        value: depositNativeAmount,
+      });
 
       await setTime(currentTime.toNumber());
     });
 
     it('should correctly withdraw funds', async () => {
       const deadline = currentTime.add(1000);
-      const userWithdrawNonce = await billingManager.getUserWithdrawNonce(OWNER.address);
+      const userNonce = 100;
 
-      const sig = createWithdrawSig(
+      const sig = createFundsWithdrawSig(
         OWNER.address,
-        nerifAssetKey,
+        [nerifTokenDepositAssetKey, nativeDepositAssetKey],
         deadline.toString(),
-        amountToWithdraw.toString(),
-        userWithdrawNonce.toString()
+        [tokensAmountToWithdraw.toString(), nativeAmountToWithdraw.toString()],
+        userNonce.toString()
       );
 
-      const tx = await billingManager.withdrawFunds(nerifAssetKey, amountToWithdraw, deadline, sig.v, sig.r, sig.s);
+      const tx = await billingManager.withdrawFunds({
+        depositAssetKeys: [nerifTokenDepositAssetKey, nativeDepositAssetKey],
+        withdrawAmounts: [tokensAmountToWithdraw.toString(), nativeAmountToWithdraw.toString()],
+        nonce: userNonce.toString(),
+        sigData: {
+          sigExpirationTime: deadline,
+          v: sig.v,
+          r: sig.r,
+          s: sig.s,
+        },
+      });
 
-      expect((await billingManager.getUserDepositInfo(OWNER.address, nerifAssetKey)).userDepositedAmount).to.be.eq(
-        depositTokensAmount.sub(amountToWithdraw)
-      );
-      expect(await billingManager.getUserWithdrawNonce(OWNER.address)).to.be.eq(userWithdrawNonce.add(1));
       expect(await nerifToken.balanceOf(OWNER.address)).to.be.eq(
-        tokensAmount.sub(depositTokensAmount).add(amountToWithdraw)
+        tokensAmount.sub(depositTokensAmount).add(tokensAmountToWithdraw)
       );
-      expect(await billingManager.getExistingUsers(0, 10)).to.be.deep.eq([OWNER.address]);
+      expect(await billingManager.isUserNonceUsed(OWNER.address, userNonce)).to.be.eq(true);
+      expect(await billingManager.getTotalDepositAssetAmount(nerifTokenDepositAssetKey)).to.be.eq(
+        depositTokensAmount.sub(tokensAmountToWithdraw)
+      );
+      expect(await billingManager.getTotalDepositAssetAmount(nativeDepositAssetKey)).to.be.eq(
+        depositNativeAmount.sub(nativeAmountToWithdraw)
+      );
 
       await expect(tx)
-        .to.emit(billingManager, 'UserFundsWithdrawn')
-        .withArgs(nerifAssetKey, OWNER.address, amountToWithdraw);
-    });
-
-    it('should correctly withdraw all user funds', async () => {
-      const deadline = currentTime.add(1000);
-      const userWithdrawNonce = await billingManager.getUserWithdrawNonce(OWNER.address);
-
-      const sig = createWithdrawSig(
-        OWNER.address,
-        nerifAssetKey,
-        deadline.toString(),
-        depositTokensAmount.toString(),
-        userWithdrawNonce.toString()
-      );
-
-      await billingManager.withdrawFunds(nerifAssetKey, depositTokensAmount, deadline, sig.v, sig.r, sig.s);
-
-      expect((await billingManager.getUserDepositInfo(OWNER.address, nerifAssetKey)).userDepositedAmount).to.be.eq(0);
-      expect(await billingManager.getExistingUsers(0, 10)).to.be.deep.eq([]);
+        .to.emit(billingManager, 'FundsWithdrawn')
+        .withArgs(
+          OWNER.address,
+          [nerifTokenDepositAssetKey, nativeDepositAssetKey],
+          [tokensAmountToWithdraw, nativeAmountToWithdraw],
+          userNonce
+        );
     });
 
     it('should get exception if pass invalid signature', async () => {
       const reason = 'BillingManager: Not a signer';
       const deadline = currentTime.add(1000);
-      const userWithdrawNonce = await billingManager.getUserWithdrawNonce(OWNER.address);
+      const userNonce = 100;
 
-      const sig = createWithdrawSig(
+      const sig = createFundsWithdrawSig(
         OWNER.address,
-        nerifAssetKey,
+        [nerifTokenDepositAssetKey],
         deadline.toString(),
-        amountToWithdraw.toString(),
-        userWithdrawNonce.toString(),
+        [tokensAmountToWithdraw.toString()],
+        userNonce.toString(),
         OWNER_PK
       );
 
       await expect(
-        billingManager.withdrawFunds(nerifAssetKey, amountToWithdraw, deadline, sig.v, sig.r, sig.s)
+        billingManager.withdrawFunds({
+          depositAssetKeys: [nerifTokenDepositAssetKey],
+          withdrawAmounts: [tokensAmountToWithdraw.toString()],
+          nonce: userNonce.toString(),
+          sigData: {
+            sigExpirationTime: deadline,
+            v: sig.v,
+            r: sig.r,
+            s: sig.s,
+          },
+        })
       ).to.be.revertedWith(reason);
     });
 
     it('should get exception if the signature has expired', async () => {
       const reason = 'BillingManager: Expired deadline';
       const deadline = currentTime.add(1000);
-      const userWithdrawNonce = await billingManager.getUserWithdrawNonce(OWNER.address);
+      const userNonce = 100;
 
-      const sig = createWithdrawSig(
+      const sig = createFundsWithdrawSig(
         OWNER.address,
-        nerifAssetKey,
+        [nerifTokenDepositAssetKey],
         deadline.toString(),
-        amountToWithdraw.toString(),
-        userWithdrawNonce.toString()
+        [tokensAmountToWithdraw.toString()],
+        userNonce.toString()
       );
 
       await setNextBlockTime(deadline.add(100).toNumber());
 
       await expect(
-        billingManager.withdrawFunds(nerifAssetKey, amountToWithdraw, deadline, sig.v, sig.r, sig.s)
+        billingManager.withdrawFunds({
+          depositAssetKeys: [nerifTokenDepositAssetKey],
+          withdrawAmounts: [tokensAmountToWithdraw.toString()],
+          nonce: userNonce.toString(),
+          sigData: {
+            sigExpirationTime: deadline,
+            v: sig.v,
+            r: sig.r,
+            s: sig.s,
+          },
+        })
       ).to.be.revertedWith(reason);
     });
 
-    it('should get exception if the user tries try execute several signatures with the same nonce', async () => {
-      const reason = 'BillingManager: Not a signer';
+    it('should get exception if the user tries execute several signatures with the same nonce', async () => {
+      const reason = 'BillingManager: Nonce has already been used';
       const deadline = currentTime.add(1000);
-      const userWithdrawNonce = await billingManager.getUserWithdrawNonce(OWNER.address);
+      const userNonce = 100;
 
-      const sig1 = createWithdrawSig(
+      const sig1 = createFundsWithdrawSig(
         OWNER.address,
-        nerifAssetKey,
+        [nerifTokenDepositAssetKey],
         deadline.toString(),
-        amountToWithdraw.toString(),
-        userWithdrawNonce.toString()
+        [tokensAmountToWithdraw.toString()],
+        userNonce.toString()
       );
-      const sig2 = createWithdrawSig(
+      const sig2 = createFundsWithdrawSig(
         OWNER.address,
-        nerifAssetKey,
+        [nerifTokenDepositAssetKey],
         deadline.toString(),
-        amountToWithdraw.mul('2').toString(),
-        userWithdrawNonce.toString()
+        [tokensAmountToWithdraw.mul('2').toString()],
+        userNonce.toString()
       );
 
-      await billingManager.withdrawFunds(nerifAssetKey, amountToWithdraw, deadline, sig1.v, sig1.r, sig1.s);
+      await billingManager.withdrawFunds({
+        depositAssetKeys: [nerifTokenDepositAssetKey],
+        withdrawAmounts: [tokensAmountToWithdraw.toString()],
+        nonce: userNonce.toString(),
+        sigData: {
+          sigExpirationTime: deadline,
+          v: sig1.v,
+          r: sig1.r,
+          s: sig1.s,
+        },
+      });
 
       await expect(
-        billingManager.withdrawFunds(nerifAssetKey, amountToWithdraw, deadline, sig2.v, sig2.r, sig2.s)
+        billingManager.withdrawFunds({
+          depositAssetKeys: [nerifTokenDepositAssetKey],
+          withdrawAmounts: [tokensAmountToWithdraw.toString()],
+          nonce: userNonce.toString(),
+          sigData: {
+            sigExpirationTime: deadline,
+            v: sig2.v,
+            r: sig2.r,
+            s: sig2.s,
+          },
+        })
       ).to.be.revertedWith(reason);
 
-      expect((await billingManager.getUserDepositInfo(OWNER.address, nerifAssetKey)).userDepositedAmount).to.be.eq(
-        depositTokensAmount.sub(amountToWithdraw)
+      expect(await billingManager.getTotalDepositAssetAmount(nerifTokenDepositAssetKey)).to.be.eq(
+        depositTokensAmount.sub(tokensAmountToWithdraw)
       );
-      expect(await billingManager.getUserWithdrawNonce(OWNER.address)).to.be.eq(userWithdrawNonce.add(1));
+      expect(await billingManager.isUserNonceUsed(OWNER.address, userNonce)).to.be.eq(true);
+    });
+
+    it('should get exception if try to withdraw more than total amount', async () => {
+      const reason = 'BillingManager: Not enough deposit asset';
+      const deadline = currentTime.add(1000);
+      const userNonce = 100;
+
+      const sig = createFundsWithdrawSig(
+        OWNER.address,
+        [nerifTokenDepositAssetKey],
+        deadline.toString(),
+        [depositTokensAmount.mul('2').toString()],
+        userNonce.toString()
+      );
+
+      await expect(
+        billingManager.withdrawFunds({
+          depositAssetKeys: [nerifTokenDepositAssetKey],
+          withdrawAmounts: [depositTokensAmount.mul('2').toString()],
+          nonce: userNonce.toString(),
+          sigData: {
+            sigExpirationTime: deadline,
+            v: sig.v,
+            r: sig.r,
+            s: sig.s,
+          },
+        })
+      ).to.be.revertedWith(reason);
     });
   });
 
-  describe('networkWithdraw', () => {
-    const depositTokensAmount = wei('200');
-    const withdrawAmount = wei('75');
-    const nerifAssetKey: string = 'NERIF';
-
-    let nerifAssetData: IBillingManager.DepositAssetDataStruct;
+  describe('rewardsWithdraw', () => {
+    const currentTime = wei('100000', 1);
+    const depositTokensAmount = wei('100');
+    const depositNativeAmount = wei('1');
+    const tokensAmountToWithdraw = wei('30');
+    const nativeAmountToWithdraw = wei('0.5');
 
     beforeEach('setup', async () => {
-      nerifAssetData = {
-        tokenAddr: nerifToken.address,
-        workflowExecutionDiscount: 10,
-        networkRewards: 0,
-        isPermitable: true,
-        isEnabled: true,
-      };
-
-      await billingManager.connect(SIGNER).addDepositAssets([
-        {
-          depositAssetKey: nerifAssetKey,
-          depositAssetData: nerifAssetData,
-        },
-      ]);
-
       await nerifToken.approve(billingManager.address, tokensAmount);
-      await billingManager.deposit(nerifAssetKey, OWNER.address, depositTokensAmount);
+      await billingManager.deposit(nerifTokenDepositAssetKey, OWNER.address, depositTokensAmount);
+      await billingManager.deposit(nativeDepositAssetKey, OWNER.address, depositNativeAmount, {
+        value: depositNativeAmount,
+      });
+
+      await setTime(currentTime.toNumber());
     });
 
-    it('should correctly withdraw user available tokens', async () => {
-      const tx = await billingManager.connect(SIGNER).networkWithdraw([
-        {
-          depositAssetKey: nerifAssetKey,
-          userAddr: OWNER.address,
-          amountToWithdraw: withdrawAmount,
+    it('should correctly withdraw rewards', async () => {
+      const deadline = currentTime.add(1000);
+      const userNonce = 100;
+
+      const sig = createRewardsWithdrawSig(
+        OWNER.address,
+        [nerifTokenDepositAssetKey, nativeDepositAssetKey],
+        deadline.toString(),
+        [tokensAmountToWithdraw.toString(), nativeAmountToWithdraw.toString()],
+        userNonce.toString()
+      );
+
+      const tx = await billingManager.withdrawRewards({
+        depositAssetKeys: [nerifTokenDepositAssetKey, nativeDepositAssetKey],
+        withdrawAmounts: [tokensAmountToWithdraw.toString(), nativeAmountToWithdraw.toString()],
+        nonce: userNonce.toString(),
+        sigData: {
+          sigExpirationTime: deadline,
+          v: sig.v,
+          r: sig.r,
+          s: sig.s,
         },
-      ]);
+      });
+
+      expect(await nerifToken.balanceOf(OWNER.address)).to.be.eq(
+        tokensAmount.sub(depositTokensAmount).add(tokensAmountToWithdraw)
+      );
+      expect(await billingManager.isUserNonceUsed(OWNER.address, userNonce)).to.be.eq(true);
+      expect(await billingManager.getTotalDepositAssetAmount(nerifTokenDepositAssetKey)).to.be.eq(
+        depositTokensAmount.sub(tokensAmountToWithdraw)
+      );
+      expect(await billingManager.getTotalDepositAssetAmount(nativeDepositAssetKey)).to.be.eq(
+        depositNativeAmount.sub(nativeAmountToWithdraw)
+      );
 
       await expect(tx)
-        .emit(billingManager, 'NetworkWithdrawCompleted')
-        .withArgs(nerifAssetKey, OWNER.address, withdrawAmount);
-
-      const userDepositInfo = await billingManager.getUserDepositInfo(OWNER.address, nerifAssetKey);
-
-      expect(userDepositInfo.userDepositedAmount).to.be.eq(depositTokensAmount.sub(withdrawAmount));
-
-      expect(await billingManager.getNetworkRewards(nerifAssetKey)).to.be.eq(withdrawAmount);
-    });
-
-    it('should get exception if not a signer try to call this function', async () => {
-      const reason = 'BillingManager: Not a signer';
-
-      await expect(
-        billingManager.networkWithdraw([
-          {
-            depositAssetKey: nerifAssetKey,
-            userAddr: OWNER.address,
-            amountToWithdraw: withdrawAmount,
-          },
-        ])
-      ).to.be.revertedWith(reason);
-    });
-
-    it('should get exception if the deposit asset key does not exist', async () => {
-      const reason = 'BillingManager: Deposit asset does not exist';
-
-      await expect(
-        billingManager.connect(SIGNER).networkWithdraw([
-          {
-            depositAssetKey: 'SOME_KEY',
-            userAddr: OWNER.address,
-            amountToWithdraw: withdrawAmount,
-          },
-        ])
-      ).to.be.revertedWith(reason);
-    });
-
-    it('should get exception if try to withdraw zero amount', async () => {
-      const reason = 'BillingManager: Zero amount to update';
-
-      await expect(
-        billingManager.connect(SIGNER).networkWithdraw([
-          {
-            depositAssetKey: nerifAssetKey,
-            userAddr: OWNER.address,
-            amountToWithdraw: 0,
-          },
-        ])
-      ).to.be.revertedWith(reason);
-    });
-
-    it('should get exception if try to withdraw more than user deposited amount', async () => {
-      const reason = 'BillingManager: Not enough deposited funds';
-
-      await expect(
-        billingManager.connect(SIGNER).networkWithdraw([
-          {
-            depositAssetKey: nerifAssetKey,
-            userAddr: OWNER.address,
-            amountToWithdraw: depositTokensAmount.add(100),
-          },
-        ])
-      ).to.be.revertedWith(reason);
-    });
-  });
-
-  describe('getters', () => {
-    const nativeTokensAmount = wei('1');
-    const nerifAssetKey: string = 'NERIF';
-    let nerifAssetData: IBillingManager.DepositAssetDataStruct;
-
-    beforeEach('setup', async () => {
-      nerifAssetData = {
-        tokenAddr: nerifToken.address,
-        workflowExecutionDiscount: 10,
-        networkRewards: 0,
-        isPermitable: true,
-        isEnabled: true,
-      };
-
-      await billingManager.connect(SIGNER).addDepositAssets([
-        {
-          depositAssetKey: nerifAssetKey,
-          depositAssetData: nerifAssetData,
-        },
-      ]);
-
-      await nerifToken.approve(billingManager.address, tokensAmount);
-    });
-
-    it('should return correct array with existing users addresses', async () => {
-      const signers = await ethers.getSigners();
-      const expectedArr = [];
-
-      for (let i = 0; i < signers.length; i++) {
-        await billingManager
-          .connect(signers[i])
-          .deposit(nativeDepositAssetKey, signers[i].address, nativeTokensAmount, { value: nativeTokensAmount });
-
-        expect(await billingManager.getTotalUsersCount()).to.be.eq(i + 1);
-        expectedArr.push(signers[i].address);
-      }
-
-      expect(await billingManager.getExistingUsers(0, 10)).to.be.deep.eq(expectedArr.slice(0, 10));
-      expect(await billingManager.getExistingUsers(5, signers.length)).to.be.deep.eq(
-        expectedArr.slice(5, signers.length)
-      );
-
-      const numberToWithdraw = 3;
-
-      for (let i = 0; i < numberToWithdraw; i++) {
-        await billingManager.connect(SIGNER).networkWithdraw([
-          {
-            depositAssetKey: nativeDepositAssetKey,
-            userAddr: signers[signers.length - i - 1].address,
-            amountToWithdraw: nativeTokensAmount,
-          },
-        ]);
-
-        expect(await billingManager.getTotalUsersCount()).to.be.eq(signers.length - 1 - i);
-      }
-
-      expect(await billingManager.getTotalUsersCount()).to.be.eq(signers.length - numberToWithdraw);
-      expect(await billingManager.getExistingUsers(0, signers.length)).to.be.deep.eq(
-        expectedArr.slice(0, signers.length - numberToWithdraw)
-      );
-    });
-
-    it('should return correct users funds info', async () => {
-      await billingManager.deposit(nativeDepositAssetKey, OWNER.address, nativeTokensAmount, {
-        value: nativeTokensAmount,
-      });
-      await billingManager
-        .connect(FIRST)
-        .deposit(nativeDepositAssetKey, FIRST.address, nativeTokensAmount.mul(2), { value: nativeTokensAmount.mul(2) });
-
-      const usersFundsInfo = await billingManager.getUsersDepositInfo(nativeDepositAssetKey, 0, 10);
-
-      expect(usersFundsInfo.length).to.be.eq(2);
-
-      expect(usersFundsInfo[0].userAddr).to.be.eq(OWNER.address);
-      expect(usersFundsInfo[0].userDepositedAmount).to.be.eq(nativeTokensAmount);
-
-      expect(usersFundsInfo[1].userAddr).to.be.eq(FIRST.address);
-      expect(usersFundsInfo[1].userDepositedAmount).to.be.eq(nativeTokensAmount.mul(2));
+        .to.emit(billingManager, 'RewardsWithdrawn')
+        .withArgs(
+          OWNER.address,
+          [nerifTokenDepositAssetKey, nativeDepositAssetKey],
+          [tokensAmountToWithdraw, nativeAmountToWithdraw],
+          userNonce
+        );
     });
   });
 });

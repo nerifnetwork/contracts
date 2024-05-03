@@ -7,12 +7,10 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "../interfaces/operational/IGateway.sol";
 import "../interfaces/operational/IRegistry.sol";
 
-import "./Registry.sol";
-
 contract Gateway is IGateway, OwnableUpgradeable {
     using EnumerableSet for *;
 
-    Registry public registry;
+    IRegistry public registry;
 
     EnumerableSet.UintSet internal _knownWorkflows;
     EnumerableSet.AddressSet internal _knownWorkflowOwners;
@@ -33,7 +31,7 @@ contract Gateway is IGateway, OwnableUpgradeable {
     function initialize(address _registryAddr, address _gatewayOwnerAddr) external initializer {
         __Ownable_init();
 
-        registry = Registry(_registryAddr);
+        registry = IRegistry(_registryAddr);
         transferOwnership(_gatewayOwnerAddr);
     }
 
@@ -47,7 +45,7 @@ contract Gateway is IGateway, OwnableUpgradeable {
     }
 
     function setRegistry(address _registry) external override onlyOwner {
-        registry = Registry(_registry);
+        registry = IRegistry(_registry);
     }
 
     function updateConfigData(UpdateConfigData memory _updateConfigData) external override onlyOwner {

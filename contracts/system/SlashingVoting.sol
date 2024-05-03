@@ -67,17 +67,13 @@ contract SlashingVoting is ISlashingVoting, Initializable, AbstractDependant {
         proposalData.validator = _validatorAddr;
         proposalData.reason = _reason;
 
-        IDKG.MainEpochInfo memory epochInfo = _dkg.createProposal();
-
-        proposalData.epochId = epochInfo.epochId;
-        proposalData.votingStartTime = epochInfo.epochStartTime;
-        proposalData.votingEndTime = epochInfo.dkgGenPeriodEndTime;
+        proposalData.epochId = _dkg.getActiveEpochId();
+        proposalData.votingStartTime = block.timestamp;
+        proposalData.votingEndTime = _dkg.createProposal();
 
         _pendingSlashingProposals[_validatorAddr] = newProposalId;
 
-        if (epochInfo.epochStartTime <= block.timestamp) {
-            _vote(newProposalId);
-        }
+        _vote(newProposalId);
 
         emit ProposalCreated(newProposalId, _validatorAddr);
 
@@ -129,11 +125,9 @@ contract SlashingVoting is ISlashingVoting, Initializable, AbstractDependant {
     function _vote(uint256 _proposalId) internal {
         SlashingProposalData storage proposalData = _proposalsData[_proposalId];
 
+        require(proposalData.votingStartTime > 0, "SlashingVoting: Proposal does not exist");
         require(!proposalData.isExecuted, "SlashingVoting: Proposal has already executed");
-        require(
-            proposalData.votingStartTime <= block.timestamp && block.timestamp < proposalData.votingEndTime,
-            "SlashingVoting: Voting hasn't started yet or finished"
-        );
+        require(block.timestamp < proposalData.votingEndTime, "SlashingVoting: Voting is already over");
         require(proposalData.votedValidatorsSet.add(msg.sender), "SlashingVoting: Validator has already voted");
 
         if (getValidatorsPercentage(proposalData.votedValidatorsSet.length()) >= votingThresholdPercentage) {

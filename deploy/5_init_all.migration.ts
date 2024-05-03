@@ -8,7 +8,6 @@ import {
   Gateway__factory,
   NerifToken__factory,
   Registry__factory,
-  RewardDistributionPool__factory,
   SlashingVoting__factory,
   Staking__factory,
   TokensVesting__factory,
@@ -21,7 +20,10 @@ export = async (deployer: Deployer) => {
 
   const contractsRegistry = await deployer.deployed(ContractsRegistry__factory);
 
-  const contractsInfoList: [string, string][] = [];
+  const contractsInfoList: [string, string][] = [
+    ['ContractsRegistry', contractsRegistry.address],
+    ['----------', '----------'],
+  ];
 
   const nerifTokenData = configParser.configData.nerifTokenData;
 
@@ -57,10 +59,6 @@ export = async (deployer: Deployer) => {
       SlashingVoting__factory,
       await contractsRegistry.getSlashingVotingContract()
     );
-    const rewardsDistributionPool = await deployer.deployed(
-      RewardDistributionPool__factory,
-      await contractsRegistry.getRewardsDistributionPoolContract()
-    );
 
     await dkg.initialize(
       systemContractsInitParams.dkgInitParams.updatesCollectionEpochDuration,
@@ -86,13 +84,11 @@ export = async (deployer: Deployer) => {
     await contractsRegistry.injectDependencies(await contractsRegistry.DKG_NAME());
     await contractsRegistry.injectDependencies(await contractsRegistry.STAKING_NAME());
     await contractsRegistry.injectDependencies(await contractsRegistry.SLASHING_VOTING_NAME());
-    await contractsRegistry.injectDependencies(await contractsRegistry.REWARDS_DISTRIBUTION_POOL_NAME());
 
     contractsInfoList.push(
       ['DKG', dkg.address],
       ['Staking', staking.address],
       ['SlashingVoting', slashingVoting.address],
-      ['RewardDistributionPool', rewardsDistributionPool.address],
       ['----------', '----------']
     );
   }
@@ -111,16 +107,43 @@ export = async (deployer: Deployer) => {
     );
     const gatewayImpl = await deployer.deployed(Gateway__factory);
 
-    await billingManager.initialize({
-      depositAssetKey: operationalContractsInitParams.nativeDepositAssetData.nativeDepositAssetKey,
-      depositAssetData: {
-        tokenAddr: ethers.constants.AddressZero,
-        workflowExecutionDiscount: operationalContractsInitParams.nativeDepositAssetData.workflowExecutionDiscount,
-        isEnabled: operationalContractsInitParams.nativeDepositAssetData.isEnabled,
-        networkRewards: 0,
-        isPermitable: false,
+    let nerifTokenAddr: string;
+
+    if (isZeroAddr(operationalContractsInitParams.billingManagerInitParams.nerifTokenDepositAssetData.nerifTokenAddr)) {
+      nerifTokenAddr = await contractsRegistry.getNerifTokenContract();
+    } else {
+      nerifTokenAddr =
+        operationalContractsInitParams.billingManagerInitParams.nerifTokenDepositAssetData.nerifTokenAddr;
+    }
+
+    await billingManager.initialize(
+      {
+        depositAssetKey:
+          operationalContractsInitParams.billingManagerInitParams.nativeDepositAssetData.nativeDepositAssetKey,
+        depositAssetData: {
+          tokenAddr: ethers.constants.AddressZero,
+          workflowExecutionDiscount:
+            operationalContractsInitParams.billingManagerInitParams.nativeDepositAssetData.workflowExecutionDiscount,
+          isEnabled: operationalContractsInitParams.billingManagerInitParams.nativeDepositAssetData.isEnabled,
+          totalAssetAmount: 0,
+          isPermitable: false,
+        },
       },
-    });
+      {
+        depositAssetKey:
+          operationalContractsInitParams.billingManagerInitParams.nerifTokenDepositAssetData.nativeDepositAssetKey,
+        depositAssetData: {
+          tokenAddr: nerifTokenAddr,
+          workflowExecutionDiscount:
+            operationalContractsInitParams.billingManagerInitParams.nerifTokenDepositAssetData
+              .workflowExecutionDiscount,
+          isEnabled: operationalContractsInitParams.billingManagerInitParams.nerifTokenDepositAssetData.isEnabled,
+          totalAssetAmount: 0,
+          isPermitable: operationalContractsInitParams.billingManagerInitParams.nerifTokenDepositAssetData.isPermitable,
+        },
+      }
+    );
+
     await registry.initialize(operationalContractsInitParams.maxWorkflowsPerAccount);
     await gatewayFactory.initialize(gatewayImpl.address);
 

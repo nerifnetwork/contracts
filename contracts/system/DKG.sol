@@ -9,13 +9,11 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@solarity/solidity-lib/contracts-registry/AbstractDependant.sol";
 import "@solarity/solidity-lib/libs/data-structures/memory/Vector.sol";
 
+import "../interfaces/core/ISignerAddress.sol";
 import "../interfaces/core/IContractsRegistry.sol";
 import "../interfaces/system/IDKG.sol";
 import "../interfaces/system/IStaking.sol";
 import "../interfaces/system/ISlashingVoting.sol";
-import "../interfaces/ISignerAddress.sol";
-
-import "hardhat/console.sol";
 
 contract DKG is IDKG, Initializable, AbstractDependant {
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -31,7 +29,7 @@ contract DKG is IDKG, Initializable, AbstractDependant {
     uint256 public dkgGenerationEpochDuration;
     uint256 public guaranteedWorkingEpochDuration;
 
-    uint256 internal _lastEpochId;
+    uint256 internal _activeEpochId;
     address internal _activeSigner;
 
     EnumerableSet.AddressSet internal _validators;
@@ -63,6 +61,8 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         updatesCollectionEpochDuration = _updatesCollectionEpochDuration;
         dkgGenerationEpochDuration = _dkgGenerationEpochDuration;
         guaranteedWorkingEpochDuration = _guaranteedWorkingEpochDuration;
+
+        _createNewEpoch();
     }
 
     function setDependencies(address _contractsRegistryAddr, bytes memory) public override dependant {
@@ -76,56 +76,42 @@ contract DKG is IDKG, Initializable, AbstractDependant {
     function addValidator(address _validatorToAdd) external override onlyStaking {
         require(!isValidator(_validatorToAdd), "DKG: Validator already exists");
 
-        ValidationData memory startValidationData = _createEpochEndUpdateValidators();
+        uint256 startValidationEpoch = _collectUpdates();
 
-        _validatorsData[_validatorToAdd] = ValidatorData(startValidationData, ValidationData(type(uint256).max, 0));
+        _validatorsData[_validatorToAdd] = ValidatorData(startValidationEpoch, type(uint256).max);
         _validators.add(_validatorToAdd);
 
-        emit NewValidatorAdded(
-            _validatorToAdd,
-            startValidationData.validationTime,
-            startValidationData.validationEpoch
-        );
+        emit NewValidatorAdded(_validatorToAdd, startValidationEpoch);
     }
 
-    function announceValidatorExit(address _validatorToExit) external override onlyStaking returns (uint256) {
-        require(isActiveValidator(_validatorToExit), "DKG: Validator is not active");
+    function announceValidatorExit(
+        address _validatorAddr
+    ) external override onlyStaking returns (uint256 _endValidationEpoch) {
+        require(isActiveValidator(_validatorAddr), "DKG: Validator is not active");
         require(
-            _validatorsData[_validatorToExit].endValidationData.validationTime == type(uint256).max,
+            _validatorsData[_validatorAddr].endValidationEpochId == type(uint256).max,
             "DKG: Exit of the validator has already been announced"
         );
 
-        ValidationData memory endValidationData = _createEpochEndUpdateValidators();
+        _endValidationEpoch = _collectUpdates();
 
-        _validatorsData[_validatorToExit].endValidationData = endValidationData;
+        _validatorsData[_validatorAddr].endValidationEpochId = _endValidationEpoch;
 
-        emit ValidatorExitAnnounced(
-            _validatorToExit,
-            endValidationData.validationTime,
-            endValidationData.validationEpoch
-        );
-
-        return endValidationData.validationTime;
+        emit ValidatorExitAnnounced(_validatorAddr, _endValidationEpoch);
     }
 
-    function removeValidator(address _validatorToRemove) external override onlyStaking {
-        require(_validators.contains(_validatorToRemove), "DKG: Validator does not exist");
-        require(
-            _validatorsData[_validatorToRemove].endValidationData.validationTime <= block.timestamp,
-            "DKG: Validator can't be removed yet"
-        );
+    function createProposal() external override onlySlashingVoting returns (uint256) {
+        _collectUpdates();
 
-        _removeValidator(_validatorToRemove);
-    }
-
-    function createProposal() external override onlySlashingVoting returns (MainEpochInfo memory) {
-        return getMainEpochInfo(_createEpoch());
+        return _dkgEpochsData[_activeEpochId].dkgGenPeriodStartTime;
     }
 
     function slashValidator(address _validatorAddr) external override onlySlashingVoting {
         require(!_slashedValidators[_validatorAddr], "DKG: Validator has already slashed");
 
         _slashedValidators[_validatorAddr] = true;
+
+        _removeValidator(_validatorAddr);
 
         emit ValidatorSlashed(_validatorAddr);
     }
@@ -153,6 +139,9 @@ contract DKG is IDKG, Initializable, AbstractDependant {
             epochData.epochSigner = _signerAddress;
             _activeSigner = _signerAddress;
 
+            _createNewEpoch();
+            updateAllValidators();
+
             emit SignerAddressUpdated(_epochId, _signerAddress);
         }
     }
@@ -161,15 +150,7 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         address[] memory allCurrentValidators = _validators.values();
 
         for (uint256 i = 0; i < allCurrentValidators.length; ++i) {
-            ValidatorData storage validatorData = _validatorsData[allCurrentValidators[i]];
-
-            if (isActiveValidator(allCurrentValidators[i])) {
-                _updateValidationData(validatorData.endValidationData);
-            } else {
-                _updateValidationData(validatorData.startValidationData);
-            }
-
-            if (validatorData.endValidationData.validationTime <= block.timestamp) {
+            if (_validatorsData[allCurrentValidators[i]].endValidationEpochId <= _activeEpochId) {
                 _removeValidator(allCurrentValidators[i]);
             }
         }
@@ -179,16 +160,27 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         return _activeSigner;
     }
 
+    function getActiveEpochId() external view returns (uint256) {
+        return _activeEpochId;
+    }
+
     function getDKGEpochInfo(uint256 _epochId) external view override returns (DKGEpochInfo memory) {
         DKGEpochData storage epochData = _dkgEpochsData[_epochId];
 
-        return DKGEpochInfo(getMainEpochInfo(_epochId), epochData.epochSigner, getEpochStatus(_epochId));
+        return
+            DKGEpochInfo(
+                _epochId,
+                epochData.epochStartTime,
+                epochData.dkgGenPeriodStartTime,
+                epochData.epochSigner,
+                getEpochStatus(_epochId)
+            );
     }
 
     function getValidatorInfo(address _validator) external view override returns (ValidatorInfo memory) {
         ValidatorData storage validatorData = _validatorsData[_validator];
 
-        return ValidatorInfo(_validator, validatorData.startValidationData, validatorData.endValidationData);
+        return ValidatorInfo(_validator, validatorData.startValidationEpochId, validatorData.endValidationEpochId);
     }
 
     function getSignerVotesCount(uint256 _epochId, address _signerAddr) external view override returns (uint256) {
@@ -233,82 +225,53 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         }
     }
 
-    function getMainEpochInfo(uint256 _epochId) public view returns (MainEpochInfo memory) {
-        return MainEpochInfo(_epochId, _dkgEpochsData[_epochId].epochStartTime, getDKGPeriodEndTime(_epochId));
-    }
-
-    function getCurrentEpochStatus() public view override returns (DKGEpochStatuses) {
-        return getEpochStatus(getCurrentEpochId());
+    function getActiveEpochStatus() public view override returns (DKGEpochStatuses) {
+        return getEpochStatus(_activeEpochId);
     }
 
     function getEpochStatus(uint256 _epochId) public view override returns (DKGEpochStatuses) {
-        if (_epochId > _lastEpochId) {
+        if (_epochId > _activeEpochId) {
             return DKGEpochStatuses.NONE;
+        } else if (_epochId != _activeEpochId) {
+            return DKGEpochStatuses.FINISHED;
         }
 
         uint256 epochStartTime = _dkgEpochsData[_epochId].epochStartTime;
 
-        if (isLastEpoch(_epochId) && (epochStartTime > block.timestamp || epochStartTime == 0)) {
-            return DKGEpochStatuses.NOT_STARTED;
-        }
-
-        if (!isCurrentEpoch(_epochId)) {
-            return DKGEpochStatuses.FINISHED;
-        }
-
-        if ((epochStartTime += updatesCollectionEpochDuration) >= block.timestamp) {
-            return DKGEpochStatuses.UPDATES_COLLECTION;
-        } else if ((epochStartTime += dkgGenerationEpochDuration) >= block.timestamp) {
-            return DKGEpochStatuses.DKG_GENERATION;
-        } else if ((epochStartTime += guaranteedWorkingEpochDuration) >= block.timestamp) {
+        if ((epochStartTime += guaranteedWorkingEpochDuration) >= block.timestamp) {
             return DKGEpochStatuses.GUARANTEED_WORKING;
-        } else {
-            return DKGEpochStatuses.ACTIVE;
         }
+
+        uint256 dkgGenPeriodStartTime = _dkgEpochsData[_epochId].dkgGenPeriodStartTime;
+
+        if (dkgGenPeriodStartTime != 0) {
+            if (dkgGenPeriodStartTime > block.timestamp) {
+                return DKGEpochStatuses.UPDATES_COLLECTION;
+            } else if (dkgGenPeriodStartTime + dkgGenerationEpochDuration >= block.timestamp) {
+                return DKGEpochStatuses.DKG_GENERATION;
+            }
+        }
+
+        return DKGEpochStatuses.ACTIVE;
     }
 
-    function getUpdatedCollectionPeriodEndTime(uint256 _epochId) public view override returns (uint256) {
-        return _dkgEpochsData[_epochId].epochStartTime + updatesCollectionEpochDuration;
+    function getGuaranteedWorkingPeriodEndTime(uint256 _epochId) public view returns (uint256) {
+        return _dkgEpochsData[_epochId].epochStartTime + guaranteedWorkingEpochDuration;
     }
 
     function getDKGPeriodEndTime(uint256 _epochId) public view override returns (uint256) {
-        return getUpdatedCollectionPeriodEndTime(_epochId) + dkgGenerationEpochDuration;
-    }
+        require(_dkgEpochsData[_epochId].dkgGenPeriodStartTime != 0, "DKG: DKG generation period does not exist");
 
-    function getEpochEndTime(uint256 _epochId) public view override returns (uint256) {
-        return getDKGPeriodEndTime(_epochId) + guaranteedWorkingEpochDuration;
-    }
-
-    function getLastEpochId() public view override returns (uint256) {
-        return _lastEpochId;
-    }
-
-    function getCurrentEpochId() public view override returns (uint256 _currentEpochId) {
-        _currentEpochId = _lastEpochId;
-
-        if (_dkgEpochsData[_currentEpochId].epochStartTime > block.timestamp) {
-            _currentEpochId--;
-        }
-    }
-
-    function isCurrentEpoch(uint256 _epochId) public view override returns (bool) {
-        return getCurrentEpochId() == _epochId;
-    }
-
-    function isLastEpoch(uint256 _epochId) public view override returns (bool) {
-        return _lastEpochId == _epochId;
+        return _dkgEpochsData[_epochId].dkgGenPeriodStartTime + dkgGenerationEpochDuration;
     }
 
     function isActiveValidator(address _validatorAddr) public view override returns (bool) {
         ValidatorData memory validatorData = _validatorsData[_validatorAddr];
 
-        bool startValidationTimeCheck = (validatorData.startValidationData.validationEpoch == FIRST_EPOCH_ID ||
-            isDKGGenSuccessful(validatorData.startValidationData.validationEpoch)) &&
-            validatorData.startValidationData.validationTime <= block.timestamp;
-        bool endValidationTimeCheck = !isDKGGenSuccessful(validatorData.endValidationData.validationEpoch) ||
-            validatorData.endValidationData.validationTime > block.timestamp;
-
-        return !_slashedValidators[_validatorAddr] && startValidationTimeCheck && endValidationTimeCheck;
+        return
+            !_slashedValidators[_validatorAddr] &&
+            validatorData.startValidationEpochId <= _activeEpochId &&
+            validatorData.endValidationEpochId > _activeEpochId;
     }
 
     function isValidator(address _validatorAddr) public view override returns (bool) {
@@ -319,57 +282,37 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         return _slashedValidators[_validatorAddr];
     }
 
-    function isDKGGenSuccessful(uint256 _epochId) public view override returns (bool) {
-        return _dkgEpochsData[_epochId].epochSigner != address(0);
+    function _collectUpdates() internal returns (uint256) {
+        DKGEpochStatuses activeEpochStatus = getActiveEpochStatus();
+
+        require(
+            activeEpochStatus != DKGEpochStatuses.DKG_GENERATION,
+            "DKG: Unable to collect updates during the DKG generation period"
+        );
+
+        uint256 currentEpochId = _activeEpochId;
+
+        if (
+            _dkgEpochsData[currentEpochId].dkgGenPeriodStartTime == 0 ||
+            getDKGPeriodEndTime(currentEpochId) < block.timestamp
+        ) {
+            uint256 updatesCollectionStartTime = activeEpochStatus != DKGEpochStatuses.GUARANTEED_WORKING
+                ? block.timestamp
+                : getGuaranteedWorkingPeriodEndTime(currentEpochId);
+
+            _dkgEpochsData[currentEpochId].dkgGenPeriodStartTime =
+                updatesCollectionStartTime +
+                updatesCollectionEpochDuration;
+        }
+
+        return currentEpochId == FIRST_EPOCH_ID ? currentEpochId : ++currentEpochId;
     }
 
-    function _createEpoch() internal returns (uint256 _epochId) {
-        uint256 currentEpochId = _epochId = getCurrentEpochId();
-        DKGEpochStatuses currentEpochStatus = getEpochStatus(currentEpochId);
+    function _createNewEpoch() internal {
+        uint256 newEpochId = ++_activeEpochId;
 
-        if (currentEpochStatus != DKGEpochStatuses.UPDATES_COLLECTION) {
-            _epochId = _lastEpochId;
-
-            if (isLastEpoch(currentEpochId)) {
-                uint256 nextEpochStartTime = block.timestamp;
-
-                if (
-                    currentEpochStatus != DKGEpochStatuses.ACTIVE && currentEpochStatus != DKGEpochStatuses.NOT_STARTED
-                ) {
-                    nextEpochStartTime = getEpochEndTime(_epochId);
-                }
-
-                _epochId = ++_lastEpochId;
-
-                _dkgEpochsData[_epochId].epochStartTime = nextEpochStartTime;
-
-                emit NewEpochCreated(_epochId, nextEpochStartTime);
-            }
-        }
-    }
-
-    function _createEpochEndUpdateValidators() internal returns (ValidationData memory _validationData) {
-        uint256 currentLastEpochId = _lastEpochId;
-        uint256 epochId = _createEpoch();
-
-        if (epochId != FIRST_EPOCH_ID) {
-            _validationData = _getValidationData(epochId);
-
-            if (_validationData.validationEpoch != currentLastEpochId) {
-                updateAllValidators();
-            }
-        } else {
-            _validationData = ValidationData(block.timestamp, epochId);
-        }
-    }
-
-    function _updateValidationData(ValidationData storage _validationData) internal {
-        if (_validationData.validationTime <= block.timestamp && !isDKGGenSuccessful(_validationData.validationEpoch)) {
-            ValidationData memory validationData = _getValidationData(_createEpoch());
-
-            _validationData.validationTime = validationData.validationTime;
-            _validationData.validationEpoch = validationData.validationEpoch;
-        }
+        _dkgEpochsData[newEpochId].epochStartTime = block.timestamp;
+        emit NewEpochCreated(newEpochId, block.timestamp);
     }
 
     function _removeValidator(address _validatorToRemove) internal {
@@ -377,10 +320,6 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         delete _validatorsData[_validatorToRemove];
 
         emit ValidatorRemoved(_validatorToRemove);
-    }
-
-    function _getValidationData(uint256 _epochId) internal view returns (ValidationData memory) {
-        return ValidationData(getDKGPeriodEndTime(_epochId), _epochId);
     }
 
     function _onlyActiveValidator() internal view {

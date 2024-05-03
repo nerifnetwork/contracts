@@ -2,7 +2,15 @@ import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { Reverter } from '../helpers/reverter';
-import { ContractsRegistry, NerifToken, TestSlashingVoting, Staking, TestDKG } from '../../generated-types/ethers';
+import {
+  ContractsRegistry,
+  NerifToken,
+  TestSlashingVoting,
+  Staking,
+  TestDKG,
+  IBillingManager,
+  BillingManager,
+} from '../../generated-types/ethers';
 import { wei } from '../helpers/utils';
 import { setNextBlockTime, setTime } from '../helpers/block-helper';
 import { BigNumber, BigNumberish } from 'ethers';
@@ -21,11 +29,13 @@ describe('SlashingVoting', () => {
   let slashingVoting: TestSlashingVoting;
   let staking: Staking;
   let nerifToken: NerifToken;
+  let billingManager: BillingManager;
 
   const tokensAmount = wei('1000');
   const defMinimalStake = wei('100');
   const defVotingThresholdPercentage = wei('50', 25);
 
+  const msgToSign = 'verify';
   const defUpdateCollectionsEpochDuration = wei('7200', 0);
   const defDKGGenerationEpochDuration = wei('600', 0);
   const defGuaranteedWorkingEpochDuration = wei('14400', 0);
@@ -33,15 +43,14 @@ describe('SlashingVoting', () => {
   const startTime = wei('20000', 0);
   const startEpochId = wei('1', 0);
 
-  function getEndDKGPeriodTime(startEpochTime: BigNumber) {
-    return startEpochTime.add(defUpdateCollectionsEpochDuration).add(defDKGGenerationEpochDuration);
-  }
+  const nativeDepositAssetKey: string = 'NATIVE';
+  const nerifTokenDepositAssetKey: string = 'NERIF';
 
-  function getEpochEndTime(startEpochTime: BigNumber) {
-    return startEpochTime
-      .add(defUpdateCollectionsEpochDuration)
-      .add(defDKGGenerationEpochDuration)
-      .add(defGuaranteedWorkingEpochDuration);
+  let nativeDepositAssetData: IBillingManager.DepositAssetDataStruct;
+  let nerifTokenDepositAssetData: IBillingManager.DepositAssetDataStruct;
+
+  function getDKGGenPeriodStartTime(startTime: BigNumber) {
+    return startTime.add(defGuaranteedWorkingEpochDuration).add(defUpdateCollectionsEpochDuration);
   }
 
   async function stake(
@@ -50,7 +59,6 @@ describe('SlashingVoting', () => {
     stakeAmount: BigNumberish = defMinimalStake
   ) {
     await nerifToken.ownerMint(signer.address, tokensAmount);
-    await staking.connect(SIGNER).updateWhitelistedUsers([signer.address], true);
     await nerifToken.connect(signer).approve(staking.address, tokensAmount);
 
     if (!stakeTime.eq('0')) {
@@ -68,9 +76,13 @@ describe('SlashingVoting', () => {
     const DKGFactory = await ethers.getContractFactory('TestDKG');
     const SlashingVotingFactory = await ethers.getContractFactory('TestSlashingVoting');
     const StakingFactory = await ethers.getContractFactory('Staking');
-    const RewardDistributionPoolFactory = await ethers.getContractFactory('RewardDistributionPool');
     const TokensVestingFactory = await ethers.getContractFactory('TokensVesting');
     const NerifTokenFactory = await ethers.getContractFactory('NerifToken');
+
+    const RegistryFactory = await ethers.getContractFactory('Registry');
+    const BillingManagerFactory = await ethers.getContractFactory('BillingManager');
+    const GatewayFactoryFactory = await ethers.getContractFactory('GatewayFactory');
+    const GatewayImplFactory = await ethers.getContractFactory('Gateway');
 
     const contractsRegistryImpl = await ContractsRegistryFactory.deploy();
     const contractsRegistryProxy = await ERC1967ProxyFactory.deploy(contractsRegistryImpl.address, '0x');
@@ -78,8 +90,12 @@ describe('SlashingVoting', () => {
     const stakingImpl = await StakingFactory.deploy();
     const dkgImpl = await DKGFactory.deploy();
     const slashingVotingImpl = await SlashingVotingFactory.deploy();
-    const rewardsDistributionPoolImpl = await RewardDistributionPoolFactory.deploy();
     const nerifTokenImpl = await NerifTokenFactory.deploy();
+
+    const registryImpl = await RegistryFactory.deploy();
+    const billingManagerImpl = await BillingManagerFactory.deploy();
+    const gatewayImpl = await GatewayImplFactory.deploy();
+    const gatewayFactoryImpl = await GatewayFactoryFactory.deploy();
 
     const tokensVesting = await TokensVestingFactory.deploy();
 
@@ -93,23 +109,62 @@ describe('SlashingVoting', () => {
       await contractsRegistry.SLASHING_VOTING_NAME(),
       slashingVotingImpl.address
     );
-    await contractsRegistry.addProxyContract(
-      await contractsRegistry.REWARDS_DISTRIBUTION_POOL_NAME(),
-      rewardsDistributionPoolImpl.address
-    );
     await contractsRegistry.addProxyContract(await contractsRegistry.NERIF_TOKEN_NAME(), nerifTokenImpl.address);
+
+    await contractsRegistry.addProxyContract(await contractsRegistry.REGISTRY_NAME(), registryImpl.address);
+    await contractsRegistry.addProxyContract(
+      await contractsRegistry.BILLING_MANAGER_NAME(),
+      billingManagerImpl.address
+    );
+    await contractsRegistry.addProxyContract(
+      await contractsRegistry.GATEWAY_FACTORY_NAME(),
+      gatewayFactoryImpl.address
+    );
 
     staking = StakingFactory.attach(await contractsRegistry.getStakingContract());
     dkg = DKGFactory.attach(await contractsRegistry.getDKGContract());
     slashingVoting = SlashingVotingFactory.attach(await contractsRegistry.getSlashingVotingContract());
     nerifToken = NerifTokenFactory.attach(await contractsRegistry.getNerifTokenContract());
+    billingManager = BillingManagerFactory.attach(await contractsRegistry.getBillingManagerContract());
+    const gatewayFactory = GatewayFactoryFactory.attach(await contractsRegistry.getGatewayFactoryContract());
+    const registry = RegistryFactory.attach(await contractsRegistry.getRegistryContract());
 
     await contractsRegistry.addContract(await contractsRegistry.TOKENS_VESTING_NAME(), tokensVesting.address);
     await contractsRegistry.addContract(await contractsRegistry.SIGNER_GETTER_NAME(), dkg.address);
 
+    nativeDepositAssetData = {
+      tokenAddr: ethers.constants.AddressZero,
+      workflowExecutionDiscount: 0,
+      totalAssetAmount: 0,
+      isPermitable: false,
+      isEnabled: true,
+    };
+    nerifTokenDepositAssetData = {
+      tokenAddr: nerifToken.address,
+      workflowExecutionDiscount: 10,
+      totalAssetAmount: 0,
+      isPermitable: true,
+      isEnabled: true,
+    };
+
+    await contractsRegistry.setIsMainChain(true);
+
+    const whitelistedUsers = (await ethers.getSigners()).map((signer: SignerWithAddress) => {
+      return signer.address;
+    });
+
     await nerifToken.initialize(tokensAmount, 'NERIF', 'NERIF');
-    await staking.initialize(nerifToken.address, defMinimalStake, [OWNER.address]);
+    await staking.initialize(nerifToken.address, defMinimalStake, whitelistedUsers);
     await slashingVoting.initialize(defVotingThresholdPercentage);
+
+    await gatewayFactory.initialize(gatewayImpl.address);
+    await registry.initialize(0);
+    await billingManager.initialize(
+      { depositAssetKey: nativeDepositAssetKey, depositAssetData: nativeDepositAssetData },
+      { depositAssetKey: nerifTokenDepositAssetKey, depositAssetData: nerifTokenDepositAssetData }
+    );
+
+    await setNextBlockTime(startTime.toNumber());
 
     await dkg.initialize(
       defUpdateCollectionsEpochDuration,
@@ -120,10 +175,8 @@ describe('SlashingVoting', () => {
     await contractsRegistry.injectDependencies(await contractsRegistry.DKG_NAME());
     await contractsRegistry.injectDependencies(await contractsRegistry.STAKING_NAME());
     await contractsRegistry.injectDependencies(await contractsRegistry.SLASHING_VOTING_NAME());
-    await contractsRegistry.injectDependencies(await contractsRegistry.REWARDS_DISTRIBUTION_POOL_NAME());
     await contractsRegistry.injectDependencies(await contractsRegistry.NERIF_TOKEN_NAME());
-
-    await setNextBlockTime(startTime.toNumber());
+    await contractsRegistry.injectDependencies(await contractsRegistry.BILLING_MANAGER_NAME());
 
     await nerifToken.approve(staking.address, tokensAmount);
     await staking.stake(defMinimalStake);
@@ -182,9 +235,10 @@ describe('SlashingVoting', () => {
 
   describe('createProposal', () => {
     const someReason = 'Some reason';
+    let secondEpochId: BigNumber;
+    let secondEpochStartTime: BigNumber;
     let expectedValidators: SignerWithAddress[];
     let expectedValidatorAddresses: string[];
-    let currentTime: BigNumber;
 
     beforeEach('setup', async () => {
       expectedValidators = [OWNER, FIRST, SECOND];
@@ -192,25 +246,27 @@ describe('SlashingVoting', () => {
         return signer.address;
       });
 
-      await dkg.setSigner(startEpochId, SIGNER.address);
-
-      for (let i = 0; i < expectedValidators.length; i++) {
+      for (let i = 1; i < expectedValidators.length; i++) {
         await stake(expectedValidators[i]);
       }
 
-      currentTime = getEpochEndTime(startTime).add('10');
+      secondEpochId = startEpochId.add('1');
+      secondEpochStartTime = getDKGGenPeriodStartTime(startTime).add('10');
 
-      await setTime(currentTime.toNumber());
+      const signature = SIGNER.signMessage(msgToSign);
+
+      await setNextBlockTime(secondEpochStartTime.sub('1').toNumber());
+      await dkg.voteSigner(startEpochId, SIGNER.address, signature);
+      await dkg.connect(FIRST).voteSigner(startEpochId, SIGNER.address, signature);
 
       expect(await dkg.getActiveValidators()).to.be.deep.eq(expectedValidatorAddresses);
-      expect(await dkg.getCurrentEpochStatus()).to.be.eq(5);
+      expect(await dkg.getActiveEpochStatus()).to.be.eq(1);
     });
 
     it('should correctly create proposal and vote', async () => {
-      const newEpochId = startEpochId.add('1');
-      const newEpochStartTime = currentTime.add('100');
+      const proposalStartTime = secondEpochStartTime.add('10');
 
-      await setNextBlockTime(newEpochStartTime.toNumber());
+      await setNextBlockTime(proposalStartTime.toNumber());
       const newProposalId = await slashingVoting.callStatic.createProposal(FIRST.address, someReason);
       const tx = await slashingVoting.createProposal(FIRST.address, someReason);
 
@@ -219,53 +275,19 @@ describe('SlashingVoting', () => {
       expect(await slashingVoting.lastProposalId()).to.be.eq(expectedProposalId);
       expect(newProposalId).to.be.eq(expectedProposalId);
 
-      expect((await tx.wait()).events?.length).to.be.eq(3);
-      await expect(tx).to.emit(dkg, 'NewEpochCreated').withArgs(newEpochId, newEpochStartTime);
+      expect((await tx.wait()).events?.length).to.be.eq(2);
       await expect(tx).to.emit(slashingVoting, 'ProposalCreated').withArgs(expectedProposalId, FIRST.address);
       await expect(tx).to.emit(slashingVoting, 'ProposalVoted').withArgs(expectedProposalId, OWNER.address);
 
+      const expectedVotingEndTime = getDKGGenPeriodStartTime(secondEpochStartTime);
       const propInfo = await slashingVoting.getDetailedProposalInfo(expectedProposalId);
 
       expect(propInfo.votedValidators.length).to.be.eq(1);
       expect(propInfo.votedValidators).to.be.deep.eq([OWNER.address]);
 
-      expect(propInfo.baseProposalInfo.epochId).to.be.eq(newEpochId);
-      expect(propInfo.baseProposalInfo.votingStartTime).to.be.eq(newEpochStartTime);
-      expect(propInfo.baseProposalInfo.votingEndTime).to.be.eq(getEndDKGPeriodTime(newEpochStartTime));
-
-      expect(await slashingVoting.hasPendingSlashingProposal(FIRST.address)).to.be.eq(true);
-    });
-
-    it('should correctly create voting without vote', async () => {
-      const secondEpochId = startEpochId.add('1');
-      const secondEpochStartTime = currentTime.add('100');
-
-      await stake(THIRD, secondEpochStartTime);
-
-      await dkg.setSigner(secondEpochId, SIGNER.address);
-      await setTime(getEndDKGPeriodTime(secondEpochStartTime).toNumber());
-
-      const thirdEpochId = secondEpochId.add('1');
-      const thirdEpochStartTime = getEpochEndTime(secondEpochStartTime);
-
-      const tx = await slashingVoting.createProposal(FIRST.address, someReason);
-
-      const expectedProposalId = 1;
-
-      expect(await slashingVoting.lastProposalId()).to.be.eq(expectedProposalId);
-
-      expect((await tx.wait()).events?.length).to.be.eq(2);
-      await expect(tx).to.emit(dkg, 'NewEpochCreated').withArgs(thirdEpochId, thirdEpochStartTime);
-      await expect(tx).to.emit(slashingVoting, 'ProposalCreated').withArgs(expectedProposalId, FIRST.address);
-
-      const propInfo = await slashingVoting.getDetailedProposalInfo(expectedProposalId);
-
-      expect(propInfo.votedValidators.length).to.be.eq(0);
-      expect(propInfo.votedValidators).to.be.deep.eq([]);
-
-      expect(propInfo.baseProposalInfo.epochId).to.be.eq(thirdEpochId);
-      expect(propInfo.baseProposalInfo.votingStartTime).to.be.eq(thirdEpochStartTime);
-      expect(propInfo.baseProposalInfo.votingEndTime).to.be.eq(getEndDKGPeriodTime(thirdEpochStartTime));
+      expect(propInfo.baseProposalInfo.epochId).to.be.eq(secondEpochId);
+      expect(propInfo.baseProposalInfo.votingStartTime).to.be.eq(proposalStartTime);
+      expect(propInfo.baseProposalInfo.votingEndTime).to.be.eq(expectedVotingEndTime);
 
       expect(await slashingVoting.hasPendingSlashingProposal(FIRST.address)).to.be.eq(true);
     });
@@ -296,10 +318,10 @@ describe('SlashingVoting', () => {
     const activeValidatorsCount = 5;
     const someReason = 'Some reason';
 
+    let secondEpochStartTime: BigNumber;
     let expectedValidators: SignerWithAddress[];
     let expectedValidatorAddresses: string[];
-    let currentTime: BigNumber;
-    let newEpochStartTime: BigNumber;
+    let proposalStartTime: BigNumber;
 
     beforeEach('setup', async () => {
       expectedValidators = (await ethers.getSigners()).slice(0, activeValidatorsCount);
@@ -307,23 +329,26 @@ describe('SlashingVoting', () => {
         return signer.address;
       });
 
-      await dkg.setSigner(startEpochId, SIGNER.address);
-
-      for (let i = 0; i < expectedValidators.length; i++) {
+      for (let i = 1; i < expectedValidators.length; i++) {
         await stake(expectedValidators[i]);
       }
 
-      currentTime = getEpochEndTime(startTime).add('10');
+      secondEpochStartTime = getDKGGenPeriodStartTime(startTime).add('10');
 
-      await setTime(currentTime.toNumber());
+      const signature = SIGNER.signMessage(msgToSign);
+
+      await setNextBlockTime(secondEpochStartTime.sub('2').toNumber());
+      await dkg.voteSigner(startEpochId, SIGNER.address, signature);
+      await dkg.connect(FIRST).voteSigner(startEpochId, SIGNER.address, signature);
+      await dkg.connect(SECOND).voteSigner(startEpochId, SIGNER.address, signature);
 
       expect(await dkg.getActiveValidators()).to.be.deep.eq(expectedValidatorAddresses);
       expect(await dkg.getActiveValidatorsCount()).to.be.eq(activeValidatorsCount);
-      expect(await dkg.getCurrentEpochStatus()).to.be.eq(5);
+      expect(await dkg.getActiveEpochStatus()).to.be.eq(1);
 
-      newEpochStartTime = currentTime.add('100');
+      proposalStartTime = secondEpochStartTime.add('10');
 
-      await setNextBlockTime(newEpochStartTime.toNumber());
+      await setNextBlockTime(proposalStartTime.toNumber());
       await slashingVoting.createProposal(FIRST.address, someReason);
     });
 
@@ -347,8 +372,15 @@ describe('SlashingVoting', () => {
 
       const tx = await slashingVoting.connect(THIRD).vote(proposalId);
 
-      expect((await tx.wait()).events?.length).to.be.eq(3);
+      expect((await tx.wait()).events?.length).to.be.eq(6);
       await expect(tx).to.emit(dkg, 'ValidatorSlashed').withArgs(FIRST.address);
+      await expect(tx).to.emit(dkg, 'ValidatorRemoved').withArgs(FIRST.address);
+      await expect(tx)
+        .to.emit(nerifToken, 'Transfer')
+        .withArgs(staking.address, billingManager.address, defMinimalStake);
+      await expect(tx)
+        .to.emit(billingManager, 'SlashedTokensAdded')
+        .withArgs(nerifTokenDepositAssetKey, defMinimalStake);
       await expect(tx).to.emit(slashingVoting, 'ProposalVoted').withArgs(proposalId, THIRD.address);
       await expect(tx).to.emit(slashingVoting, 'ProposalExecuted').withArgs(proposalId, FIRST.address);
 
@@ -379,18 +411,22 @@ describe('SlashingVoting', () => {
       await expect(slashingVoting.connect(SECOND).vote(proposalId)).to.be.revertedWith(reason);
     });
 
-    it('should get exception if the voting has not started yet or finished', async () => {
-      const reason = "SlashingVoting: Voting hasn't started yet or finished";
+    it('should get exception if the voting is already over', async () => {
+      const reason = 'SlashingVoting: Voting is already over';
 
-      await setTime(getEndDKGPeriodTime(newEpochStartTime).add('100').toNumber());
+      const expectedVotingEndTime = getDKGGenPeriodStartTime(secondEpochStartTime);
+
+      expect((await slashingVoting.getBaseProposalInfo(proposalId)).votingEndTime).to.be.eq(expectedVotingEndTime);
+
+      await setTime(expectedVotingEndTime.add('100').toNumber());
 
       await expect(slashingVoting.connect(SECOND).vote(proposalId)).to.be.revertedWith(reason);
+    });
 
-      const newProposalId = proposalId + 1;
+    it('should get exception if try to vote in proposal that does not exist', async () => {
+      const reason = 'SlashingVoting: Proposal does not exist';
 
-      await slashingVoting.createProposal(FIRST.address, someReason);
-
-      await expect(slashingVoting.connect(SECOND).vote(newProposalId)).to.be.revertedWith(reason);
+      await expect(slashingVoting.vote(100)).to.be.revertedWith(reason);
     });
 
     it('should get exception if the validator has already voted', async () => {
@@ -403,7 +439,6 @@ describe('SlashingVoting', () => {
   describe('getValidatorsPercentage', () => {
     let expectedValidators: SignerWithAddress[];
     let expectedValidatorAddresses: string[];
-    let currentTime: BigNumber;
 
     beforeEach('setup', async () => {
       expectedValidators = (await ethers.getSigners()).slice(0, 8);
@@ -411,19 +446,13 @@ describe('SlashingVoting', () => {
         return signer.address;
       });
 
-      await dkg.setSigner(startEpochId, SIGNER.address);
-
-      for (let i = 0; i < expectedValidators.length; i++) {
+      for (let i = 1; i < expectedValidators.length; i++) {
         await stake(expectedValidators[i]);
       }
 
-      currentTime = getEpochEndTime(startTime).add('10');
-
-      await setTime(currentTime.toNumber());
-
       expect(await dkg.getActiveValidators()).to.be.deep.eq(expectedValidatorAddresses);
       expect(await dkg.getActiveValidatorsCount()).to.be.eq(8);
-      expect(await dkg.getCurrentEpochStatus()).to.be.eq(5);
+      expect(await dkg.getActiveEpochStatus()).to.be.eq(1);
     });
 
     it('should return correct percentages', async () => {

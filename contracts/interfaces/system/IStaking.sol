@@ -18,11 +18,10 @@ interface IStaking {
     /**
      * @dev Struct containing information about a withdrawal announcement
      * @param tokensAmount The amount of tokens to be withdrawn
-     * @param withdrawalTime The time when the withdrawal will be allowed
      */
     struct WithdrawalAnnouncement {
         uint256 tokensAmount;
-        uint256 withdrawalTime;
+        uint256 withdrawalEpochId;
     }
 
     /**
@@ -43,9 +42,9 @@ interface IStaking {
      * @notice Emitted when a withdrawal is announced
      * @param userAddr The address of the user announcing the withdrawal
      * @param tokensAmount The amount of tokens being withdrawn
-     * @param withdrawalTime The time when the withdrawal will be allowed
+     * @param withdrawalEpochId The epoch ID when the withdrawal will be allowed
      */
-    event WithdrawalAnnounced(address indexed userAddr, uint256 tokensAmount, uint256 withdrawalTime);
+    event WithdrawalAnnounced(address indexed userAddr, uint256 tokensAmount, uint256 withdrawalEpochId);
 
     /**
      * @notice Emitted when tokens are withdrawn
@@ -74,17 +73,9 @@ interface IStaking {
     function slashValidator(address _validator) external;
 
     /**
-     * @notice Adds rewards to a validator's stake
-     * @param _validator The address of the validator
-     * @param _amount The amount of rewards to add
-     */
-    function addRewardsToStake(address _validator, uint256 _amount) external;
-
-    /**
      * @notice Announces a withdrawal
-     * @param _amount The amount of tokens to withdraw
      */
-    function announceWithdrawal(uint256 _amount) external;
+    function announceWithdrawal() external;
 
     /**
      * @notice Withdraws tokens
