@@ -99,6 +99,9 @@ contract Staking is IStaking, Initializable, AbstractDependant {
         );
 
         _billingManager.addSlashedTokens(nerifTokenDepositAssetKey, _usersStake[_validator]);
+        stakeToken.safeTransfer(address(_billingManager), _usersStake[_validator]);
+
+        delete _usersStake[_validator];
     }
 
     function stake(uint256 _stakeAmount) external override onlyWhitelistedUser onlyNotSlashed {
@@ -157,10 +160,6 @@ contract Staking is IStaking, Initializable, AbstractDependant {
 
         delete _usersStake[msg.sender];
         delete _withdrawalAnnouncements[msg.sender];
-
-        if (_dkg.isValidator(msg.sender)) {
-            _dkg.removeValidator(msg.sender);
-        }
 
         stakeToken.safeTransfer(msg.sender, withdrawalAmount);
 

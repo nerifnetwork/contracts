@@ -100,16 +100,6 @@ contract DKG is IDKG, Initializable, AbstractDependant {
         emit ValidatorExitAnnounced(_validatorAddr, _endValidationEpoch);
     }
 
-    function removeValidator(address _validatorToRemove) external override onlyStaking {
-        require(_validators.contains(_validatorToRemove), "DKG: Validator does not exist");
-        require(
-            _validatorsData[_validatorToRemove].endValidationEpochId <= _activeEpochId,
-            "DKG: Validator can't be removed yet"
-        );
-
-        _removeValidator(_validatorToRemove);
-    }
-
     function createProposal() external override onlySlashingVoting returns (uint256) {
         _collectUpdates();
 

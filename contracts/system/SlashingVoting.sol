@@ -125,11 +125,9 @@ contract SlashingVoting is ISlashingVoting, Initializable, AbstractDependant {
     function _vote(uint256 _proposalId) internal {
         SlashingProposalData storage proposalData = _proposalsData[_proposalId];
 
+        require(proposalData.votingStartTime > 0, "SlashingVoting: Proposal does not exist");
         require(!proposalData.isExecuted, "SlashingVoting: Proposal has already executed");
-        require(
-            proposalData.votingStartTime <= block.timestamp && block.timestamp < proposalData.votingEndTime,
-            "SlashingVoting: Voting hasn't started yet or finished"
-        );
+        require(block.timestamp < proposalData.votingEndTime, "SlashingVoting: Voting is already over");
         require(proposalData.votedValidatorsSet.add(msg.sender), "SlashingVoting: Validator has already voted");
 
         if (getValidatorsPercentage(proposalData.votedValidatorsSet.length()) >= votingThresholdPercentage) {

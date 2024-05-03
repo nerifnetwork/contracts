@@ -127,12 +127,6 @@ interface IDKG {
     function announceValidatorExit(address _validatorToExit) external returns (uint256);
 
     /**
-     * @notice Removes a validator
-     * @param _validatorToRemove The address of the validator to remove
-     */
-    function removeValidator(address _validatorToRemove) external;
-
-    /**
      * @notice Creates a slashing proposal
      * @return The DKG generation period start time
      */
