@@ -2,8 +2,6 @@
 
 This repository contains Solidity contracts needed to bootstrap and run Nerif Network.
 
-![structure.png](./docs/structure.png)
-
 ## Core contracts
 
 ### ContractsRegistry
@@ -32,6 +30,9 @@ The central mechanism on which most of the system is based is the logic of epoch
 ##### Epochs flow
 Since the epoch system is implemented quite flexibly, it is necessary to accurately understand all of the existing options that can occur within an epoch.
 
+![Epochs flow](./docs/epochs_flow.png)
+*Epochs flow*
+
 As stated earlier, any epoch starts with a period of guaranteed working. During this period, validators can perform any available actions. For example, announce a withdrawal from a **Staking** contract, staking an additional amount of tokens, etc. If the actions performed lead to a future change in the validator set, the start of the DKG generation period will be determined, if it was not determined earlier.
 
 The start time of the DKG generation period will be as follows:
@@ -58,7 +59,13 @@ During a DKG generation period that starts at a previously defined time and last
 
 After a successful DKG procedure, a new epoch will be created and the list of active validators will be updated.
 
+![Successful DKG Generation flow](./docs/epochs_change.png)
+*Epochs periods with successful DKG Generation*
+
 In case no new *collective address* was generated during the DKG generation period, the epoch will return to active status after its end.
+
+![Failed DKG generation](./docs/failed_dkg_gen.png)
+*Epochs periods with failed DGK generation*
 
 #### DKG procedure
 The DKG procedure itself can only take place during the DKG generation period. To accept a new *collective address*, the majority of active validators must vote in favour of its acceptance. This vote is done using the `voteSigner` function of the **DKG** contract.
@@ -131,6 +138,9 @@ After a successful deposit, an `AssetDeposited` event will be created, with the 
 
 The main feature of these deposits is that each user's balance is not stored on a contract. Instead, all users simply deposit tokens into a common pool, and the backend of the system calculates all balances. This is to prevent users from withdrawing tokens during a workflow execution, thus making the system at a loss.
 
+![Assets deposit flow](./docs/assets_deposit_flow.png)
+*Assets deposit flow*
+
 #### Funds withdrawal process
 To withdraw deposited funds, all users must first obtain a signature from the protocol backend. This step is necessary because only the backend knows about the user's current balance, taking into account all the costs that have been incurred by the system to perform workflow and other system actions.
 
@@ -157,6 +167,9 @@ StructTypehash = RewardsWithdraw(address userAddr,bytes32 depositAssetsHash,byte
 ```
 
 The fields of the signature structure are similar to the funds withdrawal.
+
+![Assets withdraw flow](./docs/assets_withdraw_flow.png)
+*Assets withdraw flow*
 
 ### Registry
 The **Registry** contract is used by the system as an entry point to execute transactions from user's **Gateway** contracts. Users, in turn, can manage their **Gateway** contracts and register new gateways.
