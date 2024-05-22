@@ -18,7 +18,10 @@ interface IDKG {
     }
 
     /**
-     * @dev Struct containing information about a DKG epoch
+     * @notice Struct containing information about a DKG epoch
+     * @param epochId The ID of the epoch
+     * @param epochStartTime The start time of the epoch
+     * @param dkgGenPeriodStartTime The start time of the DKG generation period within the epoch
      * @param epochSigner The address of the signer for the epoch
      * @param epochStatus The status of the epoch
      */
@@ -31,10 +34,10 @@ interface IDKG {
     }
 
     /**
-     * @dev Struct containing information about a validator
+     * @notice Struct containing information about a validator
      * @param validator The address of the validator
-     * @param startValidationData The validation data of the start of the validator's validation period
-     * @param endValidationData The validation data of the end of the validator's validation period
+     * @param startValidationEpochId The epoch ID of the start of the validator's validation period
+     * @param endValidationEpochId The epoch ID of the end of the validator's validation period
      */
     struct ValidatorInfo {
         address validator;
@@ -43,10 +46,11 @@ interface IDKG {
     }
 
     /**
-     * @dev Struct containing data for a DKG epoch
+     * @notice Struct containing data for a DKG epoch
      * @param epochSigner The address of the signer for the epoch
      * @param epochStartTime The start time of the epoch
-     * @param signerVotesCount Mapping from signers addresses to the number of votes they have received
+     * @param dkgGenPeriodStartTime The start time of the DKG generation period within the epoch
+     * @param signerVotesCount Mapping from signer addresses to the number of votes they have received
      * @param signerVotes Mapping from validator addresses to the collective signer they voted for
      */
     struct DKGEpochData {
@@ -59,6 +63,8 @@ interface IDKG {
 
     /**
      * @notice Represents the data associated with a validator
+     * @param startValidationEpochId The epoch ID indicating the start of the validator's validation period
+     * @param endValidationEpochId The epoch ID indicating the end of the validator's validation period
      */
     struct ValidatorData {
         uint256 startValidationEpochId;
@@ -157,6 +163,10 @@ interface IDKG {
      */
     function getSignerAddress() external view returns (address);
 
+    /**
+     * @notice Retrieves the ID of the active epoch
+     * @return The ID of the active epoch
+     */
     function getActiveEpochId() external view returns (uint256);
 
     /**
@@ -247,5 +257,10 @@ interface IDKG {
      */
     function isValidator(address _validatorAddr) external view returns (bool);
 
+    /**
+     * @notice Checks if a validator has been slashed
+     * @param _validatorAddr The address of the validator
+     * @return True if the validator has been slashed, otherwise false
+     */
     function isValidatorSlashed(address _validatorAddr) external view returns (bool);
 }
